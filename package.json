@@ -1,0 +1,29 @@
+{
+  "name": "burger.sh",
+  "version": "0.1.0",
+  "description": "Fresh compiled burgers",
+  "private": true,
+  "homepage": "https://github.com/MrJoelao/burger.sh#readme",
+  "bugs": {
+    "url": "https://github.com/MrJoelao/burger.sh/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/MrJoelao/burger.sh.git"
+  },
+  "license": "MIT",
+  "author": "joelao",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node ./bin/www",
+    "dev": "node --watch ./bin/www"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "debug": "^4.4.0",
+    "ejs": "^5.0.2",
+    "express": "^5.2.1",
+    "http-errors": "^2.0.0",
+    "morgan": "^1.10.1"
+  }
+}
