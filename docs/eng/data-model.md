@@ -3,6 +3,7 @@
 > ⚠️ **Disclaimer:** This translation was produced with the assistance of an AI system. While every effort has been made to preserve accuracy, minor translation errors or imprecisions in technical terminology may be present. Please refer to the original Italian document in case of any ambiguity.
 
 ***
+
 # Data Model
 
 This section describes how the FastFood domain model is translated into MongoDB collections and documents.  
