@@ -64,7 +64,7 @@ In particolare, l'Admin può supervisionare l'attivazione delle filiali e approv
 Il sistema deve prevedere una fase di registrazione e login per gli utenti.
 
 - **Cliente**: l'account è immediatamente utilizzabile dopo la registrazione.
-- **Manager**: la registrazione è consentita ma l'account deve essere approvato da un Admin prima di poter gestire una filiale.
+- **Manager**: la registrazione è consentita ma l'account deve essere approvato da un Admin prima di poter gestire una filiale. Lo stato di approvazione è tracciato tramite l'attributo `managerStatus` (`pending` / `approved`), definito in dettaglio in `data-model.md`.
 
 ### Dati utente previsti
 
@@ -196,10 +196,14 @@ Il flusso di stato previsto per gli ordini è il seguente:
 
 `ordinato` → `in preparazione` → `pronto` → `in consegna` → `consegnato`
 
+Il sottoinsieme di stati effettivamente raggiungibile dipende dalla modalità di completamento dell'ordine:
+
 | Modalità | Flusso di stato |
 |---|---|
 | Ritiro in sede | `ordinato` → `in preparazione` → `pronto` → `consegnato` |
 | Consegna a domicilio | `ordinato` → `in preparazione` → `in consegna` → `consegnato` |
+
+Questo flusso e i relativi valori ammessi sono modellati nel campo `status` della collezione `orders`, descritta in `data-model.md`.
 
 ### Storico acquisti
 

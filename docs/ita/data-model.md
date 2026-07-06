@@ -2,24 +2,24 @@
 
 ## Indice
 
-1. [Obiettivo del documento](#obiettivo-del-documento)
-2. [Collezioni principali](#1-collezioni-principali)
-3. [Progettazione delle collezioni](#2-progettazione-delle-collezioni)
-4. [Embedding e referencing](#3-embedding-e-referencing)
-5. [Scelte di modellazione](#4-scelte-di-modellazione)
-6. [Confini del modello](#5-confini-del-modello)
-7. [Note finali](#6-note-finali)
+1. [Obiettivo del documento](#1-obiettivo-del-documento)
+2. [Collezioni principali](#2-collezioni-principali)
+3. [Progettazione delle collezioni](#3-progettazione-delle-collezioni)
+4. [Embedding e referencing](#4-embedding-e-referencing)
+5. [Scelte di modellazione](#5-scelte-di-modellazione)
+6. [Confini del modello](#6-confini-del-modello)
+7. [Note finali](#7-note-finali)
 
 ---
 
-## Obiettivo del documento
+## 1. Obiettivo del documento
 
 Questa sezione descrive come il domain model di FastFood viene tradotto in collezioni e documenti MongoDB.
 L'obiettivo è mantenere lo schema coerente con i principali pattern di accesso dell'applicazione, preservando una chiara separazione tra dati condivisi, dati riutilizzabili e dati specifici dell'ordine.
 
 ---
 
-## 1. Collezioni principali
+## 2. Collezioni principali
 
 | Collezione | Descrizione sintetica |
 |---|---|
@@ -32,7 +32,7 @@ L'obiettivo è mantenere lo schema coerente con i principali pattern di accesso 
 
 ---
 
-## 2. Progettazione delle collezioni
+## 3. Progettazione delle collezioni
 
 ### users
 
@@ -40,8 +40,9 @@ La collezione `users` memorizza tutti gli utenti dell'applicazione, inclusi clie
 
 - Un campo `role` distingue la tipologia di utente.
 - Gli attributi comuni (nome, cognome, email, password, indirizzo) sono memorizzati nello stesso documento.
+- Il campo `managerStatus` è presente **esclusivamente** nei documenti con `role: "manager"` e può valere `"pending"` o `"approved"`. Per `role: "customer"` e `role: "admin"` il campo non viene incluso nel documento (non è impostato a `null`, ma del tutto assente), per evitare ambiguità tra "manager non ancora approvato" e "utente per cui il concetto non si applica".
 
-Esempio semplificato di documento:
+Esempio semplificato di documento cliente:
 
 ```json
 {
@@ -57,12 +58,29 @@ Esempio semplificato di documento:
     "zip": "27029"
   },
   "preferences": ["vegetariano"],
-  "managerStatus": null,
   "createdAt": "ISODate"
 }
 ```
 
-Il campo `managerStatus` è presente solo per gli utenti con `role: "manager"` e può valere ad esempio `"pending"` o `"approved"`.
+Esempio semplificato di documento manager:
+
+```json
+{
+  "_id": "ObjectId",
+  "role": "manager",
+  "firstName": "Anna",
+  "lastName": "Bianchi",
+  "email": "anna.bianchi@example.com",
+  "passwordHash": "...",
+  "address": {
+    "street": "Via Torino 3",
+    "city": "Vigevano",
+    "zip": "27029"
+  },
+  "managerStatus": "pending",
+  "createdAt": "ISODate"
+}
+```
 
 ### restaurants
 
@@ -150,14 +168,22 @@ La collezione `orders` memorizza sia gli ordini in stato di bozza sia quelli con
 }
 ```
 
-Valori ammessi per `status`: `ordinato`, `in preparazione`, `pronto`, `in consegna`, `consegnato` (i valori intermedi effettivamente applicabili dipendono dalla modalità dell'ordine, vedi `requirements.md`).
+Valori ammessi per `status`: `ordinato`, `in preparazione`, `pronto`, `in consegna`, `consegnato`.
+Il sottoinsieme di valori effettivamente raggiungibile dipende dalla modalità dell'ordine (`mode`):
+
+| Modalità | Flusso di stato applicabile |
+|---|---|
+| `ritiro` | `ordinato` → `in preparazione` → `pronto` → `consegnato` |
+| `domicilio` | `ordinato` → `in preparazione` → `in consegna` → `consegnato` |
+
+Questa tabella è coerente con quanto definito in `requirements.md`, sezione "Gestione degli ordini".
 
 #### delivery (subdocument opzionale)
 
 Le informazioni di consegna sono incorporate all'interno del documento `orders` come sottodocumento opzionale.
 
 - Questa scelta è adatta perché la consegna esiste solo per gli ordini a domicilio e non deve vivere in modo indipendente rispetto all'ordine.
-- Il sottodocumento è assente (o `null`) quando `mode` è `"ritiro"`.
+- Il sottodocumento è assente (non impostato a `null`) quando `mode` è `"ritiro"`.
 
 ### paymentMethods
 
@@ -177,7 +203,7 @@ La collezione `paymentMethods` memorizza i metodi di pagamento associati ai clie
 
 ---
 
-## 3. Embedding e referencing
+## 4. Embedding e referencing
 
 Il data model utilizza sia embedding sia referencing:
 
@@ -190,7 +216,7 @@ Questo approccio riduce la duplicazione non necessaria e permette allo stesso te
 
 ---
 
-## 4. Scelte di modellazione
+## 5. Scelte di modellazione
 
 Nel data model sono state adottate le seguenti scelte:
 
@@ -198,17 +224,18 @@ Nel data model sono state adottate le seguenti scelte:
 - Il sottodocumento `delivery` è presente solo quando la modalità dell'ordine è a domicilio.
 - I piatti standard e i piatti personalizzati sono memorizzati nella stessa collezione, utilizzando un flag per distinguerli.
 - Gli ingredienti sono modellati come collezione separata, poiché sono condivisi tra più piatti e possono essere riutilizzati nei filtri legati agli allergeni.
+- Il campo `managerStatus` è modellato come attributo opzionale e assente (non nullable) sui ruoli che non lo richiedono, per evitare ambiguità semantiche in fase di validazione dello schema.
 
 ---
 
-## 5. Confini del modello
+## 6. Confini del modello
 
 Questo data model non include route API, logica di business o comportamento del frontend.
 Questi aspetti appartengono alle fasi successive di progettazione architetturale e implementazione.
 
 ---
 
-## 6. Note finali
+## 7. Note finali
 
 Lo schema è stato progettato per essere coerente con i requisiti del progetto e con i pattern di accesso attesi.
 In particolare, privilegia l'embedding per i dati legati all'ordine e il referencing per gli elementi di dominio riutilizzabili.

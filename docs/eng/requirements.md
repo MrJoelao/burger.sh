@@ -69,7 +69,7 @@ In particular, the Admin can oversee the activation of branches and approve the 
 The system must provide a registration and login phase for users.
 
 - **Customer**: the account is immediately usable after registration.
-- **Manager**: registration is allowed, but the account must be approved by an Admin before it can manage a branch.
+- **Manager**: registration is allowed, but the account must be approved by an Admin before it can manage a branch. The approval status is tracked via the `managerStatus` attribute (`pending` / `approved`), defined in detail in `data-model.md`.
 
 ### Expected User Data
 
@@ -201,10 +201,14 @@ The expected status flow for orders is as follows:
 
 `ordered` → `in preparation` → `ready` → `out for delivery` → `delivered`
 
+The subset of statuses actually reachable depends on the order completion mode:
+
 | Mode | Status flow |
 |---|---|
 | In-store pickup | `ordered` → `in preparation` → `ready` → `delivered` |
 | Home delivery | `ordered` → `in preparation` → `out for delivery` → `delivered` |
+
+This flow and its allowed values are modeled in the `status` field of the `orders` collection, described in `data-model.md`.
 
 ### Purchase History
 

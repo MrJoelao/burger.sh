@@ -3,31 +3,30 @@
 > ⚠️ **Disclaimer:** This translation was produced with the assistance of an AI system. While every effort has been made to preserve accuracy, minor translation errors or imprecisions in technical terminology may be present. Please refer to the original Italian document in case of any ambiguity.
 
 ***
-
 # Data Model
 
 ## Table of Contents
 
-1. [Document Purpose](#document-purpose)
-2. [Main Collections](#1-main-collections)
-3. [Collection Design](#2-collection-design)
-4. [Embedding and Referencing](#3-embedding-and-referencing)
-5. [Modeling Choices](#4-modeling-choices)
-6. [Model Scope](#5-model-scope)
-7. [Final Notes](#6-final-notes)
+1. [Document Objective](#1-document-objective)
+2. [Main Collections](#2-main-collections)
+3. [Collection Design](#3-collection-design)
+4. [Embedding and Referencing](#4-embedding-and-referencing)
+5. [Modeling Choices](#5-modeling-choices)
+6. [Model Boundaries](#6-model-boundaries)
+7. [Final Notes](#7-final-notes)
 
 ---
 
-## Document Purpose
+## 1. Document Objective
 
 This section describes how the FastFood domain model is translated into MongoDB collections and documents.
 The goal is to keep the schema consistent with the application's main access patterns, preserving a clear separation between shared data, reusable data, and order-specific data.
 
 ---
 
-## 1. Main Collections
+## 2. Main Collections
 
-| Collection | Brief description |
+| Collection | Short Description |
 |---|---|
 | **users** | Customers, managers, and admins |
 | **restaurants** | Chain branches |
@@ -38,7 +37,7 @@ The goal is to keep the schema consistent with the application's main access pat
 
 ---
 
-## 2. Collection Design
+## 3. Collection Design
 
 ### users
 
@@ -46,8 +45,9 @@ The `users` collection stores all application users, including customers, manage
 
 - A `role` field distinguishes the user type.
 - Common attributes (first name, last name, email, password, address) are stored in the same document.
+- The `managerStatus` field is **exclusively** present in documents with `role: "manager"` and can be `"pending"` or `"approved"`. For `role: "customer"` and `role: "admin"` the field is not included in the document at all (it is not set to `null`, it is simply absent), to avoid ambiguity between "manager not yet approved" and "user for whom the concept does not apply".
 
-Simplified document example:
+Simplified example of a customer document:
 
 ```json
 {
@@ -63,18 +63,35 @@ Simplified document example:
     "zip": "27029"
   },
   "preferences": ["vegetarian"],
-  "managerStatus": null,
   "createdAt": "ISODate"
 }
 ```
 
-The `managerStatus` field is present only for users with `role: "manager"` and can take values such as `"pending"` or `"approved"`.
+Simplified example of a manager document:
+
+```json
+{
+  "_id": "ObjectId",
+  "role": "manager",
+  "firstName": "Anna",
+  "lastName": "Bianchi",
+  "email": "anna.bianchi@example.com",
+  "passwordHash": "...",
+  "address": {
+    "street": "Via Torino 3",
+    "city": "Vigevano",
+    "zip": "27029"
+  },
+  "managerStatus": "pending",
+  "createdAt": "ISODate"
+}
+```
 
 ### restaurants
 
 The `restaurants` collection stores the chain's branches.
 
-- Each restaurant is associated with a single manager via a reference to the related user document.
+- Each restaurant is associated with a single manager via a reference to the corresponding user document.
 
 ```json
 {
@@ -90,9 +107,9 @@ The `restaurants` collection stores the chain's branches.
 
 ### dishes
 
-The `dishes` collection stores both the chain's standard dishes and the custom dishes of a specific restaurant.
+The `dishes` collection stores both the chain's standard dishes and dishes customized by a specific restaurant.
 
-- An `isCustom` flag identifies whether a dish is custom or not.
+- An `isCustom` flag identifies whether a dish is customized or not.
 - An optional `restaurantId` reference is used only for custom dishes.
 
 ```json
@@ -110,10 +127,10 @@ The `dishes` collection stores both the chain's standard dishes and the custom d
 
 ### ingredients
 
-The `ingredients` collection stores the ingredients used to make up dishes.
+The `ingredients` collection stores the ingredients used to compose dishes.
 
 - Each ingredient can be associated with multiple dishes.
-- The relationship is managed via references rather than full embedding.
+- The relationship is managed through references rather than full embedding.
 
 ```json
 {
@@ -128,7 +145,7 @@ The `ingredients` collection stores the ingredients used to make up dishes.
 The `orders` collection stores both draft and confirmed orders.
 
 - Each order contains an embedded array of `orderItems`, since order lines are tightly coupled to the order itself and are normally read and updated together.
-- An `orderItem` stores the selected dish, the quantity, and the unit price at the time of purchase.
+- An `orderItem` stores the selected dish, the quantity, and the unit price at purchase time.
 - The order also stores its current status, order mode, and total amount.
 
 ```json
@@ -156,14 +173,22 @@ The `orders` collection stores both draft and confirmed orders.
 }
 ```
 
-Allowed values for `status`: `ordered`, `preparing`, `ready`, `out for delivery`, `delivered` (the actually applicable intermediate values depend on the order mode, see `requirements.md`).
+Allowed values for `status`: `ordered`, `in preparation`, `ready`, `out for delivery`, `delivered`.
+The subset of values actually reachable depends on the order mode (`mode`):
+
+| Mode | Applicable status flow |
+|---|---|
+| `pickup` | `ordered` → `in preparation` → `ready` → `delivered` |
+| `delivery` | `ordered` → `in preparation` → `out for delivery` → `delivered` |
+
+This table is consistent with what is defined in `requirements.md`, section "Order Management".
 
 #### delivery (optional subdocument)
 
-Delivery information is embedded inside the `orders` document as an optional subdocument.
+Delivery information is embedded within the `orders` document as an optional subdocument.
 
-- This choice fits because delivery only exists for home delivery orders and should not live independently from the order.
-- The subdocument is absent (or `null`) when `mode` is `"pickup"`.
+- This choice is appropriate because delivery only exists for home-delivery orders and should not live independently of the order.
+- The subdocument is absent (not set to `null`) when `mode` is `"pickup"`.
 
 ### paymentMethods
 
@@ -183,38 +208,39 @@ The `paymentMethods` collection stores the payment methods associated with custo
 
 ---
 
-## 3. Embedding and Referencing
+## 4. Embedding and Referencing
 
 The data model uses both embedding and referencing:
 
 | Strategy | When it applies | Examples in the project |
 |---|---|---|
-| **Embedding** | Data sharing the same lifecycle as the parent document | `orderItems` and `delivery` inside `orders` |
+| **Embedding** | Data that shares the same lifecycle as the parent document | `orderItems` and `delivery` inside `orders` |
 | **Referencing** | Reusable or shared data | restaurant ↔ manager, dish ↔ ingredients, customer ↔ payment methods |
 
-This approach reduces unnecessary duplication while keeping the most frequently used order data available in a single document.
+This approach reduces unnecessary duplication while keeping the most frequently accessed order data available in a single document.
 
 ---
 
-## 4. Modeling Choices
+## 5. Modeling Choices
 
-The following choices were made in the data model:
+The following choices were adopted in the data model:
 
-- The `orders` collection also represents the draft cart, so a separate cart collection is not needed.
+- The `orders` collection also represents the cart in draft state, so a separate cart collection is not needed.
 - The `delivery` subdocument is present only when the order mode is home delivery.
 - Standard and custom dishes are stored in the same collection, using a flag to distinguish them.
 - Ingredients are modeled as a separate collection, since they are shared across multiple dishes and can be reused in allergen-related filters.
+- The `managerStatus` field is modeled as an optional attribute, absent (not nullable) for roles that do not require it, to avoid semantic ambiguity during schema validation.
 
 ---
 
-## 5. Model Scope
+## 6. Model Boundaries
 
 This data model does not include API routes, business logic, or frontend behavior.
-These aspects belong to the later architectural design and implementation phases.
+These aspects belong to the subsequent architectural design and implementation phases.
 
 ---
 
-## 6. Final Notes
+## 7. Final Notes
 
 The schema was designed to be consistent with the project requirements and the expected access patterns.
 In particular, it favors embedding for order-related data and referencing for reusable domain elements.
