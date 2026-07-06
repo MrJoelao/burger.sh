@@ -91,14 +91,11 @@ The flows describe the interaction between user, frontend, backend, database, an
 
 ## Reference Diagrams
 
-The most relevant flows are graphically represented in the `docs/diagrams/` directory:
+The documentation currently includes only the domain model diagram in the `docs/eng/diagrams/` folder:
 
 | Diagram | File | Description |
 |---|---|---|
-| Registration/Login | `docs/diagrams/auth-flow.*` | Registration and authentication sequence |
-| Order + home delivery | `docs/diagrams/order-delivery-flow.*` | End-to-end flow from order composition to delivery |
-
-These diagrams complement the textual description with a visual representation of interactions between components.
+| Domain model | `docs/eng/diagrams/fastfood-domain-model.*` | Representation of the main entities and their relationships |
 
 ***
 

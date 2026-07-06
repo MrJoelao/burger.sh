@@ -85,14 +85,11 @@ I flussi descrivono l'interazione tra utente, frontend, backend, database e serv
 
 ## Diagrammi di riferimento
 
-I flussi più rilevanti sono rappresentati graficamente nella cartella `docs/diagrams/`:
+Attualmente la documentazione include il diagramma del modello di dominio nella cartella `docs/ita/diagrams/`:
 
 | Diagramma | File | Descrizione |
 |---|---|---|
-| Registrazione/Login | `docs/diagrams/auth-flow.*` | Sequenza di registrazione e autenticazione |
-| Ordine + consegna a domicilio | `docs/diagrams/order-delivery-flow.*` | Flusso completo dalla composizione dell'ordine alla consegna |
-
-Questi diagrammi completano la descrizione testuale con una rappresentazione visuale delle interazioni tra i componenti.
+| Domain model | `docs/ita/diagrams/fastfood-domain-model.*` | Rappresentazione delle principali entità del sistema e delle loro relazioni |
 
 ---
 
