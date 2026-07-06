@@ -3,15 +3,14 @@
 > ⚠️ **Disclaimer:** This translation was produced with the assistance of an AI system. While every effort has been made to preserve accuracy, minor translation errors or imprecisions in technical terminology may be present. Please refer to the original Italian document in case of any ambiguity.
 
 ***
-# Data Model
 
+# Data Model
 This section describes how the FastFood domain model is mapped to MongoDB collections and documents.  
 The goal is to keep the schema consistent with the application access patterns while preserving a clear separation between shared data, reusable data, and order-specific data.
 
 ## Main collections
 
 The main collections are:
-
 - **users**
 - **restaurants**
 - **dishes**
@@ -20,7 +19,6 @@ The main collections are:
 - **paymentMethods**
 
 ## Collection design
-
 ### users
 The `users` collection stores all application users, including customers, managers, and admins.  
 A role field is used to distinguish the user type, while shared fields such as name, surname, email, password, and address are stored in the same document.
@@ -53,7 +51,6 @@ The `paymentMethods` collection stores the payment methods associated with custo
 Each payment method references the owning customer through the user identifier.
 
 ## Embedding and referencing
-
 The data model uses both embedding and referencing:
 
 - **Embedding** is used for data that belongs to the same lifecycle as its parent document, such as `orderItems` and `delivery` inside `orders`.
@@ -62,7 +59,6 @@ The data model uses both embedding and referencing:
 This approach reduces unnecessary duplication while keeping frequently accessed order data available in a single document.
 
 ## Design choices
-
 The following design choices were made:
 
 - The `orders` collection also represents the cart in draft state, so no separate cart collection is needed.
@@ -71,11 +67,9 @@ The following design choices were made:
 - Ingredients are modeled as a separate collection because they are shared across multiple dishes and can be reused in filters related to allergens.
 
 ## Model boundaries
-
 This data model does not include API routes, business logic, or frontend behavior.  
 Those aspects belong to the architecture and implementation phases.
 
 ## Final notes
-
 The schema was designed to fit the project requirements and the expected access patterns.  
 In particular, it favors embedding for order-related data and referencing for reusable domain elements.

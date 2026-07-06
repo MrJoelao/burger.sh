@@ -1,10 +1,8 @@
 # Data Model
-
 Questa sezione descrive come il domain model di FastFood viene tradotto in collezioni e documenti MongoDB.  
 L’obiettivo è mantenere lo schema coerente con i principali pattern di accesso dell’applicazione, preservando una chiara separazione tra dati condivisi, dati riutilizzabili e dati specifici dell’ordine.
 
 ## Collezioni principali
-
 Le principali collezioni previste sono:
 
 - **users**
@@ -15,7 +13,6 @@ Le principali collezioni previste sono:
 - **paymentMethods**
 
 ## Progettazione delle collezioni
-
 ### users
 La collezione `users` memorizza tutti gli utenti dell’applicazione, inclusi clienti, manager e admin.  
 Un campo `role` viene utilizzato per distinguere la tipologia di utente, mentre gli attributi comuni come nome, cognome, email, password e indirizzo sono memorizzati nello stesso documento.
@@ -48,7 +45,6 @@ La collezione `paymentMethods` memorizza i metodi di pagamento associati ai clie
 Ogni metodo di pagamento contiene un riferimento al cliente proprietario tramite l’identificativo utente.
 
 ## Embedding e referencing
-
 Il data model utilizza sia embedding sia referencing:
 
 - **Embedding** per i dati che condividono lo stesso ciclo di vita del documento padre, come `orderItems` e `delivery` all’interno di `orders`.
@@ -57,7 +53,6 @@ Il data model utilizza sia embedding sia referencing:
 Questo approccio riduce la duplicazione non necessaria e permette allo stesso tempo di avere i dati dell’ordine più frequentemente utilizzati disponibili in un unico documento.
 
 ## Scelte di modellazione
-
 Nel data model sono state adottate le seguenti scelte:
 
 - La collezione `orders` rappresenta anche il carrello in stato di bozza, quindi non è necessaria una collezione separata per il carrello.
@@ -66,11 +61,9 @@ Nel data model sono state adottate le seguenti scelte:
 - Gli ingredienti sono modellati come collezione separata, poiché sono condivisi tra più piatti e possono essere riutilizzati nei filtri legati agli allergeni.
 
 ## Confini del modello
-
 Questo data model non include route API, logica di business o comportamento del frontend.  
 Questi aspetti appartengono alle fasi successive di progettazione architetturale e implementazione.
 
 ## Note finali
-
 Lo schema è stato progettato per essere coerente con i requisiti del progetto e con i pattern di accesso attesi.  
 In particolare, privilegia l’embedding per i dati legati all’ordine e il referencing per gli elementi di dominio riutilizzabili.
