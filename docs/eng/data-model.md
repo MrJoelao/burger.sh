@@ -3,53 +3,79 @@
 > ⚠️ **Disclaimer:** This translation was produced with the assistance of an AI system. While every effort has been made to preserve accuracy, minor translation errors or imprecisions in technical terminology may be present. Please refer to the original Italian document in case of any ambiguity.
 
 ***
+# Data Model
 
-The domain model represents the main concepts of the FastFood application domain and the relationships between them.  
-Its purpose is to describe the problem in conceptual terms, without introducing implementation details related to the database, APIs, or code.
+This section describes how the FastFood domain model is mapped to MongoDB collections and documents.  
+The goal is to keep the schema consistent with the application access patterns while preserving a clear separation between shared data, reusable data, and order-specific data.
 
-## Main entities
-The entities identified in the domain are:
+## Main collections
 
-- **User**, specialized into **Customer**, **Manager**, and **Admin**.
-- **Restaurant**, which represents a branch of the chain.
-- **Dish**, which represents a product that can be ordered by the customer.
-- **Ingredient**, associated with dishes to describe their composition.
-- **Order**, which represents both the cart during the composition phase and the confirmed order.
-- **Delivery**, which exists only in the case of home delivery.
-- **OrderItem**, which represents the individual dishes contained in an order together with their quantity.
-- **PaymentMethod**, associated with the customer.
+The main collections are:
 
-## Main relationships
-The main modeled relationships are the following:
+- **users**
+- **restaurants**
+- **dishes**
+- **ingredients**
+- **orders**
+- **paymentMethods**
 
-- A **Customer** can place **Orders**.
-- A **Manager** manages a **Restaurant**.
-- A **Restaurant** offers **Dishes**.
-- An **Order** is composed of multiple **OrderItems**.
-- Each **OrderItem** refers to exactly one **Dish**.
-- A **Dish** contains one or more **Ingredients**.
-- An **Order** may include a **Delivery** only in the case of home delivery.
-- A **Customer** can associate one or more **PaymentMethods**.
+## Collection design
 
-## Modeling choices
-The following design choices were adopted in the diagram:
+### users
+The `users` collection stores all application users, including customers, managers, and admins.  
+A role field is used to distinguish the user type, while shared fields such as name, surname, email, password, and address are stored in the same document.
 
-- The **User** entity was specialized into **Customer**, **Manager**, and **Admin** to clearly distinguish the system roles.
-- The **Order** entity also includes the cart concept: an order that has not yet been confirmed is represented through an initial status, such as `draft`.
-- The **Delivery** entity was modeled as an optional part of **Order**, since not all orders involve home delivery.
-- The **Dish** entity includes both standard chain dishes and restaurant-specific custom dishes; this distinction is represented through a flag.
+### restaurants
+The `restaurants` collection stores the branches of the chain.  
+Each restaurant is associated with exactly one manager through a reference to the corresponding user document.
+
+### dishes
+The `dishes` collection stores both standard dishes and restaurant-specific custom dishes.  
+A flag identifies whether a dish is custom or not, and an optional reference to the restaurant is used only for custom dishes.
+
+### ingredients
+The `ingredients` collection stores the ingredients used to compose dishes.  
+Each ingredient can be linked to multiple dishes, so this relationship is handled through references rather than full embedding.
+
+### orders
+The `orders` collection stores both draft orders and confirmed orders.  
+Each order contains an embedded array of `orderItems`, because order lines are tightly bound to the order and are normally read and updated together.
+
+An `orderItem` stores the selected dish, the quantity, and the unit price at the time of purchase.  
+The order also stores its current status, order mode, and the total amount.
+
+### delivery
+The delivery information is embedded inside the `orders` document as an optional subdocument.  
+This choice is appropriate because delivery exists only for home-delivery orders and does not need to live independently from the order.
+
+### paymentMethods
+The `paymentMethods` collection stores the payment methods associated with customers.  
+Each payment method references the owning customer through the user identifier.
+
+## Embedding and referencing
+
+The data model uses both embedding and referencing:
+
+- **Embedding** is used for data that belongs to the same lifecycle as its parent document, such as `orderItems` and `delivery` inside `orders`.
+- **Referencing** is used for reusable or shared data, such as the link between restaurants and managers, dishes and ingredients, and customers and payment methods.
+
+This approach reduces unnecessary duplication while keeping frequently accessed order data available in a single document.
+
+## Design choices
+
+The following design choices were made:
+
+- The `orders` collection also represents the cart in draft state, so no separate cart collection is needed.
+- The `delivery` subdocument is present only when the order mode is home delivery.
+- Standard dishes and custom dishes are stored in the same collection, with a flag to distinguish them.
+- Ingredients are modeled as a separate collection because they are shared across multiple dishes and can be reused in filters related to allergens.
 
 ## Model boundaries
-The domain model does not include technical or implementation-oriented elements such as MongoDB collections, REST endpoints, JWT authentication, or persistence details, because these belong to later phases of the design process.
 
-## Design assumptions
-The following assumptions were made in the model in order to stay consistent with the requirements:
-- each branch is managed by a single manager;
-- the admin is modeled as a role distinct from customer and manager;
-- the cart is not introduced as an autonomous entity, but as an order in `draft` status;
-- delivery is only expected for orders with home-delivery mode.
+This data model does not include API routes, business logic, or frontend behavior.  
+Those aspects belong to the architecture and implementation phases.
 
-## Diagram notes
-The multiplicities of the associations are shown in the attached UML diagram.  
-The diagram was created to represent only the relevant domain concepts, without implementation details.  
-The main modeling choices concern the generalization of User, the management of Order as an unconfirmed cart, and the optional presence of Delivery.
+## Final notes
+
+The schema was designed to fit the project requirements and the expected access patterns.  
+In particular, it favors embedding for order-related data and referencing for reusable domain elements.
