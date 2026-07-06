@@ -1,0 +1,38 @@
+{
+  "name": "burger.sh-backend",
+  "version": "0.1.0",
+  "description": "Backend API FastFood (Node.js + Express)",
+  "private": true,
+  "homepage": "https://github.com/MrJoelao/burger.sh#readme",
+  "bugs": {
+    "url": "https://github.com/MrJoelao/burger.sh/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/MrJoelao/burger.sh.git"
+  },
+  "license": "MIT",
+  "author": "joelao",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node ./bin/www",
+    "dev": "node --watch ./bin/www"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "debug": "^4.4.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "http-errors": "^2.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.7.3",
+    "morgan": "^1.10.1",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true
+  }
+}

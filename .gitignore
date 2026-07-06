@@ -32,9 +32,11 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-# Dependency directories
+# Dependency directories (sia root che sottocartelle backend/frontend)
 node_modules/
 jspm_packages/
+backend/node_modules/
+frontend/node_modules/
 
 # Typescript v1 declaration files
 typings/
@@ -54,8 +56,10 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# dotenv environment variables file (root, backend, frontend)
 .env
 
-# next.js build output
-.next
+# Frontend build output (se in futuro userai bundler)
+frontend/dist/
+frontend/build/
+frontend/.cache/
