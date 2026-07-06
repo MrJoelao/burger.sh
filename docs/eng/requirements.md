@@ -5,7 +5,6 @@
 ***
 
 ## 1. Project Objective
-
 The project aims to develop a web application for managing online orders within a fast food restaurant chain. The platform must allow users to interact with restaurants through features such as account registration, menu browsing, order placement, delivery management, and access to their account information.
 
 The system must handle the following four main macro-scenarios:
@@ -16,20 +15,17 @@ The system must handle the following four main macro-scenarios:
 - Delivery management
 
 ## 2. System Actors
-
 ### Defined Actors
 
 - **Customer**
 - **Manager** (Restaurant Owner/Operator)
 
 ### Proposed Extension
-
 - **Admin**, intended as the central administrator of the platform or chain, with the ability to manage every restaurant in the chain.
 
 Although not explicitly required by the project specification, the introduction of the Admin role is a deliberate design choice to better represent a franchising context and to separate the global platform management from the management of individual branches. Specifically, the Admin can supervise branch activation and approve Manager accounts registered on the platform.
 
 ### Preliminary Role Permissions
-
 #### Customer
 - Register and authenticate
 - Edit personal data
@@ -58,11 +54,9 @@ Although not explicitly required by the project specification, the introduction 
 - Intervene on global system data
 
 ## 3. User Profile Management
-
 The system must include a registration and login phase for users. For the Customer, the account is immediately usable after registration. For the Manager, registration is allowed but the account must be approved by an Admin before the Manager can operate a branch.
 
 ### Expected User Data
-
 For each user, the system must manage:
 
 - First name
@@ -75,7 +69,6 @@ For each user, the system must manage:
 - Optional associated payment methods
 
 ### Profile Features
-
 The user must be able to:
 
 - View their own data
@@ -83,7 +76,6 @@ The user must be able to:
 - Delete their account
 
 ### User Preferences
-
 The system may associate certain preferences with a customer — both at registration and during usage — to personalize services, such as:
 
 - Preferred product categories
@@ -93,11 +85,9 @@ The system may associate certain preferences with a customer — both at registr
 > **TODO:** Clarify which preferences will actually be implemented.
 
 ## 4. Restaurant Management
-
 Restaurant management primarily concerns the Manager role, who administers a single branch of the chain.
 
 ### Restaurant Information
-
 For each restaurant, the following information must be managed:
 
 - Restaurant name
@@ -108,7 +98,6 @@ For each restaurant, the following information must be managed:
 - Associated owner / Manager
 
 ### Menu Management
-
 The Manager must be able to:
 
 - Add dishes to the menu
@@ -118,7 +107,6 @@ The Manager must be able to:
 Common dishes shared across all restaurants will be loaded from `meal.json`, available during the initial system setup phase. These represent the shared base across branches.
 
 ### Dish Information
-
 For each dish, the following information must be managed:
 
 - Name
@@ -130,7 +118,6 @@ For each dish, the following information must be managed:
 In addition to the common dishes loaded at startup, the Manager can add custom dishes specific to their own restaurant.
 
 ### Manager Dashboard
-
 It is assumed that every Manager has access to a dashboard displaying:
 
 - Received orders
@@ -141,11 +128,9 @@ It is assumed that every Manager has access to a dashboard displaying:
 - Number of orders broken down by status
 
 ## 5. Order Management
-
 Order management covers the operations through which the customer selects one or more dishes and completes the purchase.
 
 ### General Flow
-
 The customer must be able to:
 
 - View the chain's restaurants
@@ -157,7 +142,6 @@ The customer must be able to:
 - View the alphanumeric code associated with the order
 
 ### Shopping Cart
-
 The system must include a cart containing:
 
 - List of selected dishes
@@ -167,7 +151,6 @@ The system must include a cart containing:
 - Grand total
 
 ### Order Data
-
 For each order, the system must store at least:
 
 - Associated customer
@@ -182,7 +165,6 @@ For each order, the system must store at least:
 - Alphanumeric order identifier / code
 
 ### Order Statuses
-
 The expected order status flow is:
 
 - `placed`
@@ -198,7 +180,6 @@ For **home delivery orders**, the expected flow is:
 `placed` → `in preparation` → `out for delivery` → `delivered`
 
 ### Purchase History
-
 The customer must be able to view:
 
 - Ongoing orders
@@ -206,14 +187,12 @@ The customer must be able to view:
 - Details of completed purchases
 
 ## 6. Delivery Management
-
 The system must support at least two order completion methods:
 
 - Pickup at the restaurant
 - Home delivery
 
 ### In-Store Pickup
-
 For pickup orders:
 
 - The system must estimate a waiting time
@@ -223,7 +202,6 @@ For pickup orders:
 It is assumed that an alphanumeric code is associated with the order, to be shown at the time of pickup.
 
 ### Home Delivery
-
 For home delivery orders:
 
 - The customer provides a delivery address
@@ -232,11 +210,9 @@ For home delivery orders:
 - Upon receiving the order, the customer confirms delivery, transitioning the order status from `out for delivery` to `delivered`
 
 ## 7. Search Features
-
 The platform must offer search functionality for both restaurants and dishes.
 
 ### Restaurant Search
-
 Search by:
 
 - Restaurant name
@@ -244,7 +220,6 @@ Search by:
 - Restaurants offering a specific dish
 
 ### Dish Search
-
 Search by:
 
 - Name
@@ -256,7 +231,6 @@ Search by:
 > **TODO:** Clarify how to model allergens — as an explicit list in the dish record or derived from the ingredients.
 
 ## 8. Design Assumptions
-
 The following design choices are assumed at the initial stage:
 
 - The system represents a **fast food chain** composed of multiple branches.
@@ -267,7 +241,6 @@ The following design choices are assumed at the initial stage:
 - Restaurant staff (employees) are not modeled within the system.
 
 ## 9. Excluded or Deferred Features
-
 For the sake of design simplicity, the following features are not considered in the first version:
 
 - Detailed employee management
@@ -277,7 +250,6 @@ For the sake of design simplicity, the following features are not considered in 
 - Full restaurant accounting
 
 ## 10. Technical Constraints
-
 - **Frontend:** HTML5 + CSS3 + JavaScript
 - **Backend:** Node.js + MongoDB
 - **API:** REST, documented with Swagger
