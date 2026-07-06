@@ -16,42 +16,42 @@ L'obiettivo è mantenere lo schema coerente con i principali pattern di accesso 
 
 ## 2. Progettazione delle collezioni
 
-### 2.1 users
+### users
 La collezione `users` memorizza tutti gli utenti dell'applicazione, inclusi clienti, manager e admin.
 
 - Un campo `role` distingue la tipologia di utente.
 - Gli attributi comuni (nome, cognome, email, password, indirizzo) sono memorizzati nello stesso documento.
 
-### 2.2 restaurants
+### restaurants
 La collezione `restaurants` memorizza le filiali della catena.
 
 - Ogni ristorante è associato a un solo manager tramite un riferimento al relativo documento utente.
 
-### 2.3 dishes
+### dishes
 La collezione `dishes` memorizza sia i piatti standard della catena sia quelli personalizzati di uno specifico ristorante.
 
 - Un flag identifica se un piatto è personalizzato oppure no.
 - Un riferimento opzionale al ristorante viene usato solo nel caso dei piatti personalizzati.
 
-### 2.4 ingredients
+### ingredients
 La collezione `ingredients` memorizza gli ingredienti utilizzati per comporre i piatti.
 
 - Ogni ingrediente può essere associato a più piatti.
 - La relazione è gestita tramite riferimenti anziché tramite embedding completo.
 
-### 2.5 orders
+### orders
 La collezione `orders` memorizza sia gli ordini in stato di bozza sia quelli confermati.
 
 - Ogni ordine contiene un array embedded di `orderItems`, poiché le righe d'ordine sono strettamente legate all'ordine stesso e vengono normalmente lette e aggiornate insieme.
 - Un `orderItem` memorizza il piatto selezionato, la quantità e il prezzo unitario al momento dell'acquisto.
 - L'ordine memorizza inoltre il proprio stato corrente, la modalità dell'ordine e l'importo totale.
 
-#### 2.5.1 delivery (subdocument opzionale)
+#### delivery (subdocument opzionale)
 Le informazioni di consegna sono incorporate all'interno del documento `orders` come sottodocumento opzionale.
 
 - Questa scelta è adatta perché la consegna esiste solo per gli ordini a domicilio e non deve vivere in modo indipendente rispetto all'ordine.
 
-### 2.6 paymentMethods
+### paymentMethods
 La collezione `paymentMethods` memorizza i metodi di pagamento associati ai clienti.
 
 - Ogni metodo di pagamento contiene un riferimento al cliente proprietario tramite l'identificativo utente.

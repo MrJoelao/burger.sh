@@ -22,42 +22,42 @@ The goal is to keep the schema consistent with the application's main access pat
 
 ## 2. Collection design
 
-### 2.1 users
+### users
 The `users` collection stores all application users, including customers, managers, and admins.
 
 - A `role` field distinguishes the user type.
 - Shared attributes (name, surname, email, password, address) are stored in the same document.
 
-### 2.2 restaurants
+### restaurants
 The `restaurants` collection stores the chain's branches.
 
 - Each restaurant is associated with exactly one manager through a reference to the corresponding user document.
 
-### 2.3 dishes
+### dishes
 The `dishes` collection stores both standard chain dishes and restaurant-specific custom dishes.
 
 - A flag identifies whether a dish is custom or not.
 - An optional reference to the restaurant is used only for custom dishes.
 
-### 2.4 ingredients
+### ingredients
 The `ingredients` collection stores the ingredients used to compose dishes.
 
 - Each ingredient can be associated with multiple dishes.
 - This relationship is handled through references rather than full embedding.
 
-### 2.5 orders
+### orders
 The `orders` collection stores both draft orders and confirmed orders.
 
 - Each order contains an embedded array of `orderItems`, since order lines are tightly bound to the order itself and are typically read and updated together.
 - An `orderItem` stores the selected dish, the quantity, and the unit price at the time of purchase.
 - The order also stores its current status, order mode, and total amount.
 
-#### 2.5.1 delivery (optional subdocument)
+#### delivery (optional subdocument)
 Delivery information is embedded within the `orders` document as an optional subdocument.
 
 - This choice is appropriate because delivery only exists for home-delivery orders and does not need to live independently from the order.
 
-### 2.6 paymentMethods
+### paymentMethods
 The `paymentMethods` collection stores the payment methods associated with customers.
 
 - Each payment method holds a reference to the owning customer through the user identifier.

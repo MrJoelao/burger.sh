@@ -31,12 +31,12 @@ Il sistema deve poter gestire i seguenti quattro macro-scenari principali:
 
 ## 2. Attori del sistema
 
-### 2.1 Attori previsti
+### Attori previsti
 
 - **Cliente**
 - **Manager** (Ristoratore)
 
-### 2.2 Estensione proposta
+### Estensione proposta
 
 - **Admin**, inteso come amministratore centrale della piattaforma o della catena, con la possibilità di gestire ogni ristorante della catena.
 
@@ -44,7 +44,7 @@ Anche se non esplicitamente richiesto dalla traccia, l'introduzione dell'Admin v
 
 In particolare, l'Admin può supervisionare l'attivazione delle filiali e approvare gli account dei Manager registrati sulla piattaforma.
 
-### 2.3 Permessi preliminari dei ruoli
+### Permessi preliminari dei ruoli
 
 | Cliente | Manager | Admin/CEO (scelta progettuale) |
 |---|---|---|
@@ -66,7 +66,7 @@ Il sistema deve prevedere una fase di registrazione e login per gli utenti.
 - **Cliente**: l'account è immediatamente utilizzabile dopo la registrazione.
 - **Manager**: la registrazione è consentita ma l'account deve essere approvato da un Admin prima di poter gestire una filiale.
 
-### 3.1 Dati utente previsti
+### Dati utente previsti
 
 Per ciascun utente il sistema dovrà gestire:
 
@@ -79,7 +79,7 @@ Per ciascun utente il sistema dovrà gestire:
 - eventuali preferenze
 - eventuali metodi di pagamento associati
 
-### 3.2 Funzionalità del profilo
+### Funzionalità del profilo
 
 L'utente deve poter:
 
@@ -87,7 +87,7 @@ L'utente deve poter:
 - modificare i propri dati personali
 - cancellare il proprio account
 
-### 3.3 Preferenze utente
+### Preferenze utente
 
 Il sistema può associare al cliente alcune preferenze, al momento della registrazione e durante l'uso del sistema, per personalizzare i servizi, ad esempio:
 
@@ -103,7 +103,7 @@ Il sistema può associare al cliente alcune preferenze, al momento della registr
 
 La gestione del ristorante riguarda principalmente il ruolo del Manager, che amministra una singola filiale della catena.
 
-### 4.1 Informazioni del ristorante
+### Informazioni del ristorante
 
 Per ogni ristorante dovranno essere gestite le seguenti informazioni:
 
@@ -114,7 +114,7 @@ Per ogni ristorante dovranno essere gestite le seguenti informazioni:
 - partita IVA
 - proprietario / Manager associato
 
-### 4.2 Gestione del menu
+### Gestione del menu
 
 Il Manager deve poter:
 
@@ -124,7 +124,7 @@ Il Manager deve poter:
 
 I piatti comuni per tutti i ristoranti saranno caricati da `meal.json`, disponibile nella fase di setup iniziale del sistema, e rappresentano la base comune tra le varie filiali.
 
-### 4.3 Informazioni dei piatti
+### Informazioni dei piatti
 
 Per ogni piatto devono essere gestite informazioni quali:
 
@@ -136,7 +136,7 @@ Per ogni piatto devono essere gestite informazioni quali:
 
 Oltre ai piatti comuni caricati inizialmente, il Manager può inserire piatti personalizzati specifici del proprio ristorante.
 
-### 4.4 Dashboard del Manager
+### Dashboard del Manager
 
 Si assume che ogni Manager disponga di una dashboard per visualizzare:
 
@@ -153,7 +153,7 @@ Si assume che ogni Manager disponga di una dashboard per visualizzare:
 
 La gestione degli ordini riguarda le operazioni con cui il cliente seleziona uno o più piatti e conclude l'acquisto.
 
-### 5.1 Flusso generale
+### Flusso generale
 
 Il cliente deve poter:
 
@@ -165,7 +165,7 @@ Il cliente deve poter:
 - pagare tramite app o contatto fisico alla cassa
 - visualizzare il codice alfanumerico associato all'ordine
 
-### 5.2 Carrello
+### Carrello
 
 Il sistema deve prevedere un carrello contenente:
 
@@ -175,7 +175,7 @@ Il sistema deve prevedere un carrello contenente:
 - totale parziale
 - totale finale
 
-### 5.3 Dati dell'ordine
+### Dati dell'ordine
 
 Per ogni ordine il sistema dovrà memorizzare almeno:
 
@@ -190,7 +190,7 @@ Per ogni ordine il sistema dovrà memorizzare almeno:
 - eventuale indirizzo di consegna
 - codice identificativo / alfanumerico associato all'ordine
 
-### 5.4 Stati dell'ordine
+### Stati dell'ordine
 
 Il flusso di stato previsto per gli ordini è il seguente:
 
@@ -201,7 +201,7 @@ Il flusso di stato previsto per gli ordini è il seguente:
 | Ritiro in sede | `ordinato` → `in preparazione` → `pronto` → `consegnato` |
 | Consegna a domicilio | `ordinato` → `in preparazione` → `in consegna` → `consegnato` |
 
-### 5.5 Storico acquisti
+### Storico acquisti
 
 Il cliente deve poter visualizzare:
 
@@ -218,7 +218,7 @@ Il sistema deve supportare almeno due modalità di completamento dell'ordine:
 - ritiro presso il ristorante
 - consegna a domicilio
 
-### 6.1 Ritiro in sede
+### Ritiro in sede
 
 Nel caso di ritiro presso il ristorante:
 
@@ -228,7 +228,7 @@ Nel caso di ritiro presso il ristorante:
 
 Si suppone di associare all'ordine anche un codice alfanumerico da mostrare al momento del ritiro.
 
-### 6.2 Consegna a domicilio
+### Consegna a domicilio
 
 Nel caso di consegna a domicilio:
 
@@ -243,7 +243,7 @@ Nel caso di consegna a domicilio:
 
 La piattaforma deve offrire funzionalità di ricerca su ristoranti e piatti.
 
-### 7.1 Ricerca ristoranti
+### Ricerca ristoranti
 
 Ricerca per:
 
@@ -251,7 +251,7 @@ Ricerca per:
 - luogo / città
 - ristorante che offre un determinato piatto
 
-### 7.2 Ricerca piatti
+### Ricerca piatti
 
 Ricerca per:
 

@@ -36,12 +36,12 @@ The system must support the following four main macro-scenarios:
 
 ## 2. System Actors
 
-### 2.1 Expected Actors
+### Expected Actors
 
 - **Customer**
 - **Manager** (Restaurant owner)
 
-### 2.2 Proposed Extension
+### Proposed Extension
 
 - **Admin**, understood as the central administrator of the platform or of the chain, with the ability to manage every restaurant in the chain.
 
@@ -49,7 +49,7 @@ Although not explicitly required by the assignment, the introduction of the Admi
 
 In particular, the Admin can oversee the activation of branches and approve the accounts of Managers registered on the platform.
 
-### 2.3 Preliminary Role Permissions
+### Preliminary Role Permissions
 
 | Customer | Manager | Admin/CEO (design choice) |
 |---|---|---|
@@ -71,7 +71,7 @@ The system must provide a registration and login phase for users.
 - **Customer**: the account is immediately usable after registration.
 - **Manager**: registration is allowed, but the account must be approved by an Admin before it can manage a branch.
 
-### 3.1 Expected User Data
+### Expected User Data
 
 For each user, the system must manage:
 
@@ -84,7 +84,7 @@ For each user, the system must manage:
 - optional preferences
 - optional associated payment methods
 
-### 3.2 Profile Features
+### Profile Features
 
 The user must be able to:
 
@@ -92,7 +92,7 @@ The user must be able to:
 - edit their personal data
 - delete their own account
 
-### 3.3 User Preferences
+### User Preferences
 
 The system can associate certain preferences with the customer, at registration time and during system usage, to personalize services, for example:
 
@@ -108,7 +108,7 @@ The system can associate certain preferences with the customer, at registration 
 
 Restaurant management mainly concerns the Manager role, who administers a single branch of the chain.
 
-### 4.1 Restaurant Information
+### Restaurant Information
 
 For each restaurant, the following information must be managed:
 
@@ -119,7 +119,7 @@ For each restaurant, the following information must be managed:
 - VAT number
 - owner / associated Manager
 
-### 4.2 Menu Management
+### Menu Management
 
 The Manager must be able to:
 
@@ -129,7 +129,7 @@ The Manager must be able to:
 
 The dishes common to all restaurants will be loaded from `meal.json`, available during the initial system setup phase, and represent the common base shared across branches.
 
-### 4.3 Dish Information
+### Dish Information
 
 For each dish, the following information must be managed:
 
@@ -141,7 +141,7 @@ For each dish, the following information must be managed:
 
 In addition to the initially loaded common dishes, the Manager can add custom dishes specific to their own restaurant.
 
-### 4.4 Manager Dashboard
+### Manager Dashboard
 
 Each Manager is assumed to have a dashboard to view:
 
@@ -158,7 +158,7 @@ Each Manager is assumed to have a dashboard to view:
 
 Order management concerns the operations through which the customer selects one or more dishes and completes the purchase.
 
-### 5.1 General Flow
+### General Flow
 
 The customer must be able to:
 
@@ -170,7 +170,7 @@ The customer must be able to:
 - pay through the app or in person at the counter
 - view the alphanumeric code associated with the order
 
-### 5.2 Cart
+### Cart
 
 The system must provide a cart containing:
 
@@ -180,7 +180,7 @@ The system must provide a cart containing:
 - subtotal
 - final total
 
-### 5.3 Order Data
+### Order Data
 
 For each order, the system must store at least:
 
@@ -195,7 +195,7 @@ For each order, the system must store at least:
 - optional delivery address
 - identification / alphanumeric code associated with the order
 
-### 5.4 Order Statuses
+### Order Statuses
 
 The expected status flow for orders is as follows:
 
@@ -206,7 +206,7 @@ The expected status flow for orders is as follows:
 | In-store pickup | `ordered` → `in preparation` → `ready` → `delivered` |
 | Home delivery | `ordered` → `in preparation` → `out for delivery` → `delivered` |
 
-### 5.5 Purchase History
+### Purchase History
 
 The customer must be able to view:
 
@@ -223,7 +223,7 @@ The system must support at least two order completion modes:
 - pickup at the restaurant
 - home delivery
 
-### 6.1 In-Store Pickup
+### In-Store Pickup
 
 In the case of in-store pickup:
 
@@ -233,7 +233,7 @@ In the case of in-store pickup:
 
 An alphanumeric code is also assumed to be associated with the order, to be shown at pickup time.
 
-### 6.2 Home Delivery
+### Home Delivery
 
 In the case of home delivery:
 
@@ -248,7 +248,7 @@ In the case of home delivery:
 
 The platform must offer search features for restaurants and dishes.
 
-### 7.1 Restaurant Search
+### Restaurant Search
 
 Search by:
 
@@ -256,7 +256,7 @@ Search by:
 - location / city
 - restaurant offering a specific dish
 
-### 7.2 Dish Search
+### Dish Search
 
 Search by:
 
