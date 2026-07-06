@@ -3,253 +3,300 @@
 > ⚠️ **Disclaimer:** This translation was produced with the assistance of an AI system. While every effort has been made to preserve accuracy, minor translation errors or imprecisions in technical terminology may be present. Please refer to the original Italian document in case of any ambiguity.
 
 ***
+# Project Requirements — FastFood
+
+## Table of Contents
+1. [Project Objective](#1-project-objective)
+2. [System Actors](#2-system-actors)
+3. [User Profile Management](#3-user-profile-management)
+4. [Restaurant Management](#4-restaurant-management)
+5. [Order Management](#5-order-management)
+6. [Delivery Management](#6-delivery-management)
+7. [Search Features](#7-search-features)
+8. [Design Assumptions](#8-design-assumptions)
+9. [Excluded or Postponed Features](#9-excluded-or-postponed-features)
+10. [Technical Constraints](#10-technical-constraints)
+
+---
 
 ## 1. Project Objective
-The project aims to develop a web application for managing online orders within a fast food restaurant chain. The platform must allow users to interact with restaurants through features such as account registration, menu browsing, order placement, delivery management, and access to their account information.
 
-The system must handle the following four main macro-scenarios:
+The project aims to build a web application for managing online ordering within a fast food restaurant chain.
 
-- User profile management
-- Restaurant management
-- Order management
-- Delivery management
+The platform must allow users to interact with restaurants through registration, menu browsing, order creation, delivery management, and viewing the main information of their own account.
+
+The system must support the following four main macro-scenarios:
+
+- user profile management
+- restaurant management
+- order management
+- delivery management
+
+---
 
 ## 2. System Actors
-### Defined Actors
+
+### 2.1 Expected Actors
 
 - **Customer**
-- **Manager** (Restaurant Owner/Operator)
+- **Manager** (Restaurant owner)
 
-### Proposed Extension
-- **Admin**, intended as the central administrator of the platform or chain, with the ability to manage every restaurant in the chain.
+### 2.2 Proposed Extension
 
-Although not explicitly required by the project specification, the introduction of the Admin role is a deliberate design choice to better represent a franchising context and to separate the global platform management from the management of individual branches. Specifically, the Admin can supervise branch activation and approve Manager accounts registered on the platform.
+- **Admin**, understood as the central administrator of the platform or of the chain, with the ability to manage every restaurant in the chain.
 
-### Preliminary Role Permissions
-#### Customer
-- Register and authenticate
-- Edit personal data
-- Delete own account
-- Browse restaurants
-- Browse menu items (dishes)
-- Place orders
-- View current and past orders
-- Confirm delivery receipt in case of home delivery
+Although not explicitly required by the assignment, the introduction of the Admin is considered a design choice to better represent a franchising context and to separate the global management of the platform from the management of a single branch.
 
-#### Manager
-- Register and authenticate
-- Edit personal data
-- Delete own account, which results in closing the branch or transferring its management
-- Manage own restaurant's data
-- Manage own restaurant's menu
-- View and update order statuses
-- View statistics related to own branch
+In particular, the Admin can oversee the activation of branches and approve the accounts of Managers registered on the platform.
 
-#### Admin/CEO (Design Choice)
-- Approve Manager accounts
-- Create a branch
-- View all branches
-- Monitor the entire platform
-- Access aggregated data on users, restaurants, and orders
-- Intervene on global system data
+### 2.3 Preliminary Role Permissions
+
+| Customer | Manager | Admin/CEO (design choice) |
+|---|---|---|
+| register and authenticate | register and authenticate | approve registered Manager accounts |
+| edit own data | edit own data | create a branch |
+| delete own account | delete own account, closing the branch or changing its manager | view all branches |
+| browse restaurants | manage own restaurant data | monitor the entire platform |
+| browse dishes | manage own restaurant menu | access aggregated information on users, restaurants, and orders |
+| place orders | view and update order status | intervene on global system data |
+| view current and past orders | view statistics related to own branch | |
+| confirm order receipt in case of home delivery | | |
+
+---
 
 ## 3. User Profile Management
-The system must include a registration and login phase for users. For the Customer, the account is immediately usable after registration. For the Manager, registration is allowed but the account must be approved by an Admin before the Manager can operate a branch.
 
-### Expected User Data
+The system must provide a registration and login phase for users.
+
+- **Customer**: the account is immediately usable after registration.
+- **Manager**: registration is allowed, but the account must be approved by an Admin before it can manage a branch.
+
+### 3.1 Expected User Data
+
 For each user, the system must manage:
 
-- First name
-- Last name
-- Email address
-- Password
-- Address
-- Account type
-- Optional preferences
-- Optional associated payment methods
+- first name
+- last name
+- email
+- password
+- address
+- account type
+- optional preferences
+- optional associated payment methods
 
-### Profile Features
+### 3.2 Profile Features
+
 The user must be able to:
 
-- View their own data
-- Edit personal information
-- Delete their account
+- view their own data
+- edit their personal data
+- delete their own account
 
-### User Preferences
-The system may associate certain preferences with a customer — both at registration and during usage — to personalize services, such as:
+### 3.3 User Preferences
 
-- Preferred product categories
-- Special offers shown prominently
-- Preferences related to the purchasing experience
+The system can associate certain preferences with the customer, at registration time and during system usage, to personalize services, for example:
 
-> **TODO:** Clarify which preferences will actually be implemented.
+- preferred product types
+- special offers shown as highlights
+- preferences related to the purchasing experience
+
+> **TODO**: further specify which preferences will actually be implemented.
+
+---
 
 ## 4. Restaurant Management
-Restaurant management primarily concerns the Manager role, who administers a single branch of the chain.
 
-### Restaurant Information
+Restaurant management mainly concerns the Manager role, who administers a single branch of the chain.
+
+### 4.1 Restaurant Information
+
 For each restaurant, the following information must be managed:
 
-- Restaurant name
-- Address
-- Location / City
-- Phone number
+- restaurant name
+- address
+- location / city
+- phone number
 - VAT number
-- Associated owner / Manager
+- owner / associated Manager
 
-### Menu Management
+### 4.2 Menu Management
+
 The Manager must be able to:
 
-- Add dishes to the menu
-- Edit existing dishes
-- Remove dishes from the menu
+- add dishes to their own menu
+- edit existing dishes
+- remove dishes from the menu
 
-Common dishes shared across all restaurants will be loaded from `meal.json`, available during the initial system setup phase. These represent the shared base across branches.
+The dishes common to all restaurants will be loaded from `meal.json`, available during the initial system setup phase, and represent the common base shared across branches.
 
-### Dish Information
+### 4.3 Dish Information
+
 For each dish, the following information must be managed:
 
-- Name
-- Category / Type
-- Price
-- Ingredients
-- Illustrative photo
+- name
+- type
+- price
+- ingredients
+- illustrative photo
 
-In addition to the common dishes loaded at startup, the Manager can add custom dishes specific to their own restaurant.
+In addition to the initially loaded common dishes, the Manager can add custom dishes specific to their own restaurant.
 
-### Manager Dashboard
-It is assumed that every Manager has access to a dashboard displaying:
+### 4.4 Manager Dashboard
 
-- Received orders
-- Orders in preparation
-- Completed orders
-- Revenue / Earnings
-- Statistics on best-selling dishes
-- Number of orders broken down by status
+Each Manager is assumed to have a dashboard to view:
+
+- received orders
+- orders in preparation
+- completed orders
+- revenue
+- statistics on best-selling dishes
+- number of orders broken down by status
+
+---
 
 ## 5. Order Management
-Order management covers the operations through which the customer selects one or more dishes and completes the purchase.
 
-### General Flow
+Order management concerns the operations through which the customer selects one or more dishes and completes the purchase.
+
+### 5.1 General Flow
+
 The customer must be able to:
 
-- View the chain's restaurants
-- Access a restaurant's menu
-- Select one or more dishes
-- Add dishes to the cart
-- Confirm the order
-- Pay via the app or in-person at the counter
-- View the alphanumeric code associated with the order
+- view the chain's restaurants
+- access a restaurant's menu
+- select one or more dishes
+- add dishes to the cart
+- confirm the order
+- pay through the app or in person at the counter
+- view the alphanumeric code associated with the order
 
-### Shopping Cart
-The system must include a cart containing:
+### 5.2 Cart
 
-- List of selected dishes
-- Quantity
-- Unit price
-- Subtotal
-- Grand total
+The system must provide a cart containing:
 
-### Order Data
+- list of selected dishes
+- quantity
+- unit price
+- subtotal
+- final total
+
+### 5.3 Order Data
+
 For each order, the system must store at least:
 
-- Associated customer
-- Associated restaurant
-- List of ordered dishes
-- Quantity per dish
-- Total price
-- Order completion method
-- Current order status
-- Creation date and time
-- Optional delivery address
-- Alphanumeric order identifier / code
+- associated customer
+- associated restaurant
+- list of ordered dishes
+- quantity for each dish
+- total price
+- order completion mode
+- current order status
+- creation date and time
+- optional delivery address
+- identification / alphanumeric code associated with the order
 
-### Order Statuses
-The expected order status flow is:
+### 5.4 Order Statuses
 
-- `placed`
-- `in preparation`
-- `ready`
-- `out for delivery`
-- `delivered`
+The expected status flow for orders is as follows:
 
-For **pickup orders**, the expected flow is:
-`placed` → `in preparation` → `ready` → `delivered`
+`ordered` → `in preparation` → `ready` → `out for delivery` → `delivered`
 
-For **home delivery orders**, the expected flow is:
-`placed` → `in preparation` → `out for delivery` → `delivered`
+| Mode | Status flow |
+|---|---|
+| In-store pickup | `ordered` → `in preparation` → `ready` → `delivered` |
+| Home delivery | `ordered` → `in preparation` → `out for delivery` → `delivered` |
 
-### Purchase History
+### 5.5 Purchase History
+
 The customer must be able to view:
 
-- Ongoing orders
-- Past orders
-- Details of completed purchases
+- ongoing orders
+- past orders
+- details of completed purchases
+
+---
 
 ## 6. Delivery Management
-The system must support at least two order completion methods:
 
-- Pickup at the restaurant
-- Home delivery
+The system must support at least two order completion modes:
 
-### In-Store Pickup
-For pickup orders:
+- pickup at the restaurant
+- home delivery
 
-- The system must estimate a waiting time
-- The Manager signals when the order is ready
-- The customer collects the order at the counter
+### 6.1 In-Store Pickup
 
-It is assumed that an alphanumeric code is associated with the order, to be shown at the time of pickup.
+In the case of in-store pickup:
 
-### Home Delivery
-For home delivery orders:
+- the system must estimate a waiting time
+- the Manager signals when the order is ready
+- the customer picks up the order at the counter
 
-- The customer provides a delivery address
-- The system calculates the distance between the restaurant and the destination, estimated via the OpenStreetMap API
-- The delivery cost depends on the distance in kilometers
-- Upon receiving the order, the customer confirms delivery, transitioning the order status from `out for delivery` to `delivered`
+An alphanumeric code is also assumed to be associated with the order, to be shown at pickup time.
+
+### 6.2 Home Delivery
+
+In the case of home delivery:
+
+- the customer enters the delivery address
+- the system calculates the distance between the restaurant and the destination, estimating it via the OpenStreetMap APIs
+- the delivery cost depends on the distance in km
+- upon receiving the order, the customer confirms the delivery, and the order status changes from `out for delivery` to `delivered`
+
+---
 
 ## 7. Search Features
-The platform must offer search functionality for both restaurants and dishes.
 
-### Restaurant Search
+The platform must offer search features for restaurants and dishes.
+
+### 7.1 Restaurant Search
+
 Search by:
 
-- Restaurant name
-- Location / City
-- Restaurants offering a specific dish
+- restaurant name
+- location / city
+- restaurant offering a specific dish
 
-### Dish Search
+### 7.2 Dish Search
+
 Search by:
 
-- Name
-- Category / Type
-- Price
-- Ingredient
-- Allergens
+- name
+- type
+- price
+- ingredient
+- allergen
 
-> **TODO:** Clarify how to model allergens — as an explicit list in the dish record or derived from the ingredients.
+> **TODO**: clarify how to model allergens: an explicit list on the dish, or one derived from the ingredients.
+
+---
 
 ## 8. Design Assumptions
-The following design choices are assumed at the initial stage:
 
-- The system represents a **fast food chain** composed of multiple branches.
-- Each branch is associated with a single responsible Manager.
-- The customer can interact with all branches through a single unified platform.
-- The **Admin** role is introduced as a design extension to manage the platform at a global level.
-- The Manager can self-register, but their account must be approved by an Admin before becoming operational.
-- Restaurant staff (employees) are not modeled within the system.
+The following design choices are assumed in the initial phase:
 
-## 9. Excluded or Deferred Features
-For the sake of design simplicity, the following features are not considered in the first version:
+- the system represents a **fast food chain** made up of multiple branches
+- each branch is associated with a single responsible Manager
+- the customer can interact with all branches through a single platform
+- the **Admin** role is introduced as a design extension to manage the platform centrally
+- the Manager can register independently, but their account must be approved by an Admin before becoming operational
+- restaurant employees are not considered in the system
 
-- Detailed employee management
-- Inventory / stock management
-- Raw materials management
-- Delivery personnel management as an autonomous entity
-- Full restaurant accounting
+---
+
+## 9. Excluded or Postponed Features
+
+For the sake of design simplicity, the first version does not consider:
+
+- detailed employee management
+- warehouse management
+- raw materials management
+- delivery staff management as an autonomous entity
+- full restaurant accounting
+
+---
 
 ## 10. Technical Constraints
-- **Frontend:** HTML5 + CSS3 + JavaScript
-- **Backend:** Node.js + MongoDB
-- **API:** REST, documented with Swagger
+
+- **Frontend**: HTML5 + CSS3 + JS
+- **Backend**: Node.js + MongoDB
+- **API**: REST, documented with Swagger
