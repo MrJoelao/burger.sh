@@ -1,111 +1,50 @@
-describes the main domain entities (User, Restaurant, Dish, Order, Delivery, …) and their key fields.
-It serves as a bridge between the textual requirements and the actual database schema.
+Il domain model rappresenta i principali concetti del dominio applicativo di FastFood e le relazioni tra essi.  
+Il suo scopo è descrivere il problema in termini concettuali, senza introdurre dettagli implementativi legati a database, API o codice [web:139].
 
-┌─────────────────────────────────────────────────┐
-│                  UTENTE                         │
-│─────────────────────────────────────────────────│
-│ nome                                            │
-│ cognome                                         │
-│ email                                           │
-│ indirizzo                                       │
-│ ruolo   ← [domanda 1]                           │
-│ ???     ← quali altri attributi hai nei req?    │
-└──────────────────┬──────────────────────────────┘
-                   │
-      ┌────────────┴────────────┐
-      │                         │
-      ▼                         ▼
-┌──────────┐             ┌───────────┐
-│ CLIENTE  │             │  MANAGER  │
-│──────────│             │───────────│
-│ ???      │             │ ???       │
-└──────────┘             └───────────┘
+## Entità principali
+Le entità individuate nel dominio sono:
 
-[domanda 2]: UTENTE è una superclasse con CLIENTE e MANAGER come sottoclassi?
-             Oppure è una sola entità con un attributo "ruolo"?
-             Pensa a quanti attributi sono in comune e quanti sono specifici.
+- **Utente**, generalizzato nelle sottoentità **Cliente**, **Manager** e **Admin**.
+- **Ristorante**, che rappresenta una filiale della catena.
+- **Piatto**, che rappresenta un prodotto ordinabile dal cliente.
+- **Ingrediente**, associato ai piatti per descriverne la composizione.
+- **Ordine**, che rappresenta sia il carrello in fase di composizione sia l’ordine confermato.
+- **Consegna**, presente solo nei casi di ordine a domicilio.
+- **RigaOrdine**, che rappresenta i singoli piatti contenuti in un ordine con la relativa quantità.
+- **MetodoPagamento**, associato al cliente.
 
+## Relazioni principali
+Le principali relazioni modellate sono le seguenti:
 
-┌─────────────────────────────────────────────────┐
-│                 RISTORANTE                      │
-│─────────────────────────────────────────────────│
-│ nome                                            │
-│ indirizzo                                       │
-│ ???     ← quali altri attributi hai nei req?    │
-└─────────────────────────────────────────────────┘
-
-[domanda 3]: Un MANAGER può gestire più ristoranti, o sempre uno solo?
-             Guarda cosa dicono i requisiti alla sezione 4.
-             Come scrivi la cardinalità di questa associazione?
+- Un **Cliente** può effettuare (cardinalità) **Ordini**.
+- Un **Manager** gestisce (cardinalità) un **Ristorante**.
+- Un **Ristorante** offre (cardinalità) dei **Piatti**.
+- Un **Ordine** è composto da (cardinalità) più **RigheOrdine**.
+- Ogni **RigaOrdine** si riferisce a un solo **Piatto**.
+- Un **Piatto** contiene (cardinalità) uno o più **Ingredienti**.
+- Un **Ordine** può includere una **Consegna** solo nel caso di modalità a domicilio.
+- Un **Cliente** può associare (cardinalità) uno o più **MetodiPagamento**.
 
 
-┌─────────────────────────────────────────────────┐
-│                   PIATTO                        │
-│─────────────────────────────────────────────────│
-│ nome                                            │
-│ tipologia                                       │
-│ prezzo                                          │
-│ ???                                             │
-└─────────────────────────────────────────────────┘
+## Scelte di modellazione
+Nel diagramma sono state adottate le seguenti scelte:
 
-[domanda 4]: Esiste una distinzione tra "piatto comune della catena" 
-             e "piatto personalizzato del singolo ristorante"?
-             Sono la stessa entità con un attributo, o due entità distinte?
-             Hai letto la sezione 4 (meal.json)?
+- L’entità **Utente** è stata specializzata in **Cliente**, **Manager** e **Admin**, per distinguere in modo chiaro i ruoli del sistema.
+- L’entità **Ordine** include anche il concetto di carrello: un ordine non ancora confermato viene rappresentato tramite uno stato iniziale, ad esempio `bozza`.
+- L’entità **Consegna** è stata modellata come parte opzionale di **Ordine**, poiché non tutti gli ordini prevedono la consegna a domicilio.
+- L’entità **Piatto** include sia i piatti comuni della catena sia quelli personalizzati del singolo ristorante; questa distinzione è rappresentata tramite flag.
 
+## Confini del modello
+Nel domain model non sono stati inclusi elementi tecnici o implementativi come collezioni MongoDB, endpoint REST, autenticazione JWT o dettagli di persistenza, perché appartengono a fasi successive della progettazione.
 
-┌─────────────────────────────────────────────────┐
-│                   ORDINE                        │
-│─────────────────────────────────────────────────│
-│ codiceAlfanumerico                              │
-│ stato  ← [domanda 5]                            │
-│ dataOra                                         │
-│ ???                                             │
-└─────────────────────────────────────────────────┘
-
-[domanda 5]: Lo "stato" dell'ordine (ordinato, in preparazione, ...) 
-             è un attributo dell'entità Ordine, oppure modelli una 
-             StoricoStati separata? Cosa ti conviene nel tuo dominio?
-
-[domanda 6]: Il CARRELLO è un'entità a sé o è parte dell'Ordine?
-             Esiste nel dominio reale una differenza tra 
-             "carrello in fase di composizione" e "ordine confermato"?
-
-
-┌─────────────────────────────────────────────────┐
-│               RIGA ORDINE (?)                   │
-│─────────────────────────────────────────────────│
-│ quantità                                        │
-│ prezzoUnitario                                  │
-└─────────────────────────────────────────────────┘
-
-[domanda 7]: Quando un cliente mette un piatto nel carrello,
-             questa è solo un'associazione ORDINE–PIATTO con attributi,
-             oppure merita una propria entità "RigaOrdine"?
-             (Hint: se l'associazione ha attributi propri → entità)
-
-
-┌─────────────────────────────────────────────────┐
-│                  CONSEGNA                       │
-│─────────────────────────────────────────────────│
-│ indirizzoDestinazione                           │
-│ distanzaKm                                      │
-│ costoConsegna                                   │
-│ ???                                             │
-└─────────────────────────────────────────────────┘
-
-[domanda 8]: La CONSEGNA è un'entità separata oppure degli attributi 
-             aggiuntivi dentro ORDINE?
-             Pensa: esistono ordini senza consegna (ritiro in sede).
-             Come modelli questa opzionalità nel dominio?
-
-
-┌─────────────────────────────────────────────────┐
-│            METODO DI PAGAMENTO                  │
-│─────────────────────────────────────────────────│
-│ ???                                             │
-└─────────────────────────────────────────────────┘
-
-[domanda 9]: Quali attributi ha un metodo di pagamento?
-             È un'entità autonoma collegata al Cliente, 
-             oppure solo un attributo dell'Ordine?
+## Assunzioni progettuali
+Nel modello sono state assunte alcune scelte progettuali coerenti con i requisiti:
+- ogni filiale è gestita da un solo manager;
+- l’admin è modellato come ruolo distinto rispetto a cliente e manager;
+- il carrello non è stato introdotto come entità autonoma, ma come ordine in stato `bozza`;
+- la consegna è prevista solo per gli ordini con modalità a domicilio.
+- 
+## Note sul diagramma
+Le molteplicità delle associazioni sono riportate nel diagramma UML allegato.  
+Il diagramma è stato costruito per rappresentare solo i concetti di dominio rilevanti, senza dettagli implementativi.  
+Le scelte di modellazione principali riguardano la generalizzazione di Utente, la gestione dell’Ordine come carrello non confermato e la presenza opzionale della Consegna.
