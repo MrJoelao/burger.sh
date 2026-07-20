@@ -1,43 +1,42 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
-  // entità completa di user
+const restaurantSchema = new mongoose.Schema(
+  // entità completa del ristorante
   {
     name: {
       type: String,
       required: true,
       trim: true,
     },
-    surname: {
+    address: {
       type: String,
       required: true,
-      trim: true,
+      trim: true, // indirizzo del ristorante
     },
-    email: {
+    city: {
       type: String,
       required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
+      trim: true, // città in cui si trova la filiale
     },
-    passwordHash: {
+    phone: {
       type: String,
       required: true,
+      trim: true, // numero di telefono del ristorante
     },
-    role: {
+    vatNumber: {
       type: String,
-      enum: ["customer", "manager", "admin"], // il suo ruolo, può variare tra cliente, manager e admin
       required: true,
+      trim: true, // partita iva della filiale
     },
-    address: addressSchema,
-    managerStatus: {
-      type: String,
-      enum: ["pending", "approved"], // un manager deve essere "approvato" dall'admin
+    managerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true, // riferimento al manager proprietario della filiale
     },
   },
   {
-    timestamps: true, // mongodb gestirà in automatico la data e ora di quando un utente verrà aggiunto/modificato
+    timestamps: true, // mongodb gestirà in automatico la data e ora di creazione/modifica
   },
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("Restaurant", restaurantSchema);
