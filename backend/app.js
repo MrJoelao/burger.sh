@@ -19,6 +19,9 @@ app.get('/api/health', function(req, res) {
   });
 });
 
+const authRoutes = require('./routes/authRoutes');
+
+app.use('/api/auth', authRoutes);
 
 // middleware che gestisce le richieste che non corrispondenti a nessuna delle route definite.
 // deve essere registrata dopo tutte le route, altrimenti intercetterebbe ogni richiesta prima che possa
