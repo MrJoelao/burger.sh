@@ -15,5 +15,8 @@
   "scripts": {
     "backend": "cd backend && npm run dev",
     "backend:start": "cd backend && npm start"
+  },
+  "dependencies": {
+    "joi": "^18.2.3"
   }
 }
