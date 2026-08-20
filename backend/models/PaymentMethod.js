@@ -10,7 +10,7 @@ const paymentMethodSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["carta", "contanti"], // tipologia del metodo di pagamento
+      enum: ["card", "cash"], // tipologia del metodo di pagamento
       required: true,
     },
     label: {

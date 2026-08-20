@@ -17,13 +17,13 @@ const createOrderSchema = Joi.object({
   restaurantId: Joi.string().hex().length(24).required(),
   orderItems: Joi.array().items(orderItemSchema).min(1).required(),
   status: Joi.string()
-      .valid('ordinato', 'in preparazione', 'pronto', 'in consegna', 'consegnato')
+      .valid('ordered', 'preparing', 'ready', 'on_delivery', 'delivered')
       .optional(),
-  mode: Joi.string().valid('ritiro', 'domicilio'),
+  mode: Joi.string().valid('pickup', 'delivery'),
   totalAmount: Joi.number().min(0).required(),
   orderCode: Joi.string().trim().required(),
   delivery: Joi.alternatives().conditional('mode', {
-      is: 'domicilio',
+      is: 'delivery',
       then: deliverySchema.required(),
       otherwise: Joi.allow(null).forbidden()
     })
@@ -34,13 +34,13 @@ const updateOrderSchema = Joi.object({
   restaurantId: Joi.string().hex().length(24).optional(),
   orderItems: Joi.array().items(orderItemSchema).min(1).optional(),
   status: Joi.string()
-    .valid('ordinato', 'in preparazione', 'pronto', 'in consegna', 'consegnato')
+    .valid('ordered', 'preparing', 'ready', 'on_delivery', 'delivered')
     .optional(),
-  mode: Joi.string().valid('ritiro', 'domicilio').optional(),
+  mode: Joi.string().valid('pickup', 'delivery').optional(),
   totalAmount: Joi.number().min(0).optional(),
   orderCode: Joi.string().trim().optional(),
   delivery: Joi.alternatives().conditional('mode', {
-    is: 'domicilio',
+    is: 'delivery',
     then: deliverySchema.optional(),
     otherwise: Joi.allow(null).forbidden()
   })

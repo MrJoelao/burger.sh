@@ -58,13 +58,13 @@ const orderSchema = new mongoose.Schema(
     orderItems: [orderItemSchema], // righe dell'ordine embedded, lette e aggiornate insieme all'ordine
     status: {
       type: String,
-      enum: ["ordinato", "in preparazione", "pronto", "in consegna", "consegnato"], // il sottoinsieme raggiungibile dipende dalla modalità (ritiro o domicilio)
+      enum: ["ordered", "preparing", "ready", "on_delivery", "delivered"],
       required: true,
-      default: "ordinato",
+      default: "ordered",
     },
     mode: {
       type: String,
-      enum: ["ritiro", "domicilio"], // modalità di completamento dell'ordine
+      enum: ["pickup", "delivery"], // modalità di completamento dell'ordine
       required: true,
     },
     totalAmount: {
