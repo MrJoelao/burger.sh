@@ -6,7 +6,7 @@ function errorHandler(err, req, res, next) {
     success: false,
     error: {
       status: statusCode,
-      message: err.message || 'Errore interno del server'
+      message: err.message || 'Internal Server Error'
     }
   });
 }

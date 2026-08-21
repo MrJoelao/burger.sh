@@ -2,7 +2,7 @@
 const createError = require('http-errors');
 
 function notFound(req, res, next) {
-  next(createError(404, `Risorsa non trovata: ${req.method} ${req.originalUrl}`));
+  next(createError(404, `Resource not found: ${req.method} ${req.originalUrl}`));
 }
 
 module.exports = notFound;
