@@ -5,7 +5,6 @@
  */
 
 var app = require('../app');
-require('dotenv').config();
 const connectDB = require('../config/db');
 var debug = require('debug')('burger.sh:server');
 var http = require('http');
