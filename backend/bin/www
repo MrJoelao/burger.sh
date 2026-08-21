@@ -5,6 +5,8 @@
  */
 
 var app = require('../app');
+require('dotenv').config();
+const connectDB = require('../config/db');
 var debug = require('debug')('burger.sh:server');
 var http = require('http');
 
@@ -25,7 +27,12 @@ var server = http.createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 
-server.listen(port);
+connectDB().then(() => {
+  server.listen(port);
+}).catch(err => {
+  console.error('Failed to connect to DB:', err);
+  process.exit(1);
+});
 server.on('error', onError);
 server.on('listening', onListening);
 

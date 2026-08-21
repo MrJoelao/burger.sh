@@ -1,18 +1,18 @@
 const mongoose = require("mongoose");
 
 async function connectDB() {
-  const uri = process.env.MONGO_URI; //prendo url con la password dal .env
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
 
   if (!uri) {
-    throw new Error("Errore: MONGO_URI, non definita nel file .env");
+    throw new Error("Errore: MONGODB_URI non definita nel file .env");
   }
   try {
     await mongoose.connect(uri);
-    console.log("connesione al db riuscita");
+    console.log("Database connection successful");
   } catch (error) {
-    console.error("Errore di connessione a MongoDB:", error.message);
+    console.error("MongoDB connection error:", error.message);
     process.exit(1);
   }
 }
 
-module.exports = connectDB; //esporta la funzione in modo che altri file possano usare connectDB esternamente
+module.exports = connectDB;
