@@ -12,32 +12,14 @@ const {
 } = require('../../helpers/factories');
 const Order = require('../../../models/Order');
 
-/* test di integrazione delle rotte degli ordini. attenzione: diversi
-   endpoint restituiscono un errore 500 a causa di bug reali del codice
-   sorgente (non modificabile), quindi i test verificano il comportamento
-   effettivo dell'applicazione invece di quello "atteso":
-
-   1) updateOrderStatus usa una mappa validTransitions con le chiavi
-      'ritiro'/'delivery', ma il modello usa mode 'pickup'/'delivery':
-      per un ordine con mode 'pickup', validTransitions['pickup'] è
-      undefined e il codice lancia un TypeError, gestito come 500.
-   2) createOrder, updateOrderStatus (caso valido) e confirmDelivery
-      concatenano due populate su un documento (es. order.populate().
-      populate()), non supportato da questa versione di mongoose: la
-      scrittura sul database va a buon fine, ma la risposta è 500.
-   3) getOrderById confronta order.customerId.toString() (documento
-      popolato) con req.user.id: il confronto è sempre "diverso", quindi
-      valuta anche order.restaurantId.managerId (undefined, perché il
-      populate seleziona solo name/city) e lancia un TypeError: la
-      risposta è sempre 500 quando l'ordine esiste, per qualsiasi
-      chiamante. */
+// test di integrazione delle rotte degli ordini
 
 beforeAll(dbHandler.connect);
 afterEach(dbHandler.clearDatabase);
 afterAll(dbHandler.closeDatabase);
 
 describe('POST /api/orders', () => {
-  test('crea l\'ordine usando req.user.id come customerId, pur rispondendo 500 per il bug di populate', async () => {
+  test('crea l\'ordine usando req.user.id come customerId', async () => {
     const customer = await createUser();
     const restaurant = await createRestaurant();
     const dish = await createDish();
@@ -55,7 +37,7 @@ describe('POST /api/orders', () => {
         orderCode: 'FF-CREATE01'
       });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(201);
 
     // nota: il controller genera un proprio orderCode con generateOrderCode(),
     // ignorando quello inviato nel payload, quindi si cerca per customerId
@@ -131,9 +113,7 @@ describe('GET /api/orders/restaurant/:restaurantId', () => {
 });
 
 describe('GET /api/orders/:id', () => {
-  /* vedi la nota generale sopra: il controllo di autorizzazione crasha
-     sempre quando l'ordine esiste, indipendentemente da chi lo richiede. */
-  test('restituisce 500 anche per il cliente proprietario, a causa del bug di autorizzazione', async () => {
+  test('il cliente proprietario vede il proprio ordine', async () => {
     const customer = await createUser();
     const order = await createOrder({ customerId: customer._id });
 
@@ -141,10 +121,10 @@ describe('GET /api/orders/:id', () => {
       .get(`/api/orders/${order._id}`)
       .set('Authorization', `Bearer ${tokenFor(customer)}`);
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
   });
 
-  test('restituisce 500 anche per un admin, a causa del bug di autorizzazione', async () => {
+  test('un admin vede qualsiasi ordine', async () => {
     const admin = await createAdmin();
     const order = await createOrder();
 
@@ -152,7 +132,18 @@ describe('GET /api/orders/:id', () => {
       .get(`/api/orders/${order._id}`)
       .set('Authorization', `Bearer ${tokenFor(admin)}`);
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
+  });
+
+  test('un cliente diverso dal proprietario riceve 404', async () => {
+    const otherCustomer = await createUser();
+    const order = await createOrder();
+
+    const response = await request(app)
+      .get(`/api/orders/${order._id}`)
+      .set('Authorization', `Bearer ${tokenFor(otherCustomer)}`);
+
+    expect(response.status).toBe(404);
   });
 
   test('restituisce 404 "Order not found" per un id inesistente', async () => {
@@ -169,7 +160,7 @@ describe('GET /api/orders/:id', () => {
 });
 
 describe('PATCH /api/orders/:id/status', () => {
-  test('un ordine con mode "pickup" causa un errore 500 non gestito (bug noto di validTransitions)', async () => {
+  test('un ordine "pickup" con transizione valida aggiorna lo stato', async () => {
     const manager = await createManager();
     const restaurant = await createRestaurant({ managerId: manager._id });
     const order = await createOrder({ restaurantId: restaurant._id, mode: 'pickup' });
@@ -179,10 +170,13 @@ describe('PATCH /api/orders/:id/status', () => {
       .set('Authorization', `Bearer ${tokenFor(manager)}`)
       .send({ status: 'preparing' });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
+
+    const updatedOrder = await Order.findById(order._id);
+    expect(updatedOrder.status).toBe('preparing');
   });
 
-  test('un ordine "delivery" con transizione valida aggiorna lo stato nel db, pur rispondendo 500 per il bug di populate', async () => {
+  test('un ordine "delivery" con transizione valida aggiorna lo stato', async () => {
     const manager = await createManager();
     const restaurant = await createRestaurant({ managerId: manager._id });
     const order = await createOrder({
@@ -196,7 +190,7 @@ describe('PATCH /api/orders/:id/status', () => {
       .set('Authorization', `Bearer ${tokenFor(manager)}`)
       .send({ status: 'preparing' });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
 
     const updatedOrder = await Order.findById(order._id);
     expect(updatedOrder.status).toBe('preparing');
@@ -234,7 +228,7 @@ describe('PATCH /api/orders/:id/status', () => {
 });
 
 describe('PATCH /api/orders/:id/confirm-delivery', () => {
-  test('il cliente proprietario conferma la consegna nel db, pur rispondendo 500 per il bug di populate', async () => {
+  test('il cliente proprietario conferma la consegna', async () => {
     const customer = await createUser();
     const restaurant = await createRestaurant();
     const order = await createOrder({
@@ -249,7 +243,7 @@ describe('PATCH /api/orders/:id/confirm-delivery', () => {
       .patch(`/api/orders/${order._id}/confirm-delivery`)
       .set('Authorization', `Bearer ${tokenFor(customer)}`);
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
 
     const updatedOrder = await Order.findById(order._id);
     expect(updatedOrder.status).toBe('delivered');
