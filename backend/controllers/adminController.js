@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { applyPasswordUpdate } = require('../utils/password');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated } = require('../utils/httpResponses');
+const { findOrThrow } = require('../utils/authorization');
 const { resolveManagerRestaurants } = require('./userController');
 const statisticsService = require('../services/statisticsService');
 
@@ -50,10 +51,7 @@ async function getAllUsers(req, res, next) {
 // get utente by id
 async function getUserById(req, res, next) {
   try {
-    const user = await User.findById(req.params.id).select('-passwordHash');
-    if (!user) {
-      return jsonError(res, 404, 'User not found');
-    }
+    const user = await findOrThrow(User.findById(req.params.id).select('-passwordHash'), 'User not found');
 
     return jsonOk(res, 200, user);
   } catch (err) {
@@ -102,10 +100,7 @@ function buildUserUpdate(updates, isLeavingManagerRole) {
    così Restaurant.managerId non resta mai orfano */
 async function updateUser(req, res, next) {
   try {
-    const targetUser = await User.findById(req.params.id);
-    if (!targetUser) {
-      return jsonError(res, 404, 'User not found');
-    }
+    const targetUser = await findOrThrow(User.findById(req.params.id), 'User not found');
 
     const { newManagerId, ...rawUpdates } = req.validated;
 
@@ -135,10 +130,7 @@ async function updateUser(req, res, next) {
 // delete utente: se è un manager proprietario, chiude o trasferisce la sua filiale
 async function deleteUser(req, res, next) {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return jsonError(res, 404, 'User not found');
-    }
+    const user = await findOrThrow(User.findById(req.params.id), 'User not found');
 
     if (user.role === 'manager') {
       const { newManagerId } = req.validated;

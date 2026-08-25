@@ -2,7 +2,8 @@ const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
 const Dish = require('../models/Dish');
 const { applyPasswordUpdate } = require('../utils/password');
-const { jsonOk, jsonError, jsonMessage, badRequest } = require('../utils/httpResponses');
+const { jsonOk, jsonMessage, badRequest } = require('../utils/httpResponses');
+const { findOrThrow } = require('../utils/authorization');
 
 /* controller del profilo utente: ogni utente autenticato (customer, manager
    o admin) può consultare, modificare ed eliminare i propri dati tramite
@@ -58,10 +59,7 @@ async function resolveManagerRestaurants(managerId, newManagerId) {
 // get i propri dati
 async function getMe(req, res, next) {
   try {
-    const user = await User.findById(req.user.id).select('-passwordHash');
-    if (!user) {
-      return jsonError(res, 404, 'User not found');
-    }
+    const user = await findOrThrow(User.findById(req.user.id).select('-passwordHash'), 'User not found');
 
     return jsonOk(res, 200, user);
   } catch (err) {
@@ -74,14 +72,13 @@ async function updateMe(req, res, next) {
   try {
     const updates = await applyPasswordUpdate(req.validated);
 
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, updates, {
-      returnDocument: 'after',
-      runValidators: true
-    }).select('-passwordHash');
-
-    if (!updatedUser) {
-      return jsonError(res, 404, 'User not found');
-    }
+    const updatedUser = await findOrThrow(
+      User.findByIdAndUpdate(req.user.id, updates, {
+        returnDocument: 'after',
+        runValidators: true
+      }).select('-passwordHash'),
+      'User not found'
+    );
 
     return jsonOk(res, 200, updatedUser);
   } catch (err) {
@@ -92,10 +89,7 @@ async function updateMe(req, res, next) {
 // delete il proprio account
 async function deleteMe(req, res, next) {
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return jsonError(res, 404, 'User not found');
-    }
+    const user = await findOrThrow(User.findById(req.user.id), 'User not found');
 
     if (user.role === 'manager') {
       const { newManagerId } = req.validated;

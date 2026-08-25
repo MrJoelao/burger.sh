@@ -89,10 +89,10 @@ async function getRestaurantById(req, res, next) {
   try {
     const { id } = req.params;
 
-    const restaurant = await Restaurant.findById(id).populate('managerId', 'name surname email');
-    if (!restaurant) {
-      return jsonError(res, 404, 'Restaurant not found');
-    }
+    const restaurant = await findOrThrow(
+      Restaurant.findById(id).populate('managerId', 'name surname email'),
+      'Restaurant not found'
+    );
 
     return jsonOk(res, 200, restaurant);
   } catch (err) {

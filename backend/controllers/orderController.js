@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Restaurant = require('../models/Restaurant');
 const orderService = require('../services/orderService');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
+const { findOrThrow } = require('../utils/authorization');
 
 /* controller degli ordini: legge la richiesta, delega la logica di dominio a
    orderService e traduce il risultato in una risposta http. le regole di
@@ -148,10 +149,7 @@ async function getRestaurantOrders(req, res, next) {
     const { restaurantId } = req.params;
     const { page, limit, skip } = req.pagination;
 
-    const restaurant = await Restaurant.findById(restaurantId);
-    if (!restaurant) {
-      return jsonError(res, 404, 'Restaurant not found');
-    }
+    const restaurant = await findOrThrow(Restaurant.findById(restaurantId), 'Restaurant not found');
 
     const authCheck = orderService.checkRestaurantOrdersAccess(req.user, restaurant);
     if (!authCheck.authorized) {
@@ -171,11 +169,7 @@ async function getOrderById(req, res, next) {
   try {
     const { id } = req.params;
 
-    const order = await orderService.populateOrderDetails(Order.findById(id));
-
-    if (!order) {
-      return jsonError(res, 404, 'Order not found');
-    }
+    const order = await findOrThrow(orderService.populateOrderDetails(Order.findById(id)), 'Order not found');
 
     const authCheck = orderService.checkOrderAccess(req.user, order, 'view');
     if (!authCheck.authorized) {
@@ -194,10 +188,7 @@ async function updateOrderStatus(req, res, next) {
     const { id } = req.params;
     const { status } = req.validated;
 
-    const order = await orderService.findOrderWithRestaurant(id);
-    if (!order) {
-      return jsonError(res, 404, 'Order not found');
-    }
+    const order = await findOrThrow(orderService.findOrderWithRestaurant(id), 'Order not found');
 
     const authCheck = orderService.checkOrderAccess(req.user, order, 'manage');
     if (!authCheck.authorized) {
@@ -224,10 +215,7 @@ async function confirmDelivery(req, res, next) {
   try {
     const { id } = req.params;
 
-    const order = await orderService.findOrderWithRestaurant(id);
-    if (!order) {
-      return jsonError(res, 404, 'Order not found');
-    }
+    const order = await findOrThrow(orderService.findOrderWithRestaurant(id), 'Order not found');
 
     const authCheck = orderService.checkOrderAccess(req.user, order, 'confirm_delivery');
     if (!authCheck.authorized) {
@@ -261,10 +249,7 @@ async function getRestaurantDashboard(req, res, next) {
   try {
     const { restaurantId } = req.params;
 
-    const restaurant = await Restaurant.findById(restaurantId);
-    if (!restaurant) {
-      return jsonError(res, 404, 'Restaurant not found');
-    }
+    const restaurant = await findOrThrow(Restaurant.findById(restaurantId), 'Restaurant not found');
 
     const authCheck = orderService.checkRestaurantOrdersAccess(req.user, restaurant);
     if (!authCheck.authorized) {
