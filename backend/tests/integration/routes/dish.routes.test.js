@@ -62,17 +62,13 @@ describe('GET /api/dishes/restaurant/:restaurantId', () => {
 });
 
 describe('GET /api/dishes/:id', () => {
-  /* nota: a causa di un bug del codice sorgente (populateDish concatena due
-     populate su un documento, non supportato da questa versione di
-     mongoose), la richiesta di un piatto esistente termina con 500 invece
-     che 200. il test verifica il comportamento reale, senza modificare il
-     controller. */
-  test('restituisce 500 per un piatto esistente a causa del bug di populateDish', async () => {
+  test('restituisce 200 con i dati del piatto popolato per un piatto esistente', async () => {
     const dish = await createDish();
 
     const response = await request(app).get(`/api/dishes/${dish._id}`);
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
+    expect(response.body.data._id).toBe(dish._id.toString());
   });
 
   test('restituisce 404 per un id inesistente', async () => {
@@ -85,10 +81,7 @@ describe('GET /api/dishes/:id', () => {
 });
 
 describe('POST /api/dishes', () => {
-  /* nota: come per GET /:id, anche la creazione va a buon fine lato
-     database ma la risposta fallisce con 500 per lo stesso bug di
-     populateDish, quindi qui si verifica il comportamento reale. */
-  test('un admin autorizzato riceve comunque 500 a causa del bug di populateDish', async () => {
+  test('un admin autorizzato crea il piatto con successo', async () => {
     const admin = await createAdmin();
 
     const response = await request(app)
@@ -96,10 +89,11 @@ describe('POST /api/dishes', () => {
       .set('Authorization', `Bearer ${tokenFor(admin)}`)
       .send({ name: 'Cheeseburger', type: 'burger', price: 8 });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(201);
+    expect(response.body.data.name).toBe('Cheeseburger');
   });
 
-  test('un manager proprietario autorizzato riceve comunque 500 a causa del bug di populateDish', async () => {
+  test('un manager proprietario autorizzato crea il piatto custom con successo', async () => {
     const manager = await createManager();
     const restaurant = await createRestaurant({ managerId: manager._id });
 
@@ -114,7 +108,8 @@ describe('POST /api/dishes', () => {
         restaurantId: restaurant._id.toString()
       });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(201);
+    expect(response.body.data.name).toBe('Panino Speciale');
   });
 
   test('un manager non proprietario riceve 403 nel creare un piatto custom di un altro ristorante', async () => {
@@ -160,10 +155,7 @@ describe('POST /api/dishes', () => {
 });
 
 describe('PUT /api/dishes/:id', () => {
-  /* nota: anche l'update va a buon fine lato database (il documento viene
-     effettivamente modificato) ma la risposta fallisce con 500 per lo
-     stesso bug di populateDish. */
-  test('un admin autorizzato riceve comunque 500 a causa del bug di populateDish', async () => {
+  test('un admin autorizzato modifica il piatto con successo', async () => {
     const admin = await createAdmin();
     const dish = await createDish();
 
@@ -172,13 +164,14 @@ describe('PUT /api/dishes/:id', () => {
       .set('Authorization', `Bearer ${tokenFor(admin)}`)
       .send({ price: 12 });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
+    expect(response.body.data.price).toBe(12);
 
     const updatedDish = await Dish.findById(dish._id);
     expect(updatedDish.price).toBe(12);
   });
 
-  test('il manager proprietario autorizzato riceve comunque 500 a causa del bug di populateDish', async () => {
+  test('il manager proprietario autorizzato modifica il piatto custom con successo', async () => {
     const manager = await createManager();
     const restaurant = await createRestaurant({ managerId: manager._id });
     const dish = await createDish({ isCustom: true, restaurantId: restaurant._id });
@@ -188,7 +181,8 @@ describe('PUT /api/dishes/:id', () => {
       .set('Authorization', `Bearer ${tokenFor(manager)}`)
       .send({ price: 15 });
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(200);
+    expect(response.body.data.price).toBe(15);
 
     const updatedDish = await Dish.findById(dish._id);
     expect(updatedDish.price).toBe(15);
