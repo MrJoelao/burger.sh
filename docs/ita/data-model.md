@@ -155,8 +155,8 @@ La collezione `orders` memorizza sia gli ordini in stato di bozza sia quelli con
       "unitPrice": 6.50
     }
   ],
-  "status": "ordinato",
-  "mode": "domicilio",
+  "status": "ordered",
+  "mode": "delivery",
   "totalAmount": 13.00,
   "orderCode": "FF-A1B2C3",
   "createdAt": "ISODate",
@@ -168,13 +168,13 @@ La collezione `orders` memorizza sia gli ordini in stato di bozza sia quelli con
 }
 ```
 
-Valori ammessi per `status`: `ordinato`, `in preparazione`, `pronto`, `in consegna`, `consegnato`.
+Valori ammessi per `status`: `ordered`, `preparing`, `ready`, `on_delivery`, `delivered`.
 Il sottoinsieme di valori effettivamente raggiungibile dipende dalla modalità dell'ordine (`mode`):
 
 | Modalità | Flusso di stato applicabile |
 |---|---|
-| `ritiro` | `ordinato` → `in preparazione` → `pronto` → `consegnato` |
-| `domicilio` | `ordinato` → `in preparazione` → `in consegna` → `consegnato` |
+| `pickup` | `ordered` → `preparing` → `ready` → `delivered` |
+| `delivery` | `ordered` → `preparing` → `on_delivery` → `delivered` |
 
 Questa tabella è coerente con quanto definito in `requirements.md`, sezione "Gestione degli ordini".
 
@@ -183,7 +183,7 @@ Questa tabella è coerente con quanto definito in `requirements.md`, sezione "Ge
 Le informazioni di consegna sono incorporate all'interno del documento `orders` come sottodocumento opzionale.
 
 - Questa scelta è adatta perché la consegna esiste solo per gli ordini a domicilio e non deve vivere in modo indipendente rispetto all'ordine.
-- Il sottodocumento è assente (non impostato a `null`) quando `mode` è `"ritiro"`.
+- Il sottodocumento è assente (non impostato a `null`) quando `mode` è `"pickup"`.
 
 ### paymentMethods
 

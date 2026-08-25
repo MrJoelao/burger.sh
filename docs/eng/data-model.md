@@ -173,13 +173,13 @@ The `orders` collection stores both draft and confirmed orders.
 }
 ```
 
-Allowed values for `status`: `ordered`, `in preparation`, `ready`, `out for delivery`, `delivered`.
+Allowed values for `status`: `ordered`, `preparing`, `ready`, `on_delivery`, `delivered`.
 The subset of values actually reachable depends on the order mode (`mode`):
 
 | Mode | Applicable status flow |
 |---|---|
-| `pickup` | `ordered` → `in preparation` → `ready` → `delivered` |
-| `delivery` | `ordered` → `in preparation` → `out for delivery` → `delivered` |
+| `pickup` | `ordered` → `preparing` → `ready` → `delivered` |
+| `delivery` | `ordered` → `preparing` → `on_delivery` → `delivered` |
 
 This table is consistent with what is defined in `requirements.md`, section "Order Management".
 
