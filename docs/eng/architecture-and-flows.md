@@ -125,7 +125,7 @@ The flows describe the interaction between user, frontend, backend, database, an
 
 1. The Customer selects one or more dishes from a restaurant's menu; each selection is added to a draft order (`orders`, with embedded `orderItems`).
 2. The frontend calculates and displays subtotals and final totals based on data received from the backend.
-3. The Customer chooses the completion mode (in-store pickup or home delivery) and confirms the order.
+3. The Customer chooses the completion mode (`pickup` for in-store pickup or `delivery` for home delivery) and confirms the order.
 4. The backend validates the order, generates the identifying alphanumeric code, and sets the status to `ordered`.
 
 ### 8.4 Home Delivery Management
@@ -133,12 +133,12 @@ The flows describe the interaction between user, frontend, backend, database, an
 1. If home delivery is chosen, the Customer provides the destination address.
 2. The backend calls the OpenStreetMap API to estimate the distance between the branch and the address.
 3. The delivery cost is calculated based on the distance and saved in the order's `delivery` subdocument.
-4. Upon receipt, the Customer confirms the delivery and the order status changes from `out for delivery` to `delivered`.
+4. Upon receipt, the Customer confirms the delivery and the order status changes from `on_delivery` to `delivered`.
 
 ### 8.5 Order Status Update by the Manager
 
 1. The Manager views the branch's received orders from their dashboard.
-2. The Manager updates the order status following the flow defined for the chosen mode (pickup or home delivery), as defined in `data-model.md`.
+2. The Manager updates the order status following the flow defined for the chosen mode (`pickup` or `delivery`), as defined in `data-model.md`.
 3. The backend persists the update, and the Customer can see the new status in their order history.
 
 ### 8.6 Administrative Management of Branches and Managers by the Admin
@@ -146,6 +146,7 @@ The flows describe the interaction between user, frontend, backend, database, an
 1. The Admin views Manager accounts with `managerStatus: "pending"` and requests to open new branches.
 2. The Admin approves or rejects a Manager account, or creates/closes a branch.
 3. The backend updates the status of the involved user/restaurant and makes the related features available.
+4. The owning Manager can close or transfer their own branch independently, without Admin involvement and without deleting their account: if they name another approved manager, the branch is transferred to them, otherwise it is closed along with its custom dishes.
 
 ---
 

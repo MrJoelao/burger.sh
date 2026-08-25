@@ -120,20 +120,20 @@ I flussi descrivono l'interazione tra utente, frontend, backend, database e serv
 
 1. Il Cliente seleziona uno o più piatti dal menu di un ristorante; ogni selezione viene aggiunta a un ordine in stato di bozza (`orders`, con `orderItems` embedded).
 2. Il frontend calcola e mostra i totali parziali e finali in base ai dati ricevuti dal backend.
-3. Il Cliente sceglie la modalità di completamento (ritiro in sede o consegna a domicilio) e conferma l'ordine.
-4. Il backend valida l'ordine, genera il codice alfanumerico identificativo e imposta lo stato a `ordinato`.
+3. Il Cliente sceglie la modalità di completamento (`pickup` per il ritiro in sede o `delivery` per la consegna a domicilio) e conferma l'ordine.
+4. Il backend valida l'ordine, genera il codice alfanumerico identificativo e imposta lo stato a `ordered`.
 
 ### 8.4 Gestione della consegna a domicilio
 
 1. Se la modalità scelta è consegna a domicilio, il Cliente fornisce l'indirizzo di destinazione.
 2. Il backend richiama le API di OpenStreetMap per stimare la distanza tra la filiale e l'indirizzo.
 3. Il costo di consegna viene calcolato in base alla distanza e salvato nel sottodocumento `delivery` dell'ordine.
-4. Alla ricezione, il Cliente conferma la consegna e lo stato dell'ordine passa da `in consegna` a `consegnato`.
+4. Alla ricezione, il Cliente conferma la consegna e lo stato dell'ordine passa da `on_delivery` a `delivered`.
 
 ### 8.5 Aggiornamento stato ordine da parte del Manager
 
 1. Il Manager visualizza dalla propria dashboard gli ordini ricevuti dalla filiale.
-2. Il Manager aggiorna lo stato dell'ordine seguendo il flusso previsto per la modalità scelta (ritiro o consegna a domicilio), come definito in `data-model.md`.
+2. Il Manager aggiorna lo stato dell'ordine seguendo il flusso previsto per la modalità scelta (`pickup` o `delivery`), come definito in `data-model.md`.
 3. Il backend persiste l'aggiornamento e il Cliente può vedere il nuovo stato dal proprio storico ordini.
 
 ### 8.6 Gestione amministrativa di filiali e manager da parte dell'Admin
@@ -141,6 +141,7 @@ I flussi descrivono l'interazione tra utente, frontend, backend, database e serv
 1. L'Admin visualizza gli account Manager con `managerStatus: "pending"` e le richieste di apertura di nuove filiali.
 2. L'Admin approva o rifiuta un account Manager, oppure crea/chiude una filiale.
 3. Il backend aggiorna lo stato dell'utente/ristorante coinvolto e rende disponibili le relative funzionalità.
+4. Il Manager proprietario può chiudere o trasferire la propria filiale in autonomia, senza l'intervento dell'Admin e senza dover eliminare il proprio account: se indica un altro manager approvato, la filiale viene trasferita a quest'ultimo, altrimenti viene chiusa insieme ai suoi piatti custom.
 
 ---
 
