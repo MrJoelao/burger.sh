@@ -24,7 +24,9 @@ tags:
   - name: Dishes
     description: piatti del menu comune e piatti custom di una filiale
   - name: Orders
-    description: carrello in bozza, ordini e dashboard di una filiale
+    description: creazione diretta di un ordine, ordini e dashboard di una filiale
+  - name: Cart
+    description: carrello in bozza del cliente autenticato, prima della conferma dell'ordine
   - name: Users
     description: profilo dell'utente autenticato
   - name: PaymentMethods
@@ -493,14 +495,16 @@ paths:
   /orders:
     post:
       tags: [Orders]
-      summary: crea un ordine diretto (senza passare dal carrello in bozza)
+      summary: crea un ordine diretto (senza passare dal carrello)
       description: >
-        `unitPrice` e `totalAmount` inviati dal client vengono ricalcolati
-        sempre lato server dal prezzo reale del piatto: valori manomessi non
-        vengono usati. Per `mode: delivery`, il costo di consegna viene
-        calcolato dal server tramite `deliveryService` a partire da
-        `delivery.address` (nessun campo `distanceKm`/`deliveryFee` accettato
-        dal client). Se la distanza supera 15km, l'ordine è rifiutato con 422.
+        `unitPrice` inviato dal client viene ricalcolato sempre lato server
+        dal prezzo reale del piatto: valori manomessi non vengono usati.
+        `totalAmount` e `status` non sono campi accettati: qualunque valore
+        inviato viene scartato dalla validazione. Per `mode: delivery`, il
+        costo di consegna viene calcolato dal server tramite
+        `deliveryService` a partire da `delivery.address` (nessun campo
+        `distanceKm`/`deliveryFee` accettato dal client). Se la distanza
+        supera 15km, l'ordine è rifiutato con 422.
       requestBody:
         required: true
         content:
@@ -513,7 +517,6 @@ paths:
                 value:
                   restaurantId: 64b7a0f9a1234567890abcd0
                   mode: pickup
-                  totalAmount: 0
                   orderItems:
                     - dishId: 64b7a0f9a1234567890abc1
                       quantity: 2
@@ -523,7 +526,6 @@ paths:
                 value:
                   restaurantId: 64b7a0f9a1234567890abcd0
                   mode: delivery
-                  totalAmount: 0
                   orderItems:
                     - dishId: 64b7a0f9a1234567890abc1
                       quantity: 1
@@ -555,9 +557,9 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
-  /orders/draft:
+  /cart:
     get:
-      tags: [Orders]
+      tags: [Cart]
       summary: legge il carrello in bozza del cliente autenticato
       responses:
         '200':
@@ -577,7 +579,7 @@ paths:
                 success: false
                 message: No draft order found
     delete:
-      tags: [Orders]
+      tags: [Cart]
       summary: elimina il carrello in bozza
       responses:
         '200':
@@ -596,9 +598,9 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
-  /orders/draft/items:
+  /cart/items:
     post:
-      tags: [Orders]
+      tags: [Cart]
       summary: aggiunge un piatto al carrello in bozza
       description: >
         Crea il carrello se non esiste ancora. Se il piatto è già presente,
@@ -610,7 +612,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AddDraftItemRequest'
+              $ref: '#/components/schemas/AddCartItemRequest'
             examples:
               default:
                 value:
@@ -640,21 +642,21 @@ paths:
                 success: false
                 message: You already have a draft order for another restaurant
 
-  /orders/draft/items/{dishId}:
+  /cart/items/{dishId}:
     parameters:
       - name: dishId
         in: path
         required: true
         schema: { $ref: '#/components/schemas/ObjectId' }
     patch:
-      tags: [Orders]
+      tags: [Cart]
       summary: cambia la quantità di un piatto nel carrello in bozza
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateDraftItemRequest'
+              $ref: '#/components/schemas/UpdateCartItemRequest'
       responses:
         '200':
           description: quantità aggiornata
@@ -672,7 +674,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
     delete:
-      tags: [Orders]
+      tags: [Cart]
       summary: rimuove un piatto dal carrello in bozza
       responses:
         '200':
@@ -689,9 +691,9 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
-  /orders/draft/confirm:
+  /cart/confirm:
     post:
-      tags: [Orders]
+      tags: [Cart]
       summary: conferma il carrello in bozza e lo trasforma in un ordine vero e proprio
       description: >
         `mode` e l'eventuale `delivery.address` si indicano solo qui, non
@@ -704,7 +706,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConfirmDraftRequest'
+              $ref: '#/components/schemas/ConfirmCartRequest'
             examples:
               ritiro:
                 value: { mode: pickup }
@@ -1672,7 +1674,7 @@ components:
 
     CreateOrderRequest:
       type: object
-      required: [restaurantId, orderItems, mode, totalAmount]
+      required: [restaurantId, orderItems, mode]
       properties:
         restaurantId: { $ref: '#/components/schemas/ObjectId' }
         orderItems:
@@ -1680,19 +1682,9 @@ components:
           minItems: 1
           items: { $ref: '#/components/schemas/OrderItemInput' }
         mode: { type: string, enum: [pickup, delivery] }
-        totalAmount:
-          type: number
-          minimum: 0
-          description: inviato dal client ma sempre ricalcolato e sovrascritto dal server
         delivery:
           $ref: '#/components/schemas/DeliveryInput'
           description: richiesto se mode è "delivery", vietato altrimenti
-        status:
-          type: string
-          description: >
-            accettato dalla validazione ma senza alcun effetto: un ordine
-            appena creato parte sempre da "ordered"
-          enum: [ordered, preparing, ready, on_delivery, delivered]
 
     UpdateOrderStatusRequest:
       type: object
@@ -1702,7 +1694,7 @@ components:
           type: string
           enum: [ordered, preparing, ready, on_delivery, delivered]
 
-    AddDraftItemRequest:
+    AddCartItemRequest:
       type: object
       required: [restaurantId, dishId, quantity]
       properties:
@@ -1710,13 +1702,13 @@ components:
         dishId: { $ref: '#/components/schemas/ObjectId' }
         quantity: { type: number, exclusiveMinimum: 0 }
 
-    UpdateDraftItemRequest:
+    UpdateCartItemRequest:
       type: object
       required: [quantity]
       properties:
         quantity: { type: number, exclusiveMinimum: 0 }
 
-    ConfirmDraftRequest:
+    ConfirmCartRequest:
       type: object
       required: [mode]
       properties:
