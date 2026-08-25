@@ -15,11 +15,11 @@ const {
 
 const router = express.Router();
 
-// Public routes
+// rotte pubbliche
 router.get('/', paginationMiddleware, getAllRestaurants);
 router.get('/:id', validateObjectId('id'), getRestaurantById);
 
-// Protected routes (require authentication)
+// rotte protette (richiedono autenticazione)
 router.post('/', authMiddleware, requireAdmin, validate(createRestaurantSchema), createRestaurant);
 router.put('/:id', authMiddleware, validateObjectId('id'), validate(updateRestaurantSchema), updateRestaurant);
 router.delete('/:id', authMiddleware, requireAdmin, validateObjectId('id'), deleteRestaurant);

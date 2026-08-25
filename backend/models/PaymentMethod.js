@@ -21,6 +21,10 @@ const paymentMethodSchema = new mongoose.Schema(
       type: String,
       trim: true, // ultime 4 cifre della carta o identificativo del metodo (non si memorizzano dati sensibili completi)
     },
+    isDefault: {
+      type: Boolean,
+      default: false, // true per il metodo di pagamento predefinito del cliente (uno solo alla volta)
+    },
   },
   {
     timestamps: true, // mongodb gestirà in automatico la data e ora di aggiunta/modifica del metodo

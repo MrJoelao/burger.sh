@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { ALLOWED_PREFERENCES } = require("../constants/preferences");
 
 const addressSchema = new mongoose.Schema(
   // entità dell'indirizzo
@@ -44,7 +45,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "approved"], // un manager deve essere "approvato" dall'admin
     },
-    preferences: [{ type: String, trim: true }],
+    preferences: [{ type: String, trim: true, enum: ALLOWED_PREFERENCES }],
   },
   {
     timestamps: true, // mongodb gestirà in automatico la data e ora di quando un utente verrà aggiunto/modificato

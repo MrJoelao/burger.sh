@@ -7,6 +7,7 @@ const Restaurant = require('../../models/Restaurant');
 const Dish = require('../../models/Dish');
 const Ingredient = require('../../models/Ingredient');
 const Order = require('../../models/Order');
+const PaymentMethod = require('../../models/PaymentMethod');
 const { hashPassword } = require('../../utils/password');
 const { signUser } = require('../../utils/jwt');
 
@@ -122,6 +123,26 @@ async function createOrder(overrides = {}) {
   return Order.create(orderData);
 }
 
+async function createPaymentMethod(overrides = {}) {
+  let { customerId } = overrides;
+
+  if (!customerId) {
+    const customer = await createUser();
+    customerId = customer._id;
+  }
+
+  const paymentMethodData = {
+    customerId,
+    type: 'card',
+    label: 'Carta principale',
+    details: '4242',
+    isDefault: false,
+    ...overrides
+  };
+
+  return PaymentMethod.create(paymentMethodData);
+}
+
 // genera il token jwt corrispondente a uno user già creato (o a un oggetto con _id e role)
 function tokenFor(user) {
   return signUser(user);
@@ -135,5 +156,6 @@ module.exports = {
   createIngredient,
   createDish,
   createOrder,
+  createPaymentMethod,
   tokenFor
 };

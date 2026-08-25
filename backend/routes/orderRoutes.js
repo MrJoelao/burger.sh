@@ -15,7 +15,7 @@ const {
 
 const router = express.Router();
 
-// Protected routes (all require authentication)
+// rotte protette (richiedono autenticazione)
 router.post('/', authMiddleware, validate(createOrderSchema), createOrder);
 router.get('/user', authMiddleware, getUserOrders);
 router.get('/restaurant/:restaurantId', authMiddleware, validateObjectId('restaurantId'), paginationMiddleware, getRestaurantOrders);
