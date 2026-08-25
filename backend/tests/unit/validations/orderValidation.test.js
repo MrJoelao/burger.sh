@@ -1,4 +1,4 @@
-const { createOrderSchema, updateOrderSchema } = require('@validations/orderValidation');
+const { createOrderSchema } = require('@validations/orderValidation');
 
 const validObjectId = '507f1f77bcf86cd799439011';
 
@@ -150,38 +150,4 @@ describe('orderValidation', () => {
     });
   });
 
-  describe('updateOrderSchema', () => {
-    test('valida un aggiornamento parziale senza mode', () => {
-      // arrange
-      const payload = { status: 'preparing' };
-
-      // act
-      const { error } = updateOrderSchema.validate(payload);
-
-      // assert
-      expect(error).toBeUndefined();
-    });
-
-    test('richiede delivery quando mode è delivery', () => {
-      // arrange
-      const payload = { mode: 'delivery' };
-
-      // act
-      const { error } = updateOrderSchema.validate(payload);
-
-      // assert
-      expect(error).toBeUndefined();
-    });
-
-    test('fallisce se delivery è presente ma mode non è delivery', () => {
-      // arrange
-      const payload = { mode: 'pickup', delivery: { address: 'via Roma 1' } };
-
-      // act
-      const { error } = updateOrderSchema.validate(payload);
-
-      // assert
-      expect(error).toBeDefined();
-    });
-  });
 });

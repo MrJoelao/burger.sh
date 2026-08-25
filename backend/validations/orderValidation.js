@@ -31,26 +31,10 @@ const createOrderSchema = Joi.object({
     })
 })
 
-const updateOrderSchema = Joi.object({
-  customerId: Joi.string().hex().length(24).optional(),
-  restaurantId: Joi.string().hex().length(24).optional(),
-  orderItems: Joi.array().items(orderItemSchema).min(1).optional(),
-  status: Joi.string()
-    .valid('ordered', 'preparing', 'ready', 'on_delivery', 'delivered')
-    .optional(),
-  mode: Joi.string().valid('pickup', 'delivery').optional(),
-  totalAmount: Joi.number().min(0).optional(),
-  orderCode: Joi.string().trim().optional(),
-  delivery: Joi.alternatives().conditional('mode', {
-    is: 'delivery',
-    then: deliverySchema.optional(),
-    otherwise: Joi.allow(null).forbidden()
-  })
-});
-
-/* PATCH /orders/:id/status accetta solo lo status: a differenza di
-   updateOrderSchema (troppo permissivo per questo endpoint, richiede solo
-   il campo davvero usato dal controller) */
+/* PATCH /orders/:id/status accetta solo lo status: un endpoint dedicato,
+   piuttosto che uno schema di update generico, perché è l'unico campo che
+   il controller usa davvero (nessuna rotta accetta un update libero di
+   un intero ordine) */
 const updateOrderStatusSchema = Joi.object({
   status: Joi.string()
     .valid('ordered', 'preparing', 'ready', 'on_delivery', 'delivered')
@@ -83,7 +67,6 @@ module.exports = {
   orderItemSchema,
   deliverySchema,
   createOrderSchema,
-  updateOrderSchema,
   updateOrderStatusSchema,
   addDraftItemSchema,
   updateDraftItemSchema,
