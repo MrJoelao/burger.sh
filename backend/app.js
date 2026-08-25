@@ -9,7 +9,6 @@ if (!process.env.JWT_SECRET) {
 
 var express = require('express');
 var helmet = require('helmet');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var rateLimit = require('express-rate-limit');
 var swaggerUi = require('swagger-ui-express');
@@ -27,7 +26,6 @@ app.use(helmet());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
 
 /* limita le richieste pubbliche (non autenticate) a 100 per ip ogni 15 minuti,
    come protezione di base contro abusi da parte di client non autenticati.
