@@ -1,4 +1,5 @@
 const { verifyToken } = require('../utils/jwt');
+const { jsonError } = require('../utils/httpResponses');
 const rateLimit = require('express-rate-limit');
 
 /**
@@ -58,10 +59,7 @@ function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      message: 'Missing token or invalid format'
-    });
+    return jsonError(res, 401, 'Missing token or invalid format');
   }
 
   const token = authHeader.slice(7);
@@ -78,10 +76,7 @@ function authMiddleware(req, res, next) {
       });
     });
   } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid or expired token'
-    });
+    return jsonError(res, 401, 'Invalid or expired token');
   }
 }
 

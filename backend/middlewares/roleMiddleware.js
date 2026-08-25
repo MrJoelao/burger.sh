@@ -7,7 +7,7 @@ const { handleAuth } = require('../utils/httpResponses');
 function requireRole(...roles) {
   return function (req, res, next) {
     if (!req.user || !roles.includes(req.user.role)) {
-      return handleAuth(res, unauthorized('Only admins can perform this operation'));
+      return handleAuth(res, unauthorized(`Only ${roles.join(' or ')} can perform this operation`));
     }
 
     return next();

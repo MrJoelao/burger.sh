@@ -3,6 +3,7 @@ const validate = require('../middlewares/validateRequest');
 const authMiddleware = require('../middlewares/authMiddleware');
 const { requireAdmin } = require('../middlewares/roleMiddleware');
 const paginationMiddleware = require('../middlewares/paginationMiddleware');
+const validateObjectId = require('../middlewares/validateObjectId');
 const { createRestaurantSchema, updateRestaurantSchema } = require('../validations/restaurantValidation');
 const {
   getAllRestaurants,
@@ -16,11 +17,11 @@ const router = express.Router();
 
 // Public routes
 router.get('/', paginationMiddleware, getAllRestaurants);
-router.get('/:id', getRestaurantById);
+router.get('/:id', validateObjectId('id'), getRestaurantById);
 
 // Protected routes (require authentication)
 router.post('/', authMiddleware, requireAdmin, validate(createRestaurantSchema), createRestaurant);
-router.put('/:id', authMiddleware, validate(updateRestaurantSchema), updateRestaurant);
-router.delete('/:id', authMiddleware, requireAdmin, deleteRestaurant);
+router.put('/:id', authMiddleware, validateObjectId('id'), validate(updateRestaurantSchema), updateRestaurant);
+router.delete('/:id', authMiddleware, requireAdmin, validateObjectId('id'), deleteRestaurant);
 
 module.exports = router;

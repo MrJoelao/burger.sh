@@ -1,7 +1,7 @@
 const Restaurant = require('../models/Restaurant');
 const User = require('../models/User');
 const { isAdmin, isOwner, unauthorized } = require('../utils/authorization');
-const { jsonOk, jsonError, paginate, handleAuth } = require('../utils/httpResponses');
+const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
 
 /* controller dei ristoranti: consultazione pubblica (lista e dettaglio) e
    gestione riservata a admin (creazione/eliminazione) e al manager
@@ -29,10 +29,7 @@ async function getAllRestaurants(req, res, next) {
       .limit(limit)
       .populate('managerId', 'name surname email');
 
-    return res.status(200).json({
-      success: true,
-      ...paginate(page, limit, total, restaurants)
-    });
+    return jsonPaginated(res, 200, page, limit, total, restaurants);
   } catch (err) {
     next(err);
   }
@@ -86,7 +83,13 @@ async function createRestaurant(req, res, next) {
 async function updateRestaurant(req, res, next) {
   try {
     const { id } = req.params;
-    const updates = req.validated;
+    const updates = { ...req.validated };
+
+    // managerId non è modificabile tramite questo endpoint: il trasferimento
+    // di un ristorante a un altro manager è un'operazione riservata all'admin
+    // e va fatta con un flusso dedicato, non con una update generica (evita
+    // che un manager proprietario ceda/rubi la propria filiale a chiunque)
+    delete updates.managerId;
 
     const restaurant = await Restaurant.findById(id);
     if (!restaurant) {
@@ -119,10 +122,7 @@ async function deleteRestaurant(req, res, next) {
       return jsonError(res, 404, 'Restaurant not found');
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Restaurant deleted successfully'
-    });
+    return jsonMessage(res, 200, 'Restaurant deleted successfully');
   } catch (err) {
     next(err);
   }

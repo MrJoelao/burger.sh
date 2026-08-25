@@ -2,7 +2,7 @@ const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
 const Dish = require('../models/Dish');
 const { applyPasswordUpdate } = require('../utils/password');
-const { jsonOk, jsonError, badRequest } = require('../utils/httpResponses');
+const { jsonOk, jsonError, jsonMessage, badRequest } = require('../utils/httpResponses');
 
 /* controller del profilo utente: ogni utente autenticato (customer, manager
    o admin) può consultare, modificare ed eliminare i propri dati tramite
@@ -83,10 +83,7 @@ async function deleteMe(req, res, next) {
 
     await User.findByIdAndDelete(user._id);
 
-    return res.status(200).json({
-      success: true,
-      message: 'Account deleted successfully'
-    });
+    return jsonMessage(res, 200, 'Account deleted successfully');
   } catch (err) {
     next(err);
   }
