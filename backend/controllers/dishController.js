@@ -52,11 +52,14 @@ async function findDish(id) {
 }
 
 /* popola un piatto con gli ingredienti e i dati essenziali del ristorante,
-   così la risposta contiene già tutto ciò che serve al client */
+   così la risposta contiene già tutto ciò che serve al client. i populate
+   multipli vanno passati in un unico array, perché concatenare più chiamate
+   .populate() non è supportato dalla versione di mongoose in uso */
 async function populateDish(dish) {
-  return dish
-    .populate('ingredientIds', 'name allergens')
-    .populate('restaurantId', 'name city');
+  return dish.populate([
+    { path: 'ingredientIds', select: 'name allergens' },
+    { path: 'restaurantId', select: 'name city' }
+  ]);
 }
 
 /* esegue la query paginata dei piatti in base al filtro passato, condivisa
