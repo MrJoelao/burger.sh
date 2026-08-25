@@ -11,12 +11,26 @@ const {
   tokenFor
 } = require('../../helpers/factories');
 const Order = require('../../../models/Order');
+const osmService = require('../../../services/osmService');
+
+/* mocka osmService: nessun test di integrazione deve contattare davvero
+   Nominatim. restituisce coordinate leggermente diverse a ogni chiamata così
+   il calcolo della distanza per gli ordini a domicilio non è mai 0 */
+jest.mock('../../../services/osmService');
 
 // test di integrazione delle rotte degli ordini
 
 beforeAll(dbHandler.connect);
 afterEach(dbHandler.clearDatabase);
 afterAll(dbHandler.closeDatabase);
+
+beforeEach(() => {
+  let callCount = 0;
+  osmService.geocodeAddress.mockImplementation(async () => {
+    callCount += 1;
+    return { lat: 45.0 + callCount * 0.01, lng: 9.0 + callCount * 0.01 };
+  });
+});
 
 describe('POST /api/orders', () => {
   test('crea l\'ordine usando req.user.id come customerId', async () => {
@@ -116,6 +130,55 @@ describe('POST /api/orders', () => {
     const savedOrder = await Order.findOne({ customerId: customer._id });
     expect(savedOrder.totalAmount).toBe(17);
     expect(savedOrder.orderItems[0].unitPrice).toBe(8.5);
+  });
+
+  test('calcola distanceKm e deliveryFee lato server, ignorando un deliveryFee manomesso a 0 dal client', async () => {
+    const customer = await createUser();
+    const restaurant = await createRestaurant();
+    const dish = await createDish({ price: 8.5 });
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
+      .send({
+        restaurantId: restaurant._id.toString(),
+        orderItems: [{ dishId: dish._id.toString(), quantity: 1, unitPrice: 8.5 }],
+        mode: 'delivery',
+        totalAmount: 8.5,
+        // il cliente prova a dichiarare una consegna gratuita: il campo non è nemmeno accettato dallo schema
+        delivery: { address: 'Via Milano 5', distanceKm: 0, deliveryFee: 0 }
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.delivery.address).toBe('Via Milano 5');
+    expect(response.body.data.delivery.deliveryFee).toBeGreaterThan(0);
+    expect(response.body.data.delivery.distanceKm).toBeGreaterThan(0);
+  });
+
+  test('rifiuta con 422 un ordine a domicilio con indirizzo non geocodificabile', async () => {
+    const customer = await createUser();
+    const restaurant = await createRestaurant();
+    const dish = await createDish({ price: 8.5 });
+
+    osmService.geocodeAddress.mockRejectedValueOnce(
+      Object.assign(new Error('Address not found'), { statusCode: 422 })
+    );
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
+      .send({
+        restaurantId: restaurant._id.toString(),
+        orderItems: [{ dishId: dish._id.toString(), quantity: 1, unitPrice: 8.5 }],
+        mode: 'delivery',
+        totalAmount: 8.5,
+        delivery: { address: 'indirizzo inesistente' }
+      });
+
+    expect(response.status).toBe(422);
+
+    const savedOrder = await Order.findOne({ customerId: customer._id });
+    expect(savedOrder).toBeNull();
   });
 });
 

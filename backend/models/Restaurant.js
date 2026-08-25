@@ -33,6 +33,23 @@ const restaurantSchema = new mongoose.Schema(
       ref: "User",
       required: true, // riferimento al manager proprietario della filiale
     },
+    location: {
+      /* coordinate geocodificate da address/city tramite le API di
+         OpenStreetMap (vedi deliveryService.ensureRestaurantLocation):
+         calcolate al bisogno, alla prima richiesta di consegna per questa
+         filiale, e riusate per tutte le successive senza richiamare il
+         servizio esterno */
+      lat: {
+        type: Number,
+        min: -90,
+        max: 90,
+      },
+      lng: {
+        type: Number,
+        min: -180,
+        max: 180,
+      },
+    },
   },
   {
     timestamps: true, // mongodb gestirà in automatico la data e ora di creazione/modifica

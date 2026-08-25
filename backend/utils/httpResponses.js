@@ -55,18 +55,21 @@ function jsonPaginated(res, statusCode, page, limit, total, data) {
   });
 }
 
+// crea un errore con lo statusCode indicato, da lanciare e far gestire all'error handler globale
+function httpError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
 // crea un errore con statusCode 404, da lanciare e far gestire all'error handler globale
 function notFound(message) {
-  const error = new Error(message);
-  error.statusCode = 404;
-  return error;
+  return httpError(404, message);
 }
 
 // crea un errore con statusCode 400, da lanciare e far gestire all'error handler globale
 function badRequest(message) {
-  const error = new Error(message);
-  error.statusCode = 400;
-  return error;
+  return httpError(400, message);
 }
 
 module.exports = {
@@ -76,6 +79,7 @@ module.exports = {
   handleAuth,
   jsonMessage,
   jsonPaginated,
+  httpError,
   notFound,
   badRequest
 };

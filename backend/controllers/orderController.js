@@ -21,7 +21,7 @@ async function createOrder(req, res, next) {
       return jsonError(res, 400, 'Restaurant not found');
     }
 
-    const result = await orderService.createOrder({ customerId, restaurantId, orderItems, mode, delivery });
+    const result = await orderService.createOrder({ customerId, restaurant, orderItems, mode, delivery });
     if (result.error) {
       return jsonError(res, 400, result.error);
     }

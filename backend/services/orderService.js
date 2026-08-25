@@ -1,8 +1,10 @@
 const Order = require('../models/Order');
 const Dish = require('../models/Dish');
+const Restaurant = require('../models/Restaurant');
 const generateOrderCode = require('../utils/generateOrderCode');
 const { isAdmin, isOwner, unauthorized } = require('../utils/authorization');
 const { countsByKey } = require('../utils/aggregation');
+const deliveryService = require('./deliveryService');
 
 /* logica di dominio degli ordini: creazione, autorizzazioni e avanzamento di
    stato (ordered -> preparing -> ready/on_delivery -> delivered). il
@@ -192,17 +194,20 @@ async function resolveDraftItems(items, restaurantId) {
    totalAmount dal prezzo reale del piatto (stessa logica di resolveDraftItems,
    usata dal carrello), così un eventuale unitPrice/totalAmount inviato dal
    client viene ignorato e non può essere manomesso per pagare meno del dovuto.
-   il chiamante deve aver già verificato che il ristorante esista. ritorna
-   { order } in caso di successo, oppure { error } con il messaggio da mostrare */
-async function createOrder({ customerId, restaurantId, orderItems, mode, delivery }) {
-  const resolved = await resolveDraftItems(orderItems, restaurantId);
+   il chiamante deve aver già verificato che il ristorante esista e passare il
+   documento completo (non solo l'id): serve a deliveryService per calcolare
+   distanceKm/deliveryFee dall'indirizzo del cliente, ignorando allo stesso
+   modo eventuali valori inviati dal client. ritorna { order } in caso di
+   successo, oppure { error } con il messaggio da mostrare */
+async function createOrder({ customerId, restaurant, orderItems, mode, delivery }) {
+  const resolved = await resolveDraftItems(orderItems, restaurant._id);
   if (resolved.error) {
     return { error: resolved.error };
   }
 
   const orderData = {
     customerId,
-    restaurantId,
+    restaurantId: restaurant._id,
     orderItems: resolved.orderItems,
     status: 'ordered',
     mode,
@@ -210,9 +215,9 @@ async function createOrder({ customerId, restaurantId, orderItems, mode, deliver
     orderCode: generateOrderCode()
   };
 
-  // aggiungi delivery solo se mode è domicilio
   if (mode === 'delivery' && delivery) {
-    orderData.delivery = delivery;
+    const { distanceKm, deliveryFee } = await deliveryService.calculateDelivery(restaurant, delivery.address);
+    orderData.delivery = { address: delivery.address, distanceKm, deliveryFee };
   }
 
   const order = await Order.create(orderData);
@@ -362,8 +367,10 @@ async function discardDraft(customerId) {
 
 /* conferma il carrello in bozza: richiede mode (e delivery se a domicilio),
    dati non ancora noti finché il cliente non completa l'ordine, e rifiuta un
-   carrello senza righe. da qui in poi l'ordine segue la state machine normale
-   (isValidStatusTransition), a partire da "ordered" */
+   carrello senza righe. per mode "delivery" ricalcola sempre distanceKm e
+   deliveryFee dall'indirizzo tramite deliveryService, ignorando eventuali
+   valori inviati dal client. da qui in poi l'ordine segue la state machine
+   normale (isValidStatusTransition), a partire da "ordered" */
 async function confirmDraft(customerId, { mode, delivery }) {
   const draft = await findActiveDraft(customerId);
   if (!draft) {
@@ -376,7 +383,15 @@ async function confirmDraft(customerId, { mode, delivery }) {
 
   draft.mode = mode;
   draft.status = 'ordered';
-  draft.delivery = mode === 'delivery' && delivery ? delivery : null;
+
+  if (mode === 'delivery' && delivery) {
+    const restaurant = await Restaurant.findById(draft.restaurantId);
+    const { distanceKm, deliveryFee } = await deliveryService.calculateDelivery(restaurant, delivery.address);
+    draft.delivery = { address: delivery.address, distanceKm, deliveryFee };
+  } else {
+    draft.delivery = null;
+  }
+
   await draft.save();
 
   return { order: await populateOrderDetails(draft) };

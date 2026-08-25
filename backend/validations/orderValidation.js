@@ -6,10 +6,11 @@ const orderItemSchema = Joi.object({
   unitPrice: Joi.number().min(0).required()
 });
 
+/* distanceKm e deliveryFee non sono accettati dal client: sono sempre
+   ricalcolati lato server da deliveryService a partire dall'indirizzo,
+   sullo stesso principio già usato per unitPrice/totalAmount degli ordini */
 const deliverySchema = Joi.object({
-  address: Joi.string().min(2).trim().required(),
-  distanceKm: Joi.number().min(0).optional(),
-  deliveryFee: Joi.number().min(0).optional()
+  address: Joi.string().min(2).trim().required()
 })
 
 /* customerId e orderCode non compaiono qui: il controller li calcola sempre
