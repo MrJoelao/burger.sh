@@ -1,5 +1,7 @@
 const validate = (schema) => (req, res, next) => {
-  const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
+  // req.body può restare undefined se la richiesta non ha un body (es. content-type
+  // assente), quindi va normalizzato prima di validarlo
+  const { error, value } = schema.validate(req.body || {}, { abortEarly: false, stripUnknown: true });
   if (error) {
     return res.status(400).json({ errors: error.details.map(d => d.message) });
   }
