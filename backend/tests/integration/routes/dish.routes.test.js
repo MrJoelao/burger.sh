@@ -7,6 +7,7 @@ const {
   createAdmin,
   createRestaurant,
   createDish,
+  createIngredient,
   tokenFor
 } = require('../../helpers/factories');
 const Dish = require('../../../models/Dish');
@@ -42,6 +43,72 @@ describe('GET /api/dishes', () => {
     expect(response.body.data).toHaveLength(1);
     expect(response.body.pagination.page).toBe(2);
     expect(response.body.pagination.totalPages).toBe(2);
+  });
+
+  test('filtra per nome con match parziale case-insensitive', async () => {
+    await createDish({ name: 'Cheeseburger' });
+    await createDish({ name: 'Patatine' });
+
+    const response = await request(app).get('/api/dishes?name=cheese');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].name).toBe('Cheeseburger');
+  });
+
+  test('filtra per tipologia con match parziale case-insensitive', async () => {
+    await createDish({ type: 'burger' });
+    await createDish({ type: 'drink' });
+
+    const response = await request(app).get('/api/dishes?type=BUR');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].type).toBe('burger');
+  });
+
+  test('filtra per fascia di prezzo con minPrice e maxPrice', async () => {
+    await createDish({ price: 3 });
+    await createDish({ price: 8 });
+    await createDish({ price: 15 });
+
+    const response = await request(app).get('/api/dishes?minPrice=5&maxPrice=10');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].price).toBe(8);
+  });
+
+  test('rifiuta con 400 un minPrice non numerico', async () => {
+    const response = await request(app).get('/api/dishes?minPrice=abc');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('filtra per ingrediente con match parziale case-insensitive', async () => {
+    const lattuga = await createIngredient({ name: 'Lattuga' });
+    const pomodoro = await createIngredient({ name: 'Pomodoro' });
+    await createDish({ name: 'Con lattuga', ingredientIds: [lattuga._id] });
+    await createDish({ name: 'Con pomodoro', ingredientIds: [pomodoro._id] });
+
+    const response = await request(app).get('/api/dishes?ingredient=lattu');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].name).toBe('Con lattuga');
+  });
+
+  test('esclude i piatti con un ingrediente che contiene l\'allergene cercato', async () => {
+    const glutine = await createIngredient({ name: 'Farina', allergens: ['glutine'] });
+    const senzaAllergeni = await createIngredient({ name: 'Insalata', allergens: [] });
+    await createDish({ name: 'Panino', ingredientIds: [glutine._id] });
+    await createDish({ name: 'Insalatona', ingredientIds: [senzaAllergeni._id] });
+
+    const response = await request(app).get('/api/dishes?allergen=glutine');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].name).toBe('Insalatona');
   });
 });
 

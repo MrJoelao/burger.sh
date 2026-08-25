@@ -6,6 +6,7 @@ const {
   createManager,
   createAdmin,
   createRestaurant,
+  createDish,
   tokenFor
 } = require('../../helpers/factories');
 
@@ -25,6 +26,72 @@ describe('GET /api/restaurants', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(2);
+  });
+
+  test('filtra per nome con match parziale case-insensitive', async () => {
+    await createRestaurant({ name: 'Burger House' });
+    await createRestaurant({ name: 'Pizzeria Napoli' });
+
+    const response = await request(app).get('/api/restaurants?name=burger');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].name).toBe('Burger House');
+  });
+
+  test('filtra per città con match parziale case-insensitive', async () => {
+    await createRestaurant({ city: 'Milano' });
+    await createRestaurant({ city: 'Torino' });
+
+    const response = await request(app).get('/api/restaurants?city=mila');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].city).toBe('Milano');
+  });
+
+  test('filtra per ristorante che offre un piatto custom con quel nome', async () => {
+    const restaurant = await createRestaurant();
+    const otherRestaurant = await createRestaurant();
+    await createDish({ name: 'Panino Speciale', isCustom: true, restaurantId: restaurant._id });
+    await createDish({ name: 'Insalatona', isCustom: true, restaurantId: otherRestaurant._id });
+
+    const response = await request(app).get('/api/restaurants?dishName=speciale');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]._id).toBe(restaurant._id.toString());
+  });
+
+  test('un piatto del menu comune con quel nome rende tutti i ristoranti idonei', async () => {
+    await createRestaurant();
+    await createRestaurant();
+    await createDish({ name: 'Cheeseburger', isCustom: false });
+
+    const response = await request(app).get('/api/restaurants?dishName=cheeseburger');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+  });
+
+  test('restituisce una lista vuota se nessun piatto corrisponde al nome cercato', async () => {
+    await createRestaurant();
+
+    const response = await request(app).get('/api/restaurants?dishName=inesistente');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(0);
+  });
+
+  test('combina i filtri di nome e città', async () => {
+    await createRestaurant({ name: 'Burger House', city: 'Milano' });
+    await createRestaurant({ name: 'Burger House', city: 'Torino' });
+
+    const response = await request(app).get('/api/restaurants?name=burger&city=torino');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].city).toBe('Torino');
   });
 });
 
