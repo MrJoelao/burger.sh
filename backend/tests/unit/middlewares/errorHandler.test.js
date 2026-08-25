@@ -28,7 +28,7 @@ describe('errorHandler middleware', () => {
     expect(res.status).toHaveBeenCalledWith(418);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
-      error: { status: 418, message: 'errore custom' }
+      message: 'errore custom'
     });
   });
 
@@ -44,7 +44,7 @@ describe('errorHandler middleware', () => {
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
-      error: { status: 404, message: 'non trovato' }
+      message: 'non trovato'
     });
   });
 
@@ -59,7 +59,7 @@ describe('errorHandler middleware', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
-      error: { status: 500, message: 'errore inatteso' }
+      message: 'errore inatteso'
     });
   });
 
@@ -73,7 +73,7 @@ describe('errorHandler middleware', () => {
     // assert
     expect(res.json).toHaveBeenCalledWith({
       success: false,
-      error: { status: 500, message: 'Internal Server Error' }
+      message: 'Internal Server Error'
     });
   });
 });
