@@ -1,5 +1,6 @@
 const PaymentMethod = require('../models/PaymentMethod');
-const { jsonOk, jsonMessage, notFound } = require('../utils/httpResponses');
+const { jsonOk, jsonMessage } = require('../utils/httpResponses');
+const { findOrThrow } = require('../utils/authorization');
 
 /* CRUD dei metodi di pagamento del cliente autenticato: ogni operazione è
    ristretta a req.user.id, così un cliente non può leggere o modificare i
@@ -16,18 +17,6 @@ async function clearOtherDefaults(customerId, excludeId) {
   );
 }
 
-/* recupera un metodo di pagamento per id, verificando che appartenga al
-   cliente autenticato, oppure lancia un errore 404 */
-async function findOwnPaymentMethod(id, customerId) {
-  const paymentMethod = await PaymentMethod.findOne({ _id: id, customerId });
-
-  if (!paymentMethod) {
-    throw notFound('Payment method not found');
-  }
-
-  return paymentMethod;
-}
-
 // get tutti i metodi di pagamento del cliente autenticato
 async function getMyPaymentMethods(req, res, next) {
   try {
@@ -42,7 +31,10 @@ async function getMyPaymentMethods(req, res, next) {
 // get un metodo di pagamento specifico del cliente autenticato
 async function getPaymentMethodById(req, res, next) {
   try {
-    const paymentMethod = await findOwnPaymentMethod(req.params.id, req.user.id);
+    const paymentMethod = await findOrThrow(
+      PaymentMethod.findOne({ _id: req.params.id, customerId: req.user.id }),
+      'Payment method not found'
+    );
 
     return jsonOk(res, 200, paymentMethod);
   } catch (err) {
@@ -79,10 +71,13 @@ async function updatePaymentMethod(req, res, next) {
     const { id } = req.params;
     const updates = req.validated;
 
-    await findOwnPaymentMethod(id, req.user.id);
+    await findOrThrow(
+      PaymentMethod.findOne({ _id: id, customerId: req.user.id }),
+      'Payment method not found'
+    );
 
     const updatedPaymentMethod = await PaymentMethod.findByIdAndUpdate(id, updates, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true
     });
 
@@ -99,7 +94,10 @@ async function updatePaymentMethod(req, res, next) {
 // delete metodo di pagamento del cliente autenticato
 async function deletePaymentMethod(req, res, next) {
   try {
-    const paymentMethod = await findOwnPaymentMethod(req.params.id, req.user.id);
+    const paymentMethod = await findOrThrow(
+      PaymentMethod.findOne({ _id: req.params.id, customerId: req.user.id }),
+      'Payment method not found'
+    );
 
     await PaymentMethod.findByIdAndDelete(paymentMethod._id);
 

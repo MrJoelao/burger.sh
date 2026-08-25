@@ -6,7 +6,8 @@ const {
   isAdmin,
   isManager,
   isOwner,
-  unauthorized
+  unauthorized,
+  findOrThrow
 } = require('../utils/authorization');
 const { jsonOk, jsonMessage, jsonPaginated, handleAuth, notFound, badRequest } = require('../utils/httpResponses');
 const { containsFilter, parseOptionalNonNegativeNumber, combineFilters } = require('../utils/searchFilters');
@@ -39,18 +40,6 @@ function canManageDish(req, dish) {
   }
 
   return unauthorized();
-}
-
-/* recupera un piatto per id, con il ristorante popolato (serve per i
-   controlli di autorizzazione), oppure lancia un errore 404 */
-async function findDish(id) {
-  const dish = await Dish.findById(id).populate('restaurantId');
-
-  if (!dish) {
-    throw notFound('Dish not found');
-  }
-
-  return dish;
 }
 
 /* popola un piatto con gli ingredienti e i dati essenziali del ristorante,
@@ -174,7 +163,7 @@ async function getDishesByRestaurant(req, res, next) {
 // get piatto per id
 async function getDishById(req, res, next) {
   try {
-    const dish = await findDish(req.params.id);
+    const dish = await findOrThrow(Dish.findById(req.params.id).populate('restaurantId'), 'Dish not found');
     const populatedDish = await populateDish(dish);
 
     return jsonOk(res, 200, populatedDish);
@@ -246,7 +235,7 @@ async function updateDish(req, res, next) {
     const { id } = req.params;
     const updates = { ...req.validated };
 
-    const dish = await findDish(id);
+    const dish = await findOrThrow(Dish.findById(id).populate('restaurantId'), 'Dish not found');
 
     const authCheck = canManageDish(req, dish);
 
@@ -262,7 +251,7 @@ async function updateDish(req, res, next) {
       id,
       updates,
       {
-        new: true,
+        returnDocument: 'after',
         runValidators: true
       }
     );
@@ -278,7 +267,7 @@ async function updateDish(req, res, next) {
 // delete piatto
 async function deleteDish(req, res, next) {
   try {
-    const dish = await findDish(req.params.id);
+    const dish = await findOrThrow(Dish.findById(req.params.id).populate('restaurantId'), 'Dish not found');
 
     const authCheck = canManageDish(req, dish);
 
