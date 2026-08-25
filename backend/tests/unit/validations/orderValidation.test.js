@@ -18,8 +18,7 @@ describe('orderValidation', () => {
       const payload = {
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
-        mode: 'pickup',
-        totalAmount: 10
+        mode: 'pickup'
       };
 
       // act
@@ -34,8 +33,7 @@ describe('orderValidation', () => {
       const payload = {
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
-        mode: 'delivery',
-        totalAmount: 10
+        mode: 'delivery'
       };
 
       // act
@@ -52,7 +50,6 @@ describe('orderValidation', () => {
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'delivery',
-        totalAmount: 10,
         delivery: { address: 'via Roma 1' }
       };
 
@@ -69,7 +66,6 @@ describe('orderValidation', () => {
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'pickup',
-        totalAmount: 10,
         delivery: { address: 'via Roma 1' }
       };
 
@@ -85,8 +81,7 @@ describe('orderValidation', () => {
       const payload = {
         restaurantId: validObjectId,
         orderItems: [],
-        mode: 'pickup',
-        totalAmount: 10
+        mode: 'pickup'
       };
 
       // act
@@ -100,8 +95,7 @@ describe('orderValidation', () => {
       // arrange
       const payload = {
         orderItems: [buildOrderItem()],
-        mode: 'pickup',
-        totalAmount: 10
+        mode: 'pickup'
       };
 
       // act
@@ -120,7 +114,6 @@ describe('orderValidation', () => {
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'pickup',
-        totalAmount: 10,
         orderCode: 'FF-ABC123'
       };
 
@@ -132,13 +125,13 @@ describe('orderValidation', () => {
       expect(error.details.every(detail => ['customerId', 'orderCode'].includes(detail.path[0]))).toBe(true);
     });
 
-    test('fallisce se status non è tra i valori ammessi', () => {
+    test('rifiuta totalAmount e status come campi sconosciuti (ricalcolati sempre lato server)', () => {
       // arrange
       const payload = {
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'pickup',
-        status: 'cancelled',
+        status: 'ordered',
         totalAmount: 10
       };
 
@@ -147,6 +140,7 @@ describe('orderValidation', () => {
 
       // assert
       expect(error).toBeDefined();
+      expect(error.details.every(detail => ['status', 'totalAmount'].includes(detail.path[0]))).toBe(true);
     });
   });
 
