@@ -14,7 +14,21 @@ async function comparePassword(plainPassword, hashedPassword) {
   return isMatch;
 }
 
+/* prende un oggetto di aggiornamenti (es. req.validated) e, se contiene una
+   password in chiaro, la sostituisce con il relativo passwordHash. usata da
+   userController.updateMe e adminController.updateUser, così l'utente e
+   l'admin aggiornano la password nello stesso identico modo. */
+async function applyPasswordUpdate(updates) {
+  if (!updates.password) {
+    return updates;
+  }
+
+  const { password, ...rest } = updates;
+  return { ...rest, passwordHash: await hashPassword(password) };
+}
+
 module.exports = {
   hashPassword,
   comparePassword,
+  applyPasswordUpdate,
 };

@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { addressSchema } = require('./common');
 
 const registerSchema = Joi.object({
   name: Joi.string().min(2).required(),
@@ -6,11 +7,7 @@ const registerSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
   role: Joi.string().valid('customer', 'manager', 'admin').required(),
-  address: Joi.object({
-    street: Joi.string().optional().allow(''),
-    city: Joi.string().optional().allow(''),
-    zip: Joi.string().optional().allow('')
-  }).optional(),
+  address: addressSchema.optional(),
   preferences: Joi.array().items(Joi.string()).optional()
 });
 
@@ -19,12 +16,14 @@ const updateProfileSchema = Joi.object({
   surname: Joi.string().min(2).optional(),
   email: Joi.string().email().optional(),
   password: Joi.string().min(6).optional(),
-  address: Joi.object({
-    street: Joi.string().optional().allow(''),
-    city: Joi.string().optional().allow(''),
-    zip: Joi.string().optional().allow('')
-  }).optional(),
+  address: addressSchema.optional(),
   preferences: Joi.array().items(Joi.string()).optional()
 });
 
-module.exports = {registerSchema, updateProfileSchema};
+// usato per eliminare il proprio account: se chi si elimina è un manager proprietario
+// di una filiale, newManagerId permette di trasferirla invece di chiuderla
+const deleteAccountSchema = Joi.object({
+  newManagerId: Joi.string().hex().length(24).optional()
+});
+
+module.exports = {registerSchema, updateProfileSchema, deleteAccountSchema};
