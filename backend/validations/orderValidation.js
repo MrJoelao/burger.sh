@@ -12,9 +12,9 @@ const deliverySchema = Joi.object({
   deliveryFee: Joi.number().min(0).optional()
 })
 
-// customerId e orderCode non compaiono qui: il controller li calcola sempre
-// lato server (req.user.id e generateOrderCode()), quindi non vanno richiesti
-// né accettati nel payload
+/* customerId e orderCode non compaiono qui: il controller li calcola sempre
+   lato server (req.user.id e generateOrderCode()), quindi non vanno richiesti
+   né accettati nel payload */
 const createOrderSchema = Joi.object({
   restaurantId: Joi.string().hex().length(24).required(),
   orderItems: Joi.array().items(orderItemSchema).min(1).required(),
@@ -47,17 +47,17 @@ const updateOrderSchema = Joi.object({
   })
 });
 
-// PATCH /orders/:id/status accetta solo lo status: a differenza di
-// updateOrderSchema (troppo permissivo per questo endpoint, richiede solo
-// il campo davvero usato dal controller)
+/* PATCH /orders/:id/status accetta solo lo status: a differenza di
+   updateOrderSchema (troppo permissivo per questo endpoint, richiede solo
+   il campo davvero usato dal controller) */
 const updateOrderStatusSchema = Joi.object({
   status: Joi.string()
     .valid('ordered', 'preparing', 'ready', 'on_delivery', 'delivered')
     .required()
 });
 
-// carrello in bozza (data-model.md §5): il client indica solo dishId e
-// quantity, mai un prezzo, che il server calcola sempre dal Dish reale
+/* carrello in bozza (data-model.md §5): il client indica solo dishId e
+   quantity, mai un prezzo, che il server calcola sempre dal Dish reale */
 const addDraftItemSchema = Joi.object({
   restaurantId: Joi.string().hex().length(24).required(),
   dishId: Joi.string().hex().length(24).required(),

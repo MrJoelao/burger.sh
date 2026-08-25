@@ -9,7 +9,7 @@ module.exports = {
   clearMocks: true,
   resetMocks: false,
   restoreMocks: false,
-  // Mappa esplicita dei moduli - risolve dalla root
+  // mappa esplicita dei moduli - risolve dalla root
   moduleNameMapper: {
     '^@utils/(.*)$': '<rootDir>/utils/$1',
     '^@middlewares/(.*)$': '<rootDir>/middlewares/$1',

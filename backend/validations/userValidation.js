@@ -5,9 +5,9 @@ const { ALLOWED_PREFERENCES } = require('../constants/preferences');
 // elenco chiuso: solo i valori definiti in constants/preferences.js sono ammessi
 const preferencesSchema = Joi.array().items(Joi.string().valid(...ALLOWED_PREFERENCES)).optional();
 
-// 'admin' non è tra i ruoli ammessi in autoregistrazione: un utente non deve
-// potersi promuovere admin da solo, quel ruolo si assegna solo manualmente
-// tramite adminController (stessa regola già applicata in authValidation.js)
+/* 'admin' non è tra i ruoli ammessi in autoregistrazione: un utente non deve
+   potersi promuovere admin da solo, quel ruolo si assegna solo manualmente
+   tramite adminController (stessa regola già applicata in authValidation.js) */
 const registerSchema = Joi.object({
   name: Joi.string().min(2).required(),
   surname: Joi.string().min(2).required(),
@@ -27,8 +27,8 @@ const updateProfileSchema = Joi.object({
   preferences: preferencesSchema
 });
 
-// usato per eliminare il proprio account: se chi si elimina è un manager proprietario
-// di una filiale, newManagerId permette di trasferirla invece di chiuderla
+/* usato per eliminare il proprio account: se chi si elimina è un manager proprietario
+   di una filiale, newManagerId permette di trasferirla invece di chiuderla */
 const deleteAccountSchema = Joi.object({
   newManagerId: Joi.string().hex().length(24).optional()
 });

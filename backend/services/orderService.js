@@ -12,13 +12,13 @@ const { countsByKey } = require('../utils/aggregation');
 // numero di piatti più venduti mostrati nella dashboard del manager
 const TOP_DISHES_LIMIT = 5;
 
-// unico stato che segna un ordine come concluso: usato sia per calcolare gli
-// incassi della dashboard sia per distinguere, nella lista ordini del
-// cliente, quelli "in corso" da quelli "passati"
+/* unico stato che segna un ordine come concluso: usato sia per calcolare gli
+   incassi della dashboard sia per distinguere, nella lista ordini del
+   cliente, quelli "in corso" da quelli "passati" */
 const COMPLETED_STATUS = 'delivered';
 
-// stato del carrello prima della conferma dell'ordine (data-model.md §5):
-// stessa collezione orders, nessuna tabella separata per il carrello
+/* stato del carrello prima della conferma dell'ordine (data-model.md §5):
+   stessa collezione orders, nessuna tabella separata per il carrello */
 const DRAFT_STATUS = 'draft';
 
 /* sequenza di stati ammessi per ogni modalità: il ritiro salta lo stato
@@ -135,9 +135,9 @@ async function findDishesById(dishIds) {
   return new Map(dishes.map(dish => [dish._id.toString(), dish]));
 }
 
-// prima riga d'ordine che fa riferimento a un piatto inesistente o non ordinabile
-// nel ristorante scelto, o null se sono tutte valide. condivisa tra la validazione
-// semplice (validateOrderDishes) e quella del carrello in bozza (resolveDraftItems)
+/* prima riga d'ordine che fa riferimento a un piatto inesistente o non ordinabile
+   nel ristorante scelto, o null se sono tutte valide. condivisa tra la validazione
+   semplice (validateOrderDishes) e quella del carrello in bozza (resolveDraftItems) */
 function findInvalidDishError(dishIds, dishById, restaurantId) {
   for (const dishId of dishIds) {
     const dish = dishById.get(dishId.toString());
@@ -224,8 +224,8 @@ function findActiveDraft(customerId) {
   return Order.findOne({ customerId, status: DRAFT_STATUS });
 }
 
-// aggiunge la riga (dishId, quantity) alla lista esistente, sommando la
-// quantity se il piatto è già nel carrello invece di duplicare la riga
+/* aggiunge la riga (dishId, quantity) alla lista esistente, sommando la
+   quantity se il piatto è già nel carrello invece di duplicare la riga */
 function mergeOrderItem(items, { dishId, quantity }) {
   const index = items.findIndex(item => isOwner(item.dishId, dishId));
   if (index === -1) {
@@ -416,8 +416,8 @@ async function listUserOrders(customerId, { statusFilter, skip, limit }) {
   return { total, orders };
 }
 
-// ordini di una filiale, paginati (solo manager proprietario o admin). i
-// carrelli in bozza dei clienti non sono ancora ordini reali e restano esclusi
+/* ordini di una filiale, paginati (solo manager proprietario o admin). i
+   carrelli in bozza dei clienti non sono ancora ordini reali e restano esclusi */
 async function listRestaurantOrders(restaurantId, { skip, limit }) {
   const filter = { restaurantId, status: { $ne: DRAFT_STATUS } };
 

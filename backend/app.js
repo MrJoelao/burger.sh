@@ -11,8 +11,8 @@ var errorHandler = require('./middlewares/errorHandler');
 
 var app = express();
 
-// imposta gli header http di sicurezza di base (X-Content-Type-Options,
-// Strict-Transport-Security, niente X-Powered-By, ecc.), mancanti finora
+/* imposta gli header http di sicurezza di base (X-Content-Type-Options,
+   Strict-Transport-Security, niente X-Powered-By, ecc.), mancanti finora */
 app.use(helmet());
 app.use(logger('dev'));
 app.use(express.json());

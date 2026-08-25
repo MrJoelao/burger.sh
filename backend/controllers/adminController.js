@@ -108,9 +108,9 @@ async function deleteUser(req, res, next) {
 // get statistiche aggregate della piattaforma (utenti, filiali, ordini)
 async function getStats(req, res, next) {
   try {
-    // i carrelli in bozza (status "draft") non sono ordini effettivi: vanno
-    // esclusi come già avviene in tutte le query di orderService, altrimenti
-    // il totale e il breakdown per stato risultano gonfiati
+    /* i carrelli in bozza (status "draft") non sono ordini effettivi: vanno
+       esclusi come già avviene in tutte le query di orderService, altrimenti
+       il totale e il breakdown per stato risultano gonfiati */
     const confirmedOrdersFilter = { status: { $ne: 'draft' } };
 
     const [usersByRole, restaurantsTotal, ordersByStatus, ordersTotal] = await Promise.all([

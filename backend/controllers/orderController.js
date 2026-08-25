@@ -11,8 +11,8 @@ const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('.
 // create ordine
 async function createOrder(req, res, next) {
   try {
-    // unitPrice e totalAmount inviati dal client vengono ignorati: il service
-    // li ricalcola sempre dal prezzo reale del piatto (vedi orderService.createOrder)
+    /* unitPrice e totalAmount inviati dal client vengono ignorati: il service
+       li ricalcola sempre dal prezzo reale del piatto (vedi orderService.createOrder) */
     const { restaurantId, orderItems, mode, delivery } = req.validated;
     const customerId = req.user.id;
 

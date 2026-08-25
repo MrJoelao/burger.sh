@@ -18,11 +18,11 @@ function createRoleRateLimiter(role, max) {
   });
 }
 
-// Admin: 10k req/min (controllo globale, accesso critico)
+// admin: 10k req/min (controllo globale, accesso critico)
 const adminRateLimiter = createRoleRateLimiter('admin', 10000);
-// Manager: 1k req/min (gestione ristorante, operazioni moderate)
+// manager: 1k req/min (gestione ristorante, operazioni moderate)
 const managerRateLimiter = createRoleRateLimiter('manager', 1000);
-// Customer: 500 req/min (operazioni semplici, protezione anti-DoS)
+// customer: 500 req/min (operazioni semplici, protezione anti-DoS)
 const customerRateLimiter = createRoleRateLimiter('customer', 500);
 
 /* rate limiter applicato quando l'header Authorization è presente ma il
@@ -41,18 +41,18 @@ const invalidTokenRateLimiter = rateLimit({
 });
 
 /**
- * Middleware di autenticazione + rate limiting per utenti autenticati
+ * middleware di autenticazione + rate limiting per utenti autenticati
  * 
- * Flusso:
- * 1. Verifica che il token JWT sia valido
- * 2. Estrae dati utente dal token
- * 3. Applica rate limiter basato sul ruolo dell'utente
- * 4. Passa al prossimo middleware
+ * flusso:
+ * 1. verifica che il token JWT sia valido
+ * 2. estrae dati utente dal token
+ * 3. applica rate limiter basato sul ruolo dell'utente
+ * 4. passa al prossimo middleware
  * 
- * Rate limit per ruolo:
- *   - Admin: 10k req/min (controllo globale, accesso critico)
- *   - Manager: 1k req/min (gestione ristorante, operazioni moderate)
- *   - Customer: 500 req/min (operazioni semplici, protezione anti-DoS)
+ * rate limit per ruolo:
+ *   - admin: 10k req/min (controllo globale, accesso critico)
+ *   - manager: 1k req/min (gestione ristorante, operazioni moderate)
+ *   - customer: 500 req/min (operazioni semplici, protezione anti-DoS)
  */
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -66,9 +66,9 @@ function authMiddleware(req, res, next) {
   try {
     req.user = verifyToken(token);
     
-    // NUOVO: Applica rate limiting basato sul ruolo
-    // Ogni ruolo ha un limiter dedicato che controlla se deve essere applicato
-    // Il limiter per il ruolo dell'utente lo processerà, gli altri lo skipperanno
+    /* nuovo: applica rate limiting basato sul ruolo.
+       ogni ruolo ha un limiter dedicato che controlla se deve essere applicato.
+       il limiter per il ruolo dell'utente lo processerà, gli altri lo skipperanno */
     adminRateLimiter(req, res, () => {
       managerRateLimiter(req, res, () => {
         customerRateLimiter(req, res, next);

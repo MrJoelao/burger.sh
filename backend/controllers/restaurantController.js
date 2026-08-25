@@ -27,8 +27,8 @@ async function restaurantIdsOfferingDish(dishName) {
   return matchingDishes.filter((dish) => dish.isCustom).map((dish) => dish.restaurantId);
 }
 
-// costruisce il filtro Mongoose per GET /api/restaurants a partire dai
-// parametri di ricerca opzionali name, city e dishName
+/* costruisce il filtro Mongoose per GET /api/restaurants a partire dai
+   parametri di ricerca opzionali name, city e dishName */
 async function buildRestaurantSearchFilter({ name, city, dishName }) {
   const conditions = [];
 
@@ -133,10 +133,10 @@ async function updateRestaurant(req, res, next) {
     const { id } = req.params;
     const updates = { ...req.validated };
 
-    // managerId non è modificabile tramite questo endpoint: il trasferimento
-    // di un ristorante a un altro manager è un'operazione riservata all'admin
-    // e va fatta con un flusso dedicato, non con una update generica (evita
-    // che un manager proprietario ceda/rubi la propria filiale a chiunque)
+    /* managerId non è modificabile tramite questo endpoint: il trasferimento
+       di un ristorante a un altro manager è un'operazione riservata all'admin
+       e va fatta con un flusso dedicato, non con una update generica (evita
+       che un manager proprietario ceda/rubi la propria filiale a chiunque) */
     delete updates.managerId;
 
     const restaurant = await Restaurant.findById(id);

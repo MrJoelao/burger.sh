@@ -32,8 +32,8 @@ const router = express.Router();
 // rotte protette (richiedono autenticazione)
 router.post('/', authMiddleware, validate(createOrderSchema), createOrder);
 
-// carrello in bozza (data-model.md §5): registrate prima di GET /:id, altrimenti
-// "draft" verrebbe interpretato come id ordine dalla rotta generica sottostante
+/* carrello in bozza (data-model.md §5): registrate prima di GET /:id, altrimenti
+   "draft" verrebbe interpretato come id ordine dalla rotta generica sottostante */
 router.get('/draft', authMiddleware, getDraft);
 router.post('/draft/items', authMiddleware, validate(addDraftItemSchema), addDraftItem);
 router.patch('/draft/items/:dishId', authMiddleware, validateObjectId('dishId'), validate(updateDraftItemSchema), updateDraftItem);
