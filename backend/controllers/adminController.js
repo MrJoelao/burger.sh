@@ -2,7 +2,7 @@ const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
 const Order = require('../models/Order');
 const { applyPasswordUpdate } = require('../utils/password');
-const { jsonOk, jsonError, paginate } = require('../utils/httpResponses');
+const { jsonOk, jsonError, jsonMessage, jsonPaginated } = require('../utils/httpResponses');
 const { reassignOrCloseManagerRestaurants } = require('./userController');
 
 /* controller di amministrazione: gestione degli utenti della piattaforma
@@ -27,10 +27,7 @@ async function getAllUsers(req, res, next) {
       User.find(filter).select('-passwordHash').skip(skip).limit(limit)
     ]);
 
-    return res.status(200).json({
-      success: true,
-      ...paginate(page, limit, total, users)
-    });
+    return jsonPaginated(res, 200, page, limit, total, users);
   } catch (err) {
     next(err);
   }
@@ -86,10 +83,7 @@ async function deleteUser(req, res, next) {
 
     await User.findByIdAndDelete(user._id);
 
-    return res.status(200).json({
-      success: true,
-      message: 'User deleted successfully'
-    });
+    return jsonMessage(res, 200, 'User deleted successfully');
   } catch (err) {
     next(err);
   }
