@@ -1,0 +1,1850 @@
+openapi: 3.0.3
+info:
+  title: burger.sh API
+  description: >
+    API REST del backend di burger.sh (progetto universitario, corso di
+    Programmazione Web e Mobile, Università degli Studi di Milano). Gestisce
+    utenti, ristoranti, piatti, ordini e metodi di pagamento per una catena di
+    fast food con più filiali. Vedi `docs/ita/requirements.md`,
+    `docs/ita/data-model.md` e `docs/ita/architecture-and-flows.md` per il
+    contesto di dominio completo.
+  version: "0.1.0"
+  contact:
+    name: burger.sh
+    url: https://github.com/MrJoelao/burger.sh
+servers:
+  - url: /api
+    description: server corrente (path relativo, stesso host della UI di Swagger)
+
+tags:
+  - name: Auth
+    description: registrazione e login
+  - name: Restaurants
+    description: filiali della catena
+  - name: Dishes
+    description: piatti del menu comune e piatti custom di una filiale
+  - name: Orders
+    description: carrello in bozza, ordini e dashboard di una filiale
+  - name: Users
+    description: profilo dell'utente autenticato
+  - name: PaymentMethods
+    description: metodi di pagamento del cliente autenticato
+  - name: Admin
+    description: gestione utenti e statistiche, riservata al ruolo admin
+  - name: Health
+    description: stato del servizio
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: verifica che l'API risponda
+      security: []
+      responses:
+        '200':
+          description: il servizio è attivo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: API working correctly
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: registra un nuovo cliente o manager
+      description: >
+        Crea un account con ruolo `customer` o `manager`. Un manager appena
+        registrato ha `managerStatus: pending` e resta bloccato dalle
+        operazioni di gestione finché un admin non lo approva (vedi
+        `PATCH /admin/users/{id}`). Il ruolo `admin` non è ottenibile tramite
+        questo endpoint: si assegna solo manualmente.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              customer:
+                summary: registrazione di un cliente
+                value:
+                  name: Mario
+                  surname: Rossi
+                  email: mario.rossi@example.com
+                  password: password123
+                  role: customer
+                  address:
+                    street: Via Roma 1
+                    city: Milano
+                    zip: '20100'
+                  preferences: [vegetariano, consegna_rapida]
+              manager:
+                summary: registrazione di un manager (resta pending)
+                value:
+                  name: Luca
+                  surname: Bianchi
+                  email: luca.bianchi@example.com
+                  password: password123
+                  role: manager
+      responses:
+        '201':
+          description: account creato, token restituito subito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: email già in uso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Email already in use
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: autentica un utente esistente
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              default:
+                value:
+                  email: mario.rossi@example.com
+                  password: password123
+      responses:
+        '200':
+          description: credenziali valide, token restituito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: >
+            email o password errate. Il messaggio non distingue i due casi,
+            per non rivelare quali email sono registrate (user enumeration).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Invalid credentials
+
+  /restaurants:
+    get:
+      tags: [Restaurants]
+      summary: elenca le filiali
+      description: >
+        Endpoint pubblico, con paginazione e filtri di ricerca opzionali.
+        `dishName` filtra per filiali che offrono un piatto il cui nome
+        contiene il testo cercato: se il piatto trovato è del menu comune
+        (non custom), il filtro non restringe nulla, perché ogni filiale lo
+        offre.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: name
+          in: query
+          description: match parziale, case-insensitive, sul nome della filiale
+          schema: { type: string }
+        - name: city
+          in: query
+          description: match parziale, case-insensitive, sulla città
+          schema: { type: string }
+        - name: dishName
+          in: query
+          description: match parziale sul nome di un piatto offerto dalla filiale
+          schema: { type: string }
+      responses:
+        '200':
+          description: elenco paginato delle filiali
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantListEnvelope'
+    post:
+      tags: [Restaurants]
+      summary: crea una nuova filiale
+      description: riservato all'admin. Il manager indicato deve esistere e avere `role: manager`.
+      responses:
+        '201':
+          description: filiale creata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantEnvelope'
+        '400':
+          description: dati non validi, oppure `managerId` non appartiene a un manager
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRestaurantRequest'
+            examples:
+              default:
+                value:
+                  name: Burger House Duomo
+                  address: Piazza Duomo 1
+                  city: Milano
+                  phone: '+39021234567'
+                  vatNumber: IT12345678901
+                  managerId: 64b7a0f9a1234567890abcd0
+
+  /restaurants/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ObjectIdParam'
+    get:
+      tags: [Restaurants]
+      summary: dettaglio di una filiale
+      security: []
+      responses:
+        '200':
+          description: filiale trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantEnvelope'
+        '400':
+          description: id non è un ObjectId Mongo valido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Restaurants]
+      summary: modifica una filiale
+      description: >
+        Riservato all'admin o al manager proprietario della filiale (con
+        `managerStatus: approved`). `managerId`, se presente nel body, viene
+        accettato dalla validazione ma **ignorato**: il trasferimento di una
+        filiale a un altro manager passa solo da `DELETE /restaurants/{id}`
+        con `newManagerId`, mai da un update generico.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRestaurantRequest'
+      responses:
+        '200':
+          description: filiale aggiornata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Restaurants]
+      summary: chiude o trasferisce una filiale
+      description: >
+        Riservato all'admin o al manager proprietario. Senza `newManagerId`
+        nel body, la filiale viene chiusa insieme ai suoi piatti custom. Con
+        `newManagerId`, viene trasferita a quel manager (che deve esistere,
+        avere `role: manager` e `managerStatus: approved`).
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountRequest'
+      responses:
+        '200':
+          description: filiale chiusa o trasferita
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageEnvelope' }
+              example:
+                success: true
+                message: Restaurant deleted successfully
+        '400':
+          description: dati non validi, oppure `newManagerId` non appartiene a un manager approvato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dishes:
+    get:
+      tags: [Dishes]
+      summary: elenca i piatti
+      description: >
+        Endpoint pubblico, con paginazione e filtri di ricerca opzionali.
+        `allergen` esclude i piatti che hanno tra i loro ingredienti un
+        allergene corrispondente al testo cercato.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: name
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          description: 'tipologia del piatto (es. "burger", "drink", "side")'
+          schema: { type: string }
+        - name: minPrice
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: maxPrice
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: ingredient
+          in: query
+          description: match parziale sul nome di un ingrediente contenuto nel piatto
+          schema: { type: string }
+        - name: allergen
+          in: query
+          description: esclude i piatti che contengono questo allergene
+          schema: { type: string }
+      responses:
+        '200':
+          description: elenco paginato dei piatti
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishListEnvelope'
+        '400':
+          description: minPrice/maxPrice non numerici o negativi
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      tags: [Dishes]
+      summary: crea un piatto
+      description: >
+        Un admin può creare sia piatti del menu comune (`isCustom: false`,
+        `restaurantId` assente) sia piatti custom di una filiale qualsiasi. Un
+        manager approvato può creare solo piatti custom (`isCustom: true`)
+        per la propria filiale.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDishRequest'
+            examples:
+              menuComune:
+                summary: piatto del menu comune (solo admin)
+                value:
+                  name: Cheeseburger
+                  type: burger
+                  price: 6.5
+                  ingredientIds: ['64b7a0f9a1234567890abc1']
+              custom:
+                summary: piatto custom di una filiale (admin o manager proprietario)
+                value:
+                  name: Burger speciale del Duomo
+                  type: burger
+                  price: 8.9
+                  isCustom: true
+                  restaurantId: 64b7a0f9a1234567890abcd0
+      responses:
+        '201':
+          description: piatto creato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /dishes/restaurant/{restaurantId}:
+    get:
+      tags: [Dishes]
+      summary: elenca i piatti ordinabili in una filiale
+      description: piatti del menu comune più gli eventuali piatti custom di quella filiale.
+      security: []
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: elenco paginato dei piatti della filiale
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishListEnvelope'
+        '400':
+          description: restaurantId non è un ObjectId Mongo valido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /dishes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ObjectIdParam'
+    get:
+      tags: [Dishes]
+      summary: dettaglio di un piatto
+      security: []
+      responses:
+        '200':
+          description: piatto trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishEnvelope'
+        '400':
+          description: id non è un ObjectId Mongo valido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Dishes]
+      summary: modifica un piatto
+      description: >
+        Riservato all'admin (qualsiasi piatto) o al manager proprietario
+        della filiale, solo per i piatti custom di quella filiale: i piatti
+        del menu comune non sono modificabili da un manager.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDishRequest'
+      responses:
+        '200':
+          description: piatto aggiornato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Dishes]
+      summary: elimina un piatto
+      description: stessa regola di autorizzazione di `PUT /dishes/{id}`.
+      responses:
+        '200':
+          description: piatto eliminato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageEnvelope' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders:
+    post:
+      tags: [Orders]
+      summary: crea un ordine diretto (senza passare dal carrello in bozza)
+      description: >
+        `unitPrice` e `totalAmount` inviati dal client vengono ricalcolati
+        sempre lato server dal prezzo reale del piatto: valori manomessi non
+        vengono usati. Per `mode: delivery`, il costo di consegna viene
+        calcolato dal server tramite `deliveryService` a partire da
+        `delivery.address` (nessun campo `distanceKm`/`deliveryFee` accettato
+        dal client). Se la distanza supera 15km, l'ordine è rifiutato con 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            examples:
+              ritiro:
+                summary: ordine con ritiro in sede
+                value:
+                  restaurantId: 64b7a0f9a1234567890abcd0
+                  mode: pickup
+                  totalAmount: 0
+                  orderItems:
+                    - dishId: 64b7a0f9a1234567890abc1
+                      quantity: 2
+                      unitPrice: 0
+              domicilio:
+                summary: ordine a domicilio
+                value:
+                  restaurantId: 64b7a0f9a1234567890abcd0
+                  mode: delivery
+                  totalAmount: 0
+                  orderItems:
+                    - dishId: 64b7a0f9a1234567890abc1
+                      quantity: 1
+                      unitPrice: 0
+                  delivery:
+                    address: Via Torino 5, Milano
+      responses:
+        '201':
+          description: ordine creato, stato iniziale "ordered"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '400':
+          description: dati non validi, filiale inesistente o piatto non nel menu della filiale
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          description: indirizzo di consegna non geocodificabile o oltre la distanza massima servita
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '502':
+          description: il servizio di geocodifica (OpenStreetMap) non risponde
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /orders/draft:
+    get:
+      tags: [Orders]
+      summary: legge il carrello in bozza del cliente autenticato
+      responses:
+        '200':
+          description: carrello trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: nessun carrello in bozza attivo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                success: false
+                message: No draft order found
+    delete:
+      tags: [Orders]
+      summary: elimina il carrello in bozza
+      responses:
+        '200':
+          description: carrello eliminato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageEnvelope' }
+              example:
+                success: true
+                message: Draft order discarded
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: nessun carrello in bozza attivo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /orders/draft/items:
+    post:
+      tags: [Orders]
+      summary: aggiunge un piatto al carrello in bozza
+      description: >
+        Crea il carrello se non esiste ancora. Se il piatto è già presente,
+        le quantità si sommano. Un cliente può avere un solo carrello attivo
+        alla volta: aggiungere un piatto di una filiale diversa da quella del
+        carrello corrente restituisce 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddDraftItemRequest'
+            examples:
+              default:
+                value:
+                  restaurantId: 64b7a0f9a1234567890abcd0
+                  dishId: 64b7a0f9a1234567890abc1
+                  quantity: 2
+      responses:
+        '200':
+          description: piatto aggiunto (o quantità aggiornata)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '400':
+          description: dishId non appartiene al menu della filiale indicata
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: esiste già un carrello attivo per un'altra filiale
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                success: false
+                message: You already have a draft order for another restaurant
+
+  /orders/draft/items/{dishId}:
+    parameters:
+      - name: dishId
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/ObjectId' }
+    patch:
+      tags: [Orders]
+      summary: cambia la quantità di un piatto nel carrello in bozza
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDraftItemRequest'
+      responses:
+        '200':
+          description: quantità aggiornata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: nessun carrello in bozza attivo, o il piatto non è nel carrello
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    delete:
+      tags: [Orders]
+      summary: rimuove un piatto dal carrello in bozza
+      responses:
+        '200':
+          description: piatto rimosso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: nessun carrello in bozza attivo, o il piatto non è nel carrello
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /orders/draft/confirm:
+    post:
+      tags: [Orders]
+      summary: conferma il carrello in bozza e lo trasforma in un ordine vero e proprio
+      description: >
+        `mode` e l'eventuale `delivery.address` si indicano solo qui, non
+        durante la costruzione del carrello. Un carrello senza righe non può
+        essere confermato. Da qui in poi l'ordine parte dallo stato
+        `ordered` e segue la state machine descritta in
+        `architecture-and-flows.md`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmDraftRequest'
+            examples:
+              ritiro:
+                value: { mode: pickup }
+              domicilio:
+                value:
+                  mode: delivery
+                  delivery:
+                    address: Via Torino 5, Milano
+      responses:
+        '200':
+          description: carrello confermato, ora è un ordine con stato "ordered"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '400':
+          description: dati non validi, o carrello senza righe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: nessun carrello in bozza attivo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: indirizzo di consegna non geocodificabile o oltre la distanza massima servita
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /orders/user:
+    get:
+      tags: [Orders]
+      summary: elenca gli ordini del cliente autenticato
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          description: >
+            `past` restituisce solo gli ordini consegnati, `current` quelli
+            ancora in corso. Senza filtro restituisce tutti gli ordini
+            effettivi (il carrello in bozza non è mai incluso).
+          schema: { type: string, enum: [past, current] }
+      responses:
+        '200':
+          description: elenco paginato degli ordini del cliente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /orders/restaurant/{restaurantId}:
+    get:
+      tags: [Orders]
+      summary: elenca gli ordini di una filiale
+      description: riservato al manager proprietario (approvato) o all'admin.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: elenco paginato degli ordini della filiale
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/restaurant/{restaurantId}/dashboard:
+    get:
+      tags: [Orders]
+      summary: statistiche di una filiale (ordini per stato, incassi, piatti più venduti)
+      description: riservato al manager proprietario (approvato) o all'admin.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema: { $ref: '#/components/schemas/ObjectId' }
+      responses:
+        '200':
+          description: dashboard della filiale
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantDashboardEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: dettaglio di un ordine
+      description: visibile al cliente proprietario, al manager della filiale (approvato) o all'admin.
+      parameters:
+        - $ref: '#/components/parameters/ObjectIdParam'
+      responses:
+        '200':
+          description: ordine trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/{id}/status:
+    patch:
+      tags: [Orders]
+      summary: avanza lo stato di un ordine
+      description: >
+        Riservato al manager della filiale (approvato) o all'admin. La
+        transizione deve rispettare la sequenza ammessa per la modalità
+        dell'ordine: `ordered → preparing → ready → delivered` per il
+        ritiro, `ordered → preparing → on_delivery → delivered` per la
+        consegna a domicilio. Saltare uno stato o tornare indietro
+        restituisce 400.
+      parameters:
+        - $ref: '#/components/parameters/ObjectIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderStatusRequest'
+      responses:
+        '200':
+          description: stato aggiornato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '400':
+          description: dati non validi, o transizione di stato non ammessa
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/{id}/confirm-delivery:
+    patch:
+      tags: [Orders]
+      summary: il cliente conferma la ricezione di un ordine a domicilio
+      description: >
+        Solo il cliente proprietario può confermarla. L'ordine deve essere
+        a domicilio (`mode: delivery`) e nello stato `on_delivery`; in caso
+        contrario restituisce 400.
+      parameters:
+        - $ref: '#/components/parameters/ObjectIdParam'
+      responses:
+        '200':
+          description: ordine confermato come consegnato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+        '400':
+          description: ordine non a domicilio, o non ancora nello stato "on_delivery"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: legge il proprio profilo
+      responses:
+        '200':
+          description: profilo dell'utente autenticato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      tags: [Users]
+      summary: modifica il proprio profilo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: profilo aggiornato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags: [Users]
+      summary: elimina il proprio account
+      description: >
+        Se l'utente è un manager proprietario di una o più filiali, queste
+        vengono trasferite a `newManagerId` (se fornito) o chiuse insieme ai
+        loro piatti custom.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountRequest'
+      responses:
+        '200':
+          description: account eliminato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageEnvelope' }
+              example:
+                success: true
+                message: Account deleted successfully
+        '400':
+          description: newManagerId non appartiene a un manager approvato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/payment-methods:
+    get:
+      tags: [PaymentMethods]
+      summary: elenca i metodi di pagamento del cliente autenticato
+      responses:
+        '200':
+          description: elenco dei metodi di pagamento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [PaymentMethods]
+      summary: aggiunge un metodo di pagamento
+      description: >
+        `details` è richiesto solo per `type: card` ed è limitato alle
+        ultime 4 cifre della carta: il backend non memorizza mai un numero di
+        carta completo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentMethodRequest'
+            examples:
+              carta:
+                value: { type: card, label: Carta principale, details: '1234', isDefault: true }
+              contanti:
+                value: { type: cash, label: Contanti alla consegna }
+      responses:
+        '201':
+          description: metodo di pagamento creato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /users/me/payment-methods/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ObjectIdParam'
+    get:
+      tags: [PaymentMethods]
+      summary: dettaglio di un metodo di pagamento
+      responses:
+        '200':
+          description: metodo di pagamento trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [PaymentMethods]
+      summary: modifica un metodo di pagamento
+      description: '`type` non è modificabile dopo la creazione.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentMethodRequest'
+      responses:
+        '200':
+          description: metodo di pagamento aggiornato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodEnvelope'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [PaymentMethods]
+      summary: elimina un metodo di pagamento
+      responses:
+        '200':
+          description: metodo di pagamento eliminato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageEnvelope' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: elenca gli utenti della piattaforma
+      description: riservato all'admin.
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: role
+          in: query
+          schema: { type: string, enum: [customer, manager, admin] }
+        - name: managerStatus
+          in: query
+          description: valido solo insieme a `role=manager`
+          schema: { type: string, enum: [pending, approved] }
+      responses:
+        '200':
+          description: elenco paginato degli utenti (senza `passwordHash`)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/users/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ObjectIdParam'
+    get:
+      tags: [Admin]
+      summary: dettaglio di un utente
+      responses:
+        '200':
+          description: utente trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Admin]
+      summary: modifica un utente, approva o rifiuta un manager
+      description: >
+        `managerStatus: approved` sblocca un manager pending. `managerStatus:
+        rejected` è transitorio: viene tradotto subito in un declassamento a
+        `role: customer` (l'utente non resta mai bloccato in uno stato
+        manager rifiutato). `managerStatus` è accettato solo per un utente
+        che è, o sta diventando, un manager: altrimenti la richiesta fallisce
+        con 400. Se l'update fa uscire un manager dal ruolo, la sua filiale
+        viene trasferita a `newManagerId` (se fornito) o chiusa.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+            examples:
+              approvaManager:
+                value: { managerStatus: approved }
+              rifiutaManager:
+                value: { managerStatus: rejected }
+              promuoviAdmin:
+                value: { role: admin }
+      responses:
+        '200':
+          description: utente aggiornato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '400':
+          description: dati non validi, o managerStatus impostato su un utente che non è un manager
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Admin]
+      summary: elimina un utente
+      description: >
+        Se l'utente è un manager proprietario di filiali, queste vengono
+        trasferite a `newManagerId` (se fornito) o chiuse.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountRequest'
+      responses:
+        '200':
+          description: utente eliminato
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MessageEnvelope' }
+              example:
+                success: true
+                message: User deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/stats:
+    get:
+      tags: [Admin]
+      summary: statistiche aggregate della piattaforma
+      description: >
+        Conteggio utenti per ruolo, totale filiali, e ordini effettivi
+        (il carrello in bozza è escluso) totali e per stato.
+      responses:
+        '200':
+          description: statistiche aggregate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatsEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Token ottenuto da `POST /auth/register` o `POST /auth/login`, valido
+        3 ore. Va inviato come `Authorization: Bearer <token>`.
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: numero di pagina, a partire da 1
+      schema: { type: integer, minimum: 1, default: 1 }
+    LimitParam:
+      name: limit
+      in: query
+      description: elementi per pagina, da 1 a 100
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    ObjectIdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ObjectId'
+
+  responses:
+    BadRequest:
+      description: payload non valido (dettagli nel messaggio)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: token mancante, malformato, scaduto o non valido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            success: false
+            message: Missing token or invalid format
+    Forbidden:
+      description: utente autenticato ma privo dei permessi richiesti
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            success: false
+            message: Not authorized to perform this operation
+    NotFound:
+      description: risorsa non trovata
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    ObjectId:
+      type: string
+      pattern: '^[0-9a-fA-F]{24}$'
+      example: 64b7a0f9a1234567890abcd0
+
+    Error:
+      type: object
+      description: >
+        Formato unico di errore per tutta l'API: sia gli errori restituiti
+        direttamente dai controller sia quelli lanciati e gestiti dal
+        middleware globale (`middlewares/errorHandler.js`) usano questa
+        stessa forma.
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string, example: Resource not found }
+      required: [success, message]
+
+    Address:
+      type: object
+      properties:
+        street: { type: string, example: Via Roma 1 }
+        city: { type: string, example: Milano }
+        zip: { type: string, example: '20100' }
+
+    Preference:
+      type: string
+      description: elenco chiuso, vedi `constants/preferences.js`
+      enum:
+        - vegetariano
+        - vegano
+        - senza_glutine
+        - piccante
+        - offerte_speciali
+        - consegna_rapida
+        - ritiro_in_sede
+
+    PaginationMeta:
+      type: object
+      properties:
+        page: { type: integer, example: 1 }
+        limit: { type: integer, example: 20 }
+        total: { type: integer, example: 42 }
+        totalPages: { type: integer, example: 3 }
+        hasNextPage: { type: boolean, example: true }
+        hasPrevPage: { type: boolean, example: false }
+
+    User:
+      type: object
+      properties:
+        _id: { $ref: '#/components/schemas/ObjectId' }
+        name: { type: string, example: Mario }
+        surname: { type: string, example: Rossi }
+        email: { type: string, format: email, example: mario.rossi@example.com }
+        role: { type: string, enum: [customer, manager, admin] }
+        address: { $ref: '#/components/schemas/Address' }
+        managerStatus:
+          type: string
+          description: presente solo per gli utenti con `role: manager`
+          enum: [pending, approved, rejected]
+        preferences:
+          type: array
+          items: { $ref: '#/components/schemas/Preference' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    AuthUser:
+      type: object
+      description: forma ridotta di User restituita da register/login
+      properties:
+        id: { $ref: '#/components/schemas/ObjectId' }
+        name: { type: string }
+        surname: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [customer, manager, admin] }
+        managerStatus:
+          type: string
+          description: assente per i ruoli che non lo prevedono, mai null
+          enum: [pending, approved, rejected]
+
+    ManagerRef:
+      type: object
+      description: manager proprietario, popolato con i soli campi essenziali
+      properties:
+        _id: { $ref: '#/components/schemas/ObjectId' }
+        name: { type: string }
+        surname: { type: string }
+        email: { type: string, format: email }
+
+    Restaurant:
+      type: object
+      properties:
+        _id: { $ref: '#/components/schemas/ObjectId' }
+        name: { type: string, example: Burger House Duomo }
+        address: { type: string, example: Piazza Duomo 1 }
+        city: { type: string, example: Milano }
+        phone: { type: string, example: '+39021234567' }
+        vatNumber: { type: string, example: IT12345678901 }
+        managerId:
+          oneOf:
+            - { $ref: '#/components/schemas/ObjectId' }
+            - { $ref: '#/components/schemas/ManagerRef' }
+        location:
+          type: object
+          nullable: true
+          description: >
+            coordinate geocodificate al bisogno alla prima richiesta di
+            consegna per questa filiale (vedi `deliveryService`), assenti finché
+            non richieste
+          properties:
+            lat: { type: number, example: 45.4642 }
+            lng: { type: number, example: 9.19 }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    Ingredient:
+      type: object
+      properties:
+        _id: { $ref: '#/components/schemas/ObjectId' }
+        name: { type: string, example: Formaggio cheddar }
+        allergens:
+          type: array
+          items: { type: string }
+          example: [lattosio]
+
+    DishRestaurantRef:
+      type: object
+      description: filiale proprietaria, popolata con i soli campi essenziali (solo per piatti custom)
+      properties:
+        _id: { $ref: '#/components/schemas/ObjectId' }
+        name: { type: string }
+        city: { type: string }
+
+    Dish:
+      type: object
+      properties:
+        _id: { $ref: '#/components/schemas/ObjectId' }
+        name: { type: string, example: Cheeseburger }
+        type: { type: string, example: burger }
+        price: { type: number, example: 6.5 }
+        photoUrl: { type: string, format: uri, nullable: true }
+        ingredientIds:
+          type: array
+          items:
+            oneOf:
+              - { $ref: '#/components/schemas/ObjectId' }
+              - { $ref: '#/components/schemas/Ingredient' }
+        isCustom: { type: boolean, default: false }
+        restaurantId:
+          nullable: true
+          description: 'null per i piatti del menu comune (`isCustom: false`)'
+          oneOf:
+            - { $ref: '#/components/schemas/ObjectId' }
+            - { $ref: '#/components/schemas/DishRestaurantRef' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    OrderItem:
+      type: object
+      properties:
+        dishId:
+          oneOf:
+            - { $ref: '#/components/schemas/ObjectId' }
+            - { $ref: '#/components/schemas/Dish' }
+        quantity: { type: integer, minimum: 1, example: 2 }
+        unitPrice:
+          type: number
+          minimum: 0
+          description: prezzo unitario al momento dell'acquisto (snapshot), calcolato sempre dal server
+          example: 6.5
+
+    Delivery:
+      type: object
+      properties:
+        address: { type: string, example: 'Via Torino 5, Milano' }
+        distanceKm:
+          type: number
+          description: distanza in linea d'aria dalla filiale, calcolata dal server
+          example: 3.2
+        deliveryFee:
+          type: number
+          description: 'tariffa a scaglioni calcolata dal server: 1.50€ fino a 2km, 2.50€ fino a 5km, 4€ fino a 10km, 6€ fino a 15km'
+          example: 2.5
+
+    Order:
+      type: object
+      properties:
+        _id: { $ref: '#/components/schemas/ObjectId' }
+        customerId:
+          oneOf:
+            - { $ref: '#/components/schemas/ObjectId' }
+            - { $ref: '#/components/schemas/ManagerRef' }
+        restaurantId:
+          oneOf:
+            - { $ref: '#/components/schemas/ObjectId' }
+            - { $ref: '#/components/schemas/DishRestaurantRef' }
+        orderItems:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+        status:
+          type: string
+          description: '"draft" rappresenta il carrello prima della conferma'
+          enum: [draft, ordered, preparing, ready, on_delivery, delivered]
+        mode:
+          type: string
+          nullable: true
+          description: assente finché il carrello resta in stato "draft"
+          enum: [pickup, delivery]
+        totalAmount: { type: number, minimum: 0, example: 13 }
+        orderCode: { type: string, example: FF-A1B2C3 }
+        delivery:
+          nullable: true
+          description: presente solo per ordini con `mode: delivery`
+          allOf:
+            - { $ref: '#/components/schemas/Delivery' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    PaymentMethod:
+      type: object
+      properties:
+        _id: { $ref: '#/components/schemas/ObjectId' }
+        customerId: { $ref: '#/components/schemas/ObjectId' }
+        type: { type: string, enum: [card, cash] }
+        label: { type: string, example: Carta principale }
+        details:
+          type: string
+          description: 'solo per `type: card`: ultime 4 cifre, mai il numero completo'
+          example: '1234'
+        isDefault: { type: boolean, default: false }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    TopDish:
+      type: object
+      properties:
+        dishId: { $ref: '#/components/schemas/ObjectId' }
+        name: { type: string, example: Cheeseburger }
+        quantitySold: { type: integer, example: 37 }
+
+    RestaurantDashboard:
+      type: object
+      properties:
+        ordersByStatus:
+          type: object
+          additionalProperties: { type: integer }
+          example: { ordered: 2, preparing: 1, delivered: 40 }
+        revenue:
+          type: number
+          description: somma di totalAmount degli ordini consegnati
+          example: 512.4
+        topDishes:
+          type: array
+          items: { $ref: '#/components/schemas/TopDish' }
+
+    Stats:
+      type: object
+      properties:
+        users:
+          type: object
+          properties:
+            total: { type: integer, example: 120 }
+            byRole:
+              type: object
+              additionalProperties: { type: integer }
+              example: { customer: 100, manager: 18, admin: 2 }
+        restaurants:
+          type: object
+          properties:
+            total: { type: integer, example: 6 }
+        orders:
+          type: object
+          properties:
+            total: { type: integer, example: 843 }
+            byStatus:
+              type: object
+              additionalProperties: { type: integer }
+              example: { ordered: 5, preparing: 3, ready: 1, on_delivery: 2, delivered: 832 }
+
+    # --- request bodies ---
+
+    RegisterRequest:
+      type: object
+      required: [name, surname, email, password, role]
+      properties:
+        name: { type: string, minLength: 2 }
+        surname: { type: string, minLength: 2 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6, format: password }
+        role:
+          type: string
+          description: '"admin" non è ottenibile tramite autoregistrazione'
+          enum: [customer, manager]
+        address: { $ref: '#/components/schemas/Address' }
+        preferences:
+          type: array
+          items: { $ref: '#/components/schemas/Preference' }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 2 }
+        surname: { type: string, minLength: 2 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6, format: password }
+        address: { $ref: '#/components/schemas/Address' }
+        preferences:
+          type: array
+          items: { $ref: '#/components/schemas/Preference' }
+
+    DeleteAccountRequest:
+      type: object
+      properties:
+        newManagerId:
+          $ref: '#/components/schemas/ObjectId'
+      description: >
+        se chi si elimina (o la filiale che si chiude) appartiene a un
+        manager, newManagerId permette di trasferirla invece di chiuderla
+
+    CreateRestaurantRequest:
+      type: object
+      required: [name, address, city, phone, vatNumber, managerId]
+      properties:
+        name: { type: string, minLength: 2 }
+        address: { type: string, minLength: 5 }
+        city: { type: string, minLength: 2 }
+        phone: { type: string, pattern: '^\+?[0-9\s\-()]+$' }
+        vatNumber: { type: string }
+        managerId: { $ref: '#/components/schemas/ObjectId' }
+
+    UpdateRestaurantRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 2 }
+        address: { type: string, minLength: 5 }
+        city: { type: string, minLength: 2 }
+        phone: { type: string, pattern: '^\+?[0-9\s\-()]+$' }
+        vatNumber: { type: string }
+        managerId:
+          $ref: '#/components/schemas/ObjectId'
+          description: accettato dalla validazione ma ignorato dal controller (vedi descrizione dell'endpoint)
+
+    CreateDishRequest:
+      type: object
+      required: [name, type, price]
+      properties:
+        name: { type: string, minLength: 2 }
+        type: { type: string, minLength: 2 }
+        price: { type: number, exclusiveMinimum: 0 }
+        photoUrl: { type: string, format: uri }
+        ingredientIds:
+          type: array
+          items: { $ref: '#/components/schemas/ObjectId' }
+        isCustom: { type: boolean, default: false }
+        restaurantId:
+          $ref: '#/components/schemas/ObjectId'
+          description: obbligatorio se isCustom è true, altrimenti assente
+
+    UpdateDishRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 2 }
+        type: { type: string, minLength: 2 }
+        price: { type: number, exclusiveMinimum: 0 }
+        photoUrl: { type: string, format: uri }
+        ingredientIds:
+          type: array
+          items: { $ref: '#/components/schemas/ObjectId' }
+        isCustom: { type: boolean }
+        restaurantId: { $ref: '#/components/schemas/ObjectId' }
+
+    CreatePaymentMethodRequest:
+      type: object
+      required: [type]
+      properties:
+        type: { type: string, enum: [card, cash] }
+        label: { type: string, minLength: 2 }
+        details:
+          type: string
+          pattern: '^\d{4}$'
+          description: 'richiesto se type è "card", vietato se type è "cash"'
+        isDefault: { type: boolean }
+
+    UpdatePaymentMethodRequest:
+      type: object
+      properties:
+        label: { type: string, minLength: 2 }
+        details:
+          type: string
+          pattern: '^\d{4}$'
+        isDefault: { type: boolean }
+
+    OrderItemInput:
+      type: object
+      required: [dishId, quantity, unitPrice]
+      properties:
+        dishId: { $ref: '#/components/schemas/ObjectId' }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        unitPrice:
+          type: number
+          minimum: 0
+          description: inviato dal client ma sempre ricalcolato e sovrascritto dal server
+
+    DeliveryInput:
+      type: object
+      required: [address]
+      properties:
+        address:
+          type: string
+          minLength: 2
+          description: unico campo accettato in ingresso per la consegna; distanza e costo sono sempre calcolati dal server
+
+    CreateOrderRequest:
+      type: object
+      required: [restaurantId, orderItems, mode, totalAmount]
+      properties:
+        restaurantId: { $ref: '#/components/schemas/ObjectId' }
+        orderItems:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/OrderItemInput' }
+        mode: { type: string, enum: [pickup, delivery] }
+        totalAmount:
+          type: number
+          minimum: 0
+          description: inviato dal client ma sempre ricalcolato e sovrascritto dal server
+        delivery:
+          $ref: '#/components/schemas/DeliveryInput'
+          description: richiesto se mode è "delivery", vietato altrimenti
+        status:
+          type: string
+          description: >
+            accettato dalla validazione ma senza alcun effetto: un ordine
+            appena creato parte sempre da "ordered"
+          enum: [ordered, preparing, ready, on_delivery, delivered]
+
+    UpdateOrderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ordered, preparing, ready, on_delivery, delivered]
+
+    AddDraftItemRequest:
+      type: object
+      required: [restaurantId, dishId, quantity]
+      properties:
+        restaurantId: { $ref: '#/components/schemas/ObjectId' }
+        dishId: { $ref: '#/components/schemas/ObjectId' }
+        quantity: { type: number, exclusiveMinimum: 0 }
+
+    UpdateDraftItemRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity: { type: number, exclusiveMinimum: 0 }
+
+    ConfirmDraftRequest:
+      type: object
+      required: [mode]
+      properties:
+        mode: { type: string, enum: [pickup, delivery] }
+        delivery:
+          $ref: '#/components/schemas/DeliveryInput'
+          description: richiesto se mode è "delivery", vietato altrimenti
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 2 }
+        surname: { type: string, minLength: 2 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 6, format: password }
+        role: { type: string, enum: [customer, manager, admin] }
+        managerStatus:
+          type: string
+          description: valido solo se l'utente è (o sta diventando) un manager
+          enum: [pending, approved, rejected]
+        newManagerId:
+          $ref: '#/components/schemas/ObjectId'
+          description: usato solo se l'update fa uscire un manager dal ruolo e possiede una filiale
+        address: { $ref: '#/components/schemas/Address' }
+        preferences:
+          type: array
+          items: { $ref: '#/components/schemas/Preference' }
+
+    # --- response envelopes: { success, data } o { success, data, pagination } ---
+
+    MessageEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        message: { type: string }
+
+    AuthResponseEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            token: { type: string, description: JWT valido 3 ore }
+            user: { $ref: '#/components/schemas/AuthUser' }
+
+    UserEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data: { $ref: '#/components/schemas/User' }
+
+    UserListEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/User' }
+        pagination: { $ref: '#/components/schemas/PaginationMeta' }
+
+    RestaurantEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data: { $ref: '#/components/schemas/Restaurant' }
+
+    RestaurantListEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Restaurant' }
+        pagination: { $ref: '#/components/schemas/PaginationMeta' }
+
+    RestaurantDashboardEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data: { $ref: '#/components/schemas/RestaurantDashboard' }
+
+    DishEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data: { $ref: '#/components/schemas/Dish' }
+
+    DishListEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Dish' }
+        pagination: { $ref: '#/components/schemas/PaginationMeta' }
+
+    OrderEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data: { $ref: '#/components/schemas/Order' }
+
+    OrderListEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Order' }
+        pagination: { $ref: '#/components/schemas/PaginationMeta' }
+
+    PaymentMethodEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data: { $ref: '#/components/schemas/PaymentMethod' }
+
+    PaymentMethodListEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/PaymentMethod' }
+
+    StatsEnvelope:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data: { $ref: '#/components/schemas/Stats' }

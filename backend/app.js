@@ -12,6 +12,9 @@ var helmet = require('helmet');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var rateLimit = require('express-rate-limit');
+var swaggerUi = require('swagger-ui-express');
+var YAML = require('yamljs');
+var path = require('path');
 
 var notFound = require('./middlewares/notFound');
 var errorHandler = require('./middlewares/errorHandler');
@@ -44,6 +47,14 @@ const publicLimiter = rateLimit({
 });
 
 app.use(publicLimiter);
+
+/* documentazione interattiva delle api, montata solo fuori produzione:
+   espone la forma esatta di ogni endpoint (inclusi quelli interni come
+   /api/admin/*), che non ha senso rendere pubblica su un deploy reale */
+if (process.env.NODE_ENV !== 'production') {
+  const openapiSpec = YAML.load(path.join(__dirname, 'swagger', 'openapi.yaml'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+}
 
 app.get('/api/health', function(req, res) {
   res.status(200).json({

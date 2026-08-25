@@ -28,3 +28,39 @@ describe('app - validazione JWT_SECRET', () => {
     expect(() => require('../../app')).not.toThrow();
   });
 });
+
+/* la documentazione swagger espone la forma esatta di ogni endpoint, inclusi
+   quelli interni come /api/admin/*: non ha senso renderla raggiungibile su
+   un deploy di produzione, che non è un'api pubblica */
+describe('app - documentazione swagger (/api-docs)', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+
+  beforeEach(() => {
+    jest.resetModules();
+    jest.doMock('dotenv', () => ({ config: jest.fn() }));
+  });
+
+  afterEach(() => {
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  test('monta /api-docs quando NODE_ENV non è "production"', async () => {
+    process.env.NODE_ENV = 'test';
+    const request = require('supertest');
+    const app = require('../../app');
+
+    const response = await request(app).get('/api-docs/');
+
+    expect(response.status).toBe(200);
+  });
+
+  test('non monta /api-docs quando NODE_ENV è "production"', async () => {
+    process.env.NODE_ENV = 'production';
+    const request = require('supertest');
+    const app = require('../../app');
+
+    const response = await request(app).get('/api-docs/');
+
+    expect(response.status).toBe(404);
+  });
+});
