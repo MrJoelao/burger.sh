@@ -21,7 +21,7 @@ const createOrderSchema = Joi.object({
   status: Joi.string()
       .valid('ordered', 'preparing', 'ready', 'on_delivery', 'delivered')
       .optional(),
-  mode: Joi.string().valid('pickup', 'delivery'),
+  mode: Joi.string().valid('pickup', 'delivery').required(),
   totalAmount: Joi.number().min(0).required(),
   delivery: Joi.alternatives().conditional('mode', {
       is: 'delivery',
@@ -45,6 +45,15 @@ const updateOrderSchema = Joi.object({
     then: deliverySchema.optional(),
     otherwise: Joi.allow(null).forbidden()
   })
+});
+
+// PATCH /orders/:id/status accetta solo lo status: a differenza di
+// updateOrderSchema (troppo permissivo per questo endpoint, richiede solo
+// il campo davvero usato dal controller)
+const updateOrderStatusSchema = Joi.object({
+  status: Joi.string()
+    .valid('ordered', 'preparing', 'ready', 'on_delivery', 'delivered')
+    .required()
 });
 
 // carrello in bozza (data-model.md §5): il client indica solo dishId e
@@ -74,6 +83,7 @@ module.exports = {
   deliverySchema,
   createOrderSchema,
   updateOrderSchema,
+  updateOrderStatusSchema,
   addDraftItemSchema,
   updateDraftItemSchema,
   confirmDraftSchema

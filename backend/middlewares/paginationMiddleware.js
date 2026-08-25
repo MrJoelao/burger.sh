@@ -30,8 +30,12 @@ function validatePaginationParams(page, limit) {
  *   const { page, limit, skip } = req.pagination;
  */
 function paginationMiddleware(req, res, next) {
-  const page = parseInt(req.query.page) || DEFAULT_PAGE;
-  const limit = parseInt(req.query.limit) || DEFAULT_LIMIT;
+  // niente "|| DEFAULT": con l'or, page=0 o limit=0 verrebbero silenziosamente
+  // sostituiti dal default invece di far scattare l'errore di validazione
+  const parsedPage = parseInt(req.query.page);
+  const parsedLimit = parseInt(req.query.limit);
+  const page = Number.isNaN(parsedPage) ? DEFAULT_PAGE : parsedPage;
+  const limit = Number.isNaN(parsedLimit) ? DEFAULT_LIMIT : parsedLimit;
 
   const validationError = validatePaginationParams(page, limit);
   if (validationError) {

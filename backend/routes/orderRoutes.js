@@ -6,7 +6,7 @@ const paginationMiddleware = require('../middlewares/paginationMiddleware');
 const validateObjectId = require('../middlewares/validateObjectId');
 const {
   createOrderSchema,
-  updateOrderSchema,
+  updateOrderStatusSchema,
   addDraftItemSchema,
   updateDraftItemSchema,
   confirmDraftSchema
@@ -45,7 +45,7 @@ router.get('/user', authMiddleware, paginationMiddleware, getUserOrders);
 router.get('/restaurant/:restaurantId', authMiddleware, requireApprovedManager, validateObjectId('restaurantId'), paginationMiddleware, getRestaurantOrders);
 router.get('/restaurant/:restaurantId/dashboard', authMiddleware, requireApprovedManager, validateObjectId('restaurantId'), getRestaurantDashboard);
 router.get('/:id', authMiddleware, validateObjectId('id'), getOrderById);
-router.patch('/:id/status', authMiddleware, requireApprovedManager, validateObjectId('id'), validate(updateOrderSchema), updateOrderStatus);
+router.patch('/:id/status', authMiddleware, requireApprovedManager, validateObjectId('id'), validate(updateOrderStatusSchema), updateOrderStatus);
 router.patch('/:id/confirm-delivery', authMiddleware, validateObjectId('id'), confirmDelivery);
 
 module.exports = router;

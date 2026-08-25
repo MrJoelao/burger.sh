@@ -1,44 +1,43 @@
 const { verifyToken } = require('../utils/jwt');
 const { jsonError } = require('../utils/httpResponses');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 
-/**
- * Rate limiter per utenti autenticati - ADMIN (permissivo)
- * 10.000 richieste per minuto
- * Motivo: Admin gestisc l'intera piattaforma, ha accesso critico
- */
-const adminRateLimiter = rateLimit({
-  windowMs: 60 * 1000,          // 1 minuto
-  max: 10000,                   // 10k richieste
-  keyGenerator: (req) => req.user?.id || 'admin',
-  skip: (req) => req.user?.role !== 'admin',  // Applica solo ad admin
-  message: 'Admin rate limit exceeded'
-});
+const ROLE_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuto
 
-/**
- * Rate limiter per utenti autenticati - MANAGER
- * 1.000 richieste per minuto
- * Motivo: Manager gestisce un ristorante, operazioni moderate
- */
-const managerRateLimiter = rateLimit({
-  windowMs: 60 * 1000,          // 1 minuto
-  max: 1000,                    // 1k richieste
-  keyGenerator: (req) => req.user?.id || 'manager',
-  skip: (req) => req.user?.role !== 'manager',  // Applica solo a manager
-  message: 'Manager rate limit exceeded'
-});
+/* crea un rate limiter dedicato a un ruolo: si applica solo alle richieste
+   di quel ruolo (skip per tutte le altre), evitando di ripetere la stessa
+   configurazione tre volte per admin/manager/customer */
+function createRoleRateLimiter(role, max) {
+  return rateLimit({
+    windowMs: ROLE_RATE_LIMIT_WINDOW_MS,
+    max,
+    keyGenerator: (req) => req.user?.id || role,
+    skip: (req) => req.user?.role !== role,
+    message: `${role} rate limit exceeded`
+  });
+}
 
-/**
- * Rate limiter per utenti autenticati - CUSTOMER
- * 500 richieste per minuto
- * Motivo: Customer fa semplici operazioni (browse, order), limite medio
- */
-const customerRateLimiter = rateLimit({
-  windowMs: 60 * 1000,          // 1 minuto
-  max: 500,                     // 500 richieste
-  keyGenerator: (req) => req.user?.id || 'customer',
-  skip: (req) => req.user?.role !== 'customer',  // Applica solo a customer
-  message: 'Customer rate limit exceeded'
+// Admin: 10k req/min (controllo globale, accesso critico)
+const adminRateLimiter = createRoleRateLimiter('admin', 10000);
+// Manager: 1k req/min (gestione ristorante, operazioni moderate)
+const managerRateLimiter = createRoleRateLimiter('manager', 1000);
+// Customer: 500 req/min (operazioni semplici, protezione anti-DoS)
+const customerRateLimiter = createRoleRateLimiter('customer', 500);
+
+/* rate limiter applicato quando l'header Authorization è presente ma il
+   token non è valido. senza questo, un client può inviare un qualsiasi
+   header "Bearer <valore inventato>" per far saltare il publicLimiter di
+   app.js (che salta ogni richiesta con prefisso "Bearer ") e finire comunque
+   qui senza mai incontrare i rate limiter per ruolo sopra, che si eseguono
+   solo dopo una verifica del token riuscita: il risultato era un bypass
+   completo di ogni limite di richieste. */
+const invalidTokenRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,     // 15 minuti, stessa finestra del publicLimiter
+  max: 100,
+  // ipKeyGenerator normalizza correttamente anche gli indirizzi IPv6
+  keyGenerator: (req) => ipKeyGenerator(req.ip),
+  message: 'Too many requests from this IP, please try again later.'
 });
 
 /**
@@ -76,7 +75,7 @@ function authMiddleware(req, res, next) {
       });
     });
   } catch (error) {
-    return jsonError(res, 401, 'Invalid or expired token');
+    return invalidTokenRateLimiter(req, res, () => jsonError(res, 401, 'Invalid or expired token'));
   }
 }
 

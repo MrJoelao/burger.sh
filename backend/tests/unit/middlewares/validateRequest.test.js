@@ -36,7 +36,7 @@ describe('validateRequest middleware', () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
-  test('risponde con 400 e i messaggi di errore quando il body non è valido', () => {
+  test('risponde con 400 e un messaggio di errore quando il body non è valido', () => {
     // arrange
     const req = { body: { age: -5 } };
     const middleware = validateRequest(testSchema);
@@ -44,10 +44,12 @@ describe('validateRequest middleware', () => {
     // act
     middleware(req, res, next);
 
-    // assert
+    // assert: stesso formato { success: false, message } usato da tutte le
+    // altre risposte di errore dell'api (vedi utils/httpResponses.js)
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      errors: expect.any(Array)
+      success: false,
+      message: expect.any(String)
     });
     expect(next).not.toHaveBeenCalled();
   });

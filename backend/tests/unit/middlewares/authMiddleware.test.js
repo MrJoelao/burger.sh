@@ -48,12 +48,14 @@ describe('authMiddleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('risponde con 401 se il token non è valido', () => {
+  test('risponde con 401 se il token non è valido', async () => {
     // arrange
-    const req = { headers: { authorization: 'Bearer token-fasullo' } };
+    const req = { headers: { authorization: 'Bearer token-fasullo' }, ip: '127.0.0.1' };
 
     // act
     authMiddleware(req, res, next);
+    // anche qui il rate limiter per i token non validi risolve in modo asincrono
+    await new Promise((resolve) => setImmediate(resolve));
 
     // assert
     expect(res.status).toHaveBeenCalledWith(401);

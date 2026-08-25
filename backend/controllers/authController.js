@@ -25,7 +25,12 @@ function buildAuthResponse(user) {
 // register: crea un nuovo utente (customer o manager) e restituisce subito un token
 async function register(req, res, next) {
   try {
-    const { name, surname, email, password, role } = req.validated;
+    const { name, surname, password, role } = req.validated;
+    // lo schema email ha lowercase:true, quindi il confronto va normalizzato
+    // allo stesso modo, altrimenti due casing diversi della stessa email
+    // sfuggirebbero al controllo di duplicato e farebbero fallire la create()
+    // con un E11000 non gestito
+    const email = req.validated.email.toLowerCase().trim();
 
     // controllo che l'email non sia già usata
     const existingUser = await User.findOne({ email });
@@ -59,7 +64,11 @@ async function register(req, res, next) {
 // login: verifica le credenziali e restituisce un token se sono corrette
 async function login(req, res, next) {
   try {
-    const { email, password } = req.validated;
+    const { password } = req.validated;
+    // stesso motivo del register: l'email è salvata in lowercase, quindi va
+    // normalizzata prima della query o un login con casing diverso da quello
+    // usato in fase di registrazione fallirebbe anche con password corretta
+    const email = req.validated.email.toLowerCase().trim();
 
     // cerco l'utente tramite email. il messaggio d'errore resta identico sia che
     // l'email non esista sia che la password sia sbagliata, altrimenti si
