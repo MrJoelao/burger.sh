@@ -1,10 +1,8 @@
 const User = require('../models/User');
-const Restaurant = require('../models/Restaurant');
-const Order = require('../models/Order');
 const { applyPasswordUpdate } = require('../utils/password');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated } = require('../utils/httpResponses');
-const { countsByKey } = require('../utils/aggregation');
 const { resolveManagerRestaurants } = require('./userController');
+const statisticsService = require('../services/statisticsService');
 
 /* valori ammessi per i filtri di getAllUsers: qualsiasi altro valore (comprese
    stringhe fuori da questo elenco o oggetti come { $ne: null }, che qs può
@@ -158,31 +156,9 @@ async function deleteUser(req, res, next) {
 // get statistiche aggregate della piattaforma (utenti, filiali, ordini)
 async function getStats(req, res, next) {
   try {
-    /* i carrelli in bozza (status "draft") non sono ordini effettivi: vanno
-       esclusi come già avviene in tutte le query di orderService, altrimenti
-       il totale e il breakdown per stato risultano gonfiati */
-    const confirmedOrdersFilter = { status: { $ne: 'draft' } };
+    const stats = await statisticsService.getPlatformStats();
 
-    const [usersByRole, restaurantsTotal, ordersByStatus, ordersTotal] = await Promise.all([
-      User.aggregate([{ $group: { _id: '$role', count: { $sum: 1 } } }]),
-      Restaurant.countDocuments(),
-      Order.aggregate([{ $match: confirmedOrdersFilter }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
-      Order.countDocuments(confirmedOrdersFilter)
-    ]);
-
-    return jsonOk(res, 200, {
-      users: {
-        total: usersByRole.reduce((sum, { count }) => sum + count, 0),
-        byRole: countsByKey(usersByRole)
-      },
-      restaurants: {
-        total: restaurantsTotal
-      },
-      orders: {
-        total: ordersTotal,
-        byStatus: countsByKey(ordersByStatus)
-      }
-    });
+    return jsonOk(res, 200, stats);
   } catch (err) {
     next(err);
   }
