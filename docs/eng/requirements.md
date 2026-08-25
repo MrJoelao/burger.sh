@@ -199,14 +199,14 @@ For each order, the system must store at least:
 
 The expected status flow for orders is as follows:
 
-`ordered` → `in preparation` → `ready` → `out for delivery` → `delivered`
+`ordered` → `preparing` → `ready` → `on_delivery` → `delivered`
 
 The subset of statuses actually reachable depends on the order completion mode:
 
 | Mode | Status flow |
 |---|---|
-| In-store pickup | `ordered` → `in preparation` → `ready` → `delivered` |
-| Home delivery | `ordered` → `in preparation` → `out for delivery` → `delivered` |
+| In-store pickup (`pickup`) | `ordered` → `preparing` → `ready` → `delivered` |
+| Home delivery (`delivery`) | `ordered` → `preparing` → `on_delivery` → `delivered` |
 
 This flow and its allowed values are modeled in the `status` field of the `orders` collection, described in `data-model.md`.
 
@@ -244,7 +244,7 @@ In the case of home delivery:
 - the customer enters the delivery address
 - the system calculates the distance between the restaurant and the destination, estimating it via the OpenStreetMap APIs
 - the delivery cost depends on the distance in km
-- upon receiving the order, the customer confirms the delivery, and the order status changes from `out for delivery` to `delivered`
+- upon receiving the order, the customer confirms the delivery, and the order status changes from `on_delivery` to `delivered`
 
 ---
 

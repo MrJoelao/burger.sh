@@ -194,14 +194,14 @@ Per ogni ordine il sistema dovrà memorizzare almeno:
 
 Il flusso di stato previsto per gli ordini è il seguente:
 
-`ordinato` → `in preparazione` → `pronto` → `in consegna` → `consegnato`
+`ordered` → `preparing` → `ready` → `on_delivery` → `delivered`
 
 Il sottoinsieme di stati effettivamente raggiungibile dipende dalla modalità di completamento dell'ordine:
 
 | Modalità | Flusso di stato |
 |---|---|
-| Ritiro in sede | `ordinato` → `in preparazione` → `pronto` → `consegnato` |
-| Consegna a domicilio | `ordinato` → `in preparazione` → `in consegna` → `consegnato` |
+| Ritiro in sede (`pickup`) | `ordered` → `preparing` → `ready` → `delivered` |
+| Consegna a domicilio (`delivery`) | `ordered` → `preparing` → `on_delivery` → `delivered` |
 
 Questo flusso e i relativi valori ammessi sono modellati nel campo `status` della collezione `orders`, descritta in `data-model.md`.
 
@@ -239,7 +239,7 @@ Nel caso di consegna a domicilio:
 - il cliente inserisce l'indirizzo di consegna
 - il sistema calcola la distanza tra ristorante e destinazione stimandola tramite le API di OpenStreetMap
 - il costo di consegna dipende dalla distanza in km
-- il cliente, alla ricezione dell'ordine, conferma l'avvenuta consegna e l'ordine passa da `in consegna` a `consegnato`
+- il cliente, alla ricezione dell'ordine, conferma l'avvenuta consegna e l'ordine passa da `on_delivery` a `delivered`
 
 ---
 
