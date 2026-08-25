@@ -9,7 +9,7 @@ describe('userValidation', () => {
         surname: 'Verdi',
         email: 'luigi.verdi@example.com',
         password: 'password123',
-        role: 'admin',
+        role: 'manager',
         address: { street: 'via Roma', city: 'Milano', zip: '20100' },
         preferences: ['vegano']
       };
@@ -19,6 +19,23 @@ describe('userValidation', () => {
 
       // assert
       expect(error).toBeUndefined();
+    });
+
+    test('fallisce se il ruolo è admin, non assegnabile in autoregistrazione', () => {
+      // arrange
+      const payload = {
+        name: 'Luigi',
+        surname: 'Verdi',
+        email: 'luigi.verdi@example.com',
+        password: 'password123',
+        role: 'admin'
+      };
+
+      // act
+      const { error } = registerSchema.validate(payload);
+
+      // assert
+      expect(error).toBeDefined();
     });
 
     test('valida un payload minimo senza address e preferences', () => {

@@ -188,24 +188,25 @@ async function resolveDraftItems(items, restaurantId) {
 }
 
 /* crea un ordine per il cliente autenticato: verifica che i piatti richiesti
-   siano ordinabili nella filiale scelta e genera il codice ordine lato
-   server (mai fidarsi di uno eventualmente inviato dal client). il chiamante
-   deve aver già verificato che il ristorante esista. ritorna { order } in
-   caso di successo, oppure { error } con il messaggio da mostrare */
-async function createOrder({ customerId, restaurantId, orderItems, mode, totalAmount, delivery }) {
-  const dishIds = orderItems.map(item => item.dishId);
-  const dishError = await validateOrderDishes(dishIds, restaurantId);
-  if (dishError) {
-    return { error: dishError };
+   siano ordinabili nella filiale scelta e ricalcola sempre unitPrice e
+   totalAmount dal prezzo reale del piatto (stessa logica di resolveDraftItems,
+   usata dal carrello), così un eventuale unitPrice/totalAmount inviato dal
+   client viene ignorato e non può essere manomesso per pagare meno del dovuto.
+   il chiamante deve aver già verificato che il ristorante esista. ritorna
+   { order } in caso di successo, oppure { error } con il messaggio da mostrare */
+async function createOrder({ customerId, restaurantId, orderItems, mode, delivery }) {
+  const resolved = await resolveDraftItems(orderItems, restaurantId);
+  if (resolved.error) {
+    return { error: resolved.error };
   }
 
   const orderData = {
     customerId,
     restaurantId,
-    orderItems,
+    orderItems: resolved.orderItems,
     status: 'ordered',
     mode,
-    totalAmount,
+    totalAmount: resolved.totalAmount,
     orderCode: generateOrderCode()
   };
 

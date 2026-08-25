@@ -5,12 +5,15 @@ const { ALLOWED_PREFERENCES } = require('../constants/preferences');
 // elenco chiuso: solo i valori definiti in constants/preferences.js sono ammessi
 const preferencesSchema = Joi.array().items(Joi.string().valid(...ALLOWED_PREFERENCES)).optional();
 
+// 'admin' non è tra i ruoli ammessi in autoregistrazione: un utente non deve
+// potersi promuovere admin da solo, quel ruolo si assegna solo manualmente
+// tramite adminController (stessa regola già applicata in authValidation.js)
 const registerSchema = Joi.object({
   name: Joi.string().min(2).required(),
   surname: Joi.string().min(2).required(),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
-  role: Joi.string().valid('customer', 'manager', 'admin').required(),
+  role: Joi.string().valid('customer', 'manager').required(),
   address: addressSchema.optional(),
   preferences: preferencesSchema
 });

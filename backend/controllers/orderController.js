@@ -11,7 +11,9 @@ const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('.
 // create ordine
 async function createOrder(req, res, next) {
   try {
-    const { restaurantId, orderItems, mode, totalAmount, delivery } = req.validated;
+    // unitPrice e totalAmount inviati dal client vengono ignorati: il service
+    // li ricalcola sempre dal prezzo reale del piatto (vedi orderService.createOrder)
+    const { restaurantId, orderItems, mode, delivery } = req.validated;
     const customerId = req.user.id;
 
     const restaurant = await Restaurant.findById(restaurantId);
@@ -19,7 +21,7 @@ async function createOrder(req, res, next) {
       return jsonError(res, 400, 'Restaurant not found');
     }
 
-    const result = await orderService.createOrder({ customerId, restaurantId, orderItems, mode, totalAmount, delivery });
+    const result = await orderService.createOrder({ customerId, restaurantId, orderItems, mode, delivery });
     if (result.error) {
       return jsonError(res, 400, result.error);
     }

@@ -92,6 +92,31 @@ describe('POST /api/orders', () => {
 
     expect(response.status).toBe(201);
   });
+
+  test('ignora unitPrice e totalAmount manomessi dal client, usando sempre il prezzo reale del piatto', async () => {
+    const customer = await createUser();
+    const restaurant = await createRestaurant();
+    const dish = await createDish({ price: 8.5 });
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
+      .send({
+        restaurantId: restaurant._id.toString(),
+        // il cliente prova a dichiarare un prezzo unitario e un totale più bassi di quello reale
+        orderItems: [{ dishId: dish._id.toString(), quantity: 2, unitPrice: 0.01 }],
+        mode: 'pickup',
+        totalAmount: 0.02
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.orderItems[0].unitPrice).toBe(8.5);
+    expect(response.body.data.totalAmount).toBe(17);
+
+    const savedOrder = await Order.findOne({ customerId: customer._id });
+    expect(savedOrder.totalAmount).toBe(17);
+    expect(savedOrder.orderItems[0].unitPrice).toBe(8.5);
+  });
 });
 
 describe('Carrello in bozza (draft)', () => {

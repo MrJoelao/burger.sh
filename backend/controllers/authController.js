@@ -61,16 +61,13 @@ async function login(req, res, next) {
   try {
     const { email, password } = req.validated;
 
-    // cerco l'utente tramite email
+    // cerco l'utente tramite email. il messaggio d'errore resta identico sia che
+    // l'email non esista sia che la password sia sbagliata, altrimenti si
+    // potrebbe scoprire quali email sono registrate provando il login (user enumeration)
     const user = await User.findOne({ email });
-    if (!user) {
-      return jsonError(res, 401, 'Invalid credentials: email not found');
-    }
-
-    // verifico la password
-    const isMatch = await comparePassword(password, user.passwordHash);
+    const isMatch = user && await comparePassword(password, user.passwordHash);
     if (!isMatch) {
-      return jsonError(res, 401, 'Invalid credentials: invalid password');
+      return jsonError(res, 401, 'Invalid credentials');
     }
 
     return jsonOk(res, 200, buildAuthResponse(user));

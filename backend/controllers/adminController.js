@@ -6,6 +6,27 @@ const { jsonOk, jsonError, jsonMessage, jsonPaginated } = require('../utils/http
 const { countsByKey } = require('../utils/aggregation');
 const { reassignOrCloseManagerRestaurants } = require('./userController');
 
+/* valori ammessi per i filtri di getAllUsers: qualsiasi altro valore (comprese
+   stringhe fuori da questo elenco o oggetti come { $ne: null }, che qs può
+   costruire da una query string del tipo "role[$ne]=null") viene ignorato,
+   per evitare di far arrivare a mongoose un operatore non previsto (NoSQL injection) */
+const ALLOWED_ROLE_FILTERS = ['customer', 'manager', 'admin'];
+const ALLOWED_MANAGER_STATUS_FILTERS = ['pending', 'approved'];
+
+// costruisce il filtro di getAllUsers accettando solo valori tra quelli ammessi
+function buildUserFilter(query) {
+  const filter = {};
+
+  if (ALLOWED_ROLE_FILTERS.includes(query.role)) {
+    filter.role = query.role;
+  }
+  if (ALLOWED_MANAGER_STATUS_FILTERS.includes(query.managerStatus)) {
+    filter.managerStatus = query.managerStatus;
+  }
+
+  return filter;
+}
+
 /* controller di amministrazione: gestione degli utenti della piattaforma
    (lista, dettaglio, modifica, eliminazione), approvazione dei manager
    pending e statistiche aggregate. tutte le operazioni sono riservate
@@ -15,13 +36,7 @@ const { reassignOrCloseManagerRestaurants } = require('./userController');
 async function getAllUsers(req, res, next) {
   try {
     const { page, limit, skip } = req.pagination;
-    const filter = {};
-    if (req.query.role) {
-      filter.role = req.query.role;
-    }
-    if (req.query.managerStatus) {
-      filter.managerStatus = req.query.managerStatus;
-    }
+    const filter = buildUserFilter(req.query);
 
     const [total, users] = await Promise.all([
       User.countDocuments(filter),
