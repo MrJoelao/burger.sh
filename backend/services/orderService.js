@@ -1,34 +1,19 @@
 const Order = require('../models/Order');
-const Dish = require('../models/Dish');
-const Restaurant = require('../models/Restaurant');
-const generateOrderCode = require('../utils/generateOrderCode');
 const { isAdmin, isOwner, unauthorized } = require('../utils/authorization');
 const { countsByKey } = require('../utils/aggregation');
+const { DRAFT_STATUS, COMPLETED_STATUS } = require('../constants/orderStatus');
+const { resolveOrderItems, createOrderWithUniqueCode, populateOrderDetails } = require('./orderRecordService');
 const deliveryService = require('./deliveryService');
 
-/* logica di dominio degli ordini: creazione, autorizzazioni e avanzamento di
-   stato (ordered -> preparing -> ready/on_delivery -> delivered). il
-   controller resta responsabile solo di leggere la richiesta, chiamare
-   queste funzioni e tradurne il risultato in una risposta http. */
+/* logica di dominio degli ordini confermati: creazione, autorizzazioni e
+   avanzamento di stato (ordered -> preparing -> ready/on_delivery ->
+   delivered). il controller resta responsabile solo di leggere la
+   richiesta, chiamare queste funzioni e tradurne il risultato in una
+   risposta http. il carrello in bozza (stesso modello Order, status
+   'draft') ha un ciclo di vita diverso e vive in cartService.js. */
 
 // numero di piatti più venduti mostrati nella dashboard del manager
 const TOP_DISHES_LIMIT = 5;
-
-/* unico stato che segna un ordine come concluso: usato sia per calcolare gli
-   incassi della dashboard sia per distinguere, nella lista ordini del
-   cliente, quelli "in corso" da quelli "passati" */
-const COMPLETED_STATUS = 'delivered';
-
-/* stato del carrello prima della conferma dell'ordine (data-model.md §5):
-   stessa collezione orders, nessuna tabella separata per il carrello */
-const DRAFT_STATUS = 'draft';
-
-/* generateOrderCode produce un codice casuale su un alfabeto di 36 caratteri
-   e 6 posizioni: la probabilità di collisione è bassissima ma non nulla, e
-   senza un retry esplicito la create() fallirebbe con un errore mongo 500
-   non gestito. questo numero di tentativi rende la collisione persistente
-   (e quindi l'errore restituito al client) un evento praticamente impossibile */
-const MAX_ORDER_CODE_ATTEMPTS = 5;
 
 /* sequenza di stati ammessi per ogni modalità: il ritiro salta lo stato
    "on_delivery" (non c'è consegna), la modalità a domicilio salta "ready"
@@ -53,19 +38,6 @@ function isValidStatusTransition(mode, currentStatus, nextStatus) {
   const nextIndex = sequence.indexOf(nextStatus);
 
   return currentIndex !== -1 && nextIndex === currentIndex + 1;
-}
-
-/* aggiunge a un ordine i dati essenziali di cliente, ristorante e piatti,
-   così la risposta al client è sempre completa senza ripetere la stessa
-   catena di populate in ogni funzione. i populate multipli vanno passati
-   in un unico array, perché concatenare più chiamate .populate() non è
-   supportato dalla versione di mongoose in uso */
-function populateOrderDetails(order) {
-  return order.populate([
-    { path: 'customerId', select: 'name surname email' },
-    { path: 'restaurantId', select: 'name city managerId' },
-    { path: 'orderItems.dishId', select: 'name price type' }
-  ]);
 }
 
 /* recupera un ordine con il ristorante popolato, dato necessario ai controlli
@@ -131,93 +103,10 @@ function checkRestaurantOrdersAccess(user, restaurant) {
   return { authorized: true };
 }
 
-/* un piatto è ordinabile in una filiale se è del menu comune (isCustom: false,
-   valido per tutte le filiali) oppure se è un piatto custom di quella
-   specifica filiale */
-function belongsToRestaurantMenu(dish, restaurantId) {
-  return !dish.isCustom || isOwner(dish.restaurantId, restaurantId);
-}
-
-// recupera i piatti richiesti in un'unica query, indicizzati per id come stringa
-async function findDishesById(dishIds) {
-  const dishes = await Dish.find({ _id: { $in: dishIds } });
-  return new Map(dishes.map(dish => [dish._id.toString(), dish]));
-}
-
-/* prima riga d'ordine che fa riferimento a un piatto inesistente o non ordinabile
-   nel ristorante scelto, o null se sono tutte valide. condivisa tra la validazione
-   semplice (validateOrderDishes) e quella del carrello in bozza (resolveDraftItems) */
-function findInvalidDishError(dishIds, dishById, restaurantId) {
-  for (const dishId of dishIds) {
-    const dish = dishById.get(dishId.toString());
-    if (!dish) {
-      return `Dish ${dishId} not found`;
-    }
-    if (!belongsToRestaurantMenu(dish, restaurantId)) {
-      return `Dish ${dishId} is not part of this restaurant's menu`;
-    }
-  }
-
-  return null;
-}
-
-/* verifica che tutti i piatti richiesti esistano e appartengano al menu del
-   ristorante scelto. ritorna il messaggio d'errore da mostrare, o null se
-   tutto è valido */
-async function validateOrderDishes(dishIds, restaurantId) {
-  const dishById = await findDishesById(dishIds);
-  return findInvalidDishError(dishIds, dishById, restaurantId);
-}
-
-// somma quantity * unitPrice di ogni riga, usata per ricalcolare il totale del carrello
-function sumOrderItems(orderItems) {
-  return orderItems.reduce((total, item) => total + item.quantity * item.unitPrice, 0);
-}
-
-/* valida i piatti richiesti per il carrello in bozza e calcola unitPrice come
-   snapshot del prezzo attuale del piatto: il client indica solo dishId e
-   quantity, mai un prezzo, per evitare di fidarsi di un totale calcolato lato
-   client. ritorna { orderItems, totalAmount } oppure { error } */
-async function resolveDraftItems(items, restaurantId) {
-  const dishIds = items.map(item => item.dishId);
-  const dishById = await findDishesById(dishIds);
-
-  const error = findInvalidDishError(dishIds, dishById, restaurantId);
-  if (error) {
-    return { error };
-  }
-
-  const orderItems = items.map(item => ({
-    dishId: item.dishId,
-    quantity: item.quantity,
-    unitPrice: dishById.get(item.dishId.toString()).price
-  }));
-
-  return { orderItems, totalAmount: sumOrderItems(orderItems) };
-}
-
-/* crea l'ordine gestendo l'estremamente rara collisione di orderCode: se
-   Order.create fallisce per un duplicate key sul campo orderCode, genera un
-   nuovo codice e ritenta invece di lasciar risalire un errore mongo 500 non
-   gestito esplicitamente. qualsiasi altro errore (es. di validazione) viene
-   rilanciato subito, senza ritentare */
-async function createOrderWithUniqueCode(orderData) {
-  for (let attempt = 1; attempt <= MAX_ORDER_CODE_ATTEMPTS; attempt++) {
-    try {
-      return await Order.create({ ...orderData, orderCode: generateOrderCode() });
-    } catch (err) {
-      const isOrderCodeCollision = err.code === 11000 && Object.hasOwn(err.keyPattern || {}, 'orderCode');
-      if (!isOrderCodeCollision || attempt === MAX_ORDER_CODE_ATTEMPTS) {
-        throw err;
-      }
-    }
-  }
-}
-
 /* crea un ordine per il cliente autenticato: verifica che i piatti richiesti
    siano ordinabili nella filiale scelta e ricalcola sempre unitPrice e
-   totalAmount dal prezzo reale del piatto (stessa logica di resolveDraftItems,
-   usata dal carrello), così un eventuale unitPrice/totalAmount inviato dal
+   totalAmount dal prezzo reale del piatto (orderRecordService.resolveOrderItems,
+   condiviso col carrello), così un eventuale unitPrice/totalAmount inviato dal
    client viene ignorato e non può essere manomesso per pagare meno del dovuto.
    il chiamante deve aver già verificato che il ristorante esista e passare il
    documento completo (non solo l'id): serve a deliveryService per calcolare
@@ -225,7 +114,7 @@ async function createOrderWithUniqueCode(orderData) {
    modo eventuali valori inviati dal client. ritorna { order } in caso di
    successo, oppure { error } con il messaggio da mostrare */
 async function createOrder({ customerId, restaurant, orderItems, mode, delivery }) {
-  const resolved = await resolveDraftItems(orderItems, restaurant._id);
+  const resolved = await resolveOrderItems(orderItems, restaurant._id);
   if (resolved.error) {
     return { error: resolved.error };
   }
@@ -248,182 +137,10 @@ async function createOrder({ customerId, restaurant, orderItems, mode, delivery 
   return { order: await populateOrderDetails(order) };
 }
 
-// il carrello attivo del cliente: al più un ordine in stato draft per cliente
-function findActiveDraft(customerId) {
-  return Order.findOne({ customerId, status: DRAFT_STATUS });
-}
-
-/* aggiunge la riga (dishId, quantity) alla lista esistente, sommando la
-   quantity se il piatto è già nel carrello invece di duplicare la riga */
-function mergeOrderItem(items, { dishId, quantity }) {
-  const index = items.findIndex(item => isOwner(item.dishId, dishId));
-  if (index === -1) {
-    return [...items, { dishId, quantity }];
-  }
-
-  const merged = [...items];
-  merged[index] = { dishId, quantity: merged[index].quantity + quantity };
-  return merged;
-}
-
-/* aggiunge un piatto al carrello in bozza del cliente autenticato: crea il
-   carrello se non esiste ancora, per il ristorante indicato. un cliente ha al
-   più un carrello attivo alla volta, quindi aggiungere un piatto di un altro
-   ristorante è rifiutato finché il carrello corrente non viene svuotato o
-   confermato. ritorna { order } oppure { error, statusCode } */
-async function addDraftItem(customerId, { restaurantId, dishId, quantity }) {
-  const draft = await findActiveDraft(customerId);
-
-  if (draft && !isOwner(draft.restaurantId, restaurantId)) {
-    return { error: 'You already have a draft order for another restaurant', statusCode: 409 };
-  }
-
-  const existingItems = draft
-    ? draft.orderItems.map(item => ({ dishId: item.dishId, quantity: item.quantity }))
-    : [];
-  const items = mergeOrderItem(existingItems, { dishId, quantity });
-
-  const resolved = await resolveDraftItems(items, restaurantId);
-  if (resolved.error) {
-    return { error: resolved.error, statusCode: 400 };
-  }
-
-  if (draft) {
-    draft.orderItems = resolved.orderItems;
-    draft.totalAmount = resolved.totalAmount;
-    await draft.save();
-    return { order: await populateOrderDetails(draft) };
-  }
-
-  const created = await createOrderWithUniqueCode({
-    customerId,
-    restaurantId,
-    orderItems: resolved.orderItems,
-    totalAmount: resolved.totalAmount,
-    status: DRAFT_STATUS
-  });
-  return { order: await populateOrderDetails(created) };
-}
-
-// carrello in bozza del cliente autenticato, o un errore 404 se non esiste
-async function getDraft(customerId) {
-  const draft = await findActiveDraft(customerId);
-  if (!draft) {
-    return { error: 'No draft order found', statusCode: 404 };
-  }
-
-  return { order: await populateOrderDetails(draft) };
-}
-
-/* aggiorna la quantity di un piatto già presente nel carrello in bozza.
-   ricalcola sempre totalAmount dal prezzo attuale del piatto */
-async function updateDraftItemQuantity(customerId, dishId, quantity) {
-  const draft = await findActiveDraft(customerId);
-  if (!draft) {
-    return { error: 'No draft order found', statusCode: 404 };
-  }
-
-  const index = draft.orderItems.findIndex(item => isOwner(item.dishId, dishId));
-  if (index === -1) {
-    return { error: 'Dish not found in draft order', statusCode: 404 };
-  }
-
-  const items = draft.orderItems.map((item, i) => ({
-    dishId: item.dishId,
-    quantity: i === index ? quantity : item.quantity
-  }));
-
-  const resolved = await resolveDraftItems(items, draft.restaurantId);
-  if (resolved.error) {
-    return { error: resolved.error, statusCode: 400 };
-  }
-
-  draft.orderItems = resolved.orderItems;
-  draft.totalAmount = resolved.totalAmount;
-  await draft.save();
-  return { order: await populateOrderDetails(draft) };
-}
-
-// rimuove un piatto dal carrello in bozza, ricalcolando il totale sulle righe rimanenti
-async function removeDraftItem(customerId, dishId) {
-  const draft = await findActiveDraft(customerId);
-  if (!draft) {
-    return { error: 'No draft order found', statusCode: 404 };
-  }
-
-  const remainingItems = draft.orderItems
-    .filter(item => !isOwner(item.dishId, dishId))
-    .map(item => ({ dishId: item.dishId, quantity: item.quantity }));
-
-  if (remainingItems.length === draft.orderItems.length) {
-    return { error: 'Dish not found in draft order', statusCode: 404 };
-  }
-
-  if (remainingItems.length === 0) {
-    draft.orderItems = [];
-    draft.totalAmount = 0;
-    await draft.save();
-    return { order: await populateOrderDetails(draft) };
-  }
-
-  const resolved = await resolveDraftItems(remainingItems, draft.restaurantId);
-  if (resolved.error) {
-    return { error: resolved.error, statusCode: 400 };
-  }
-
-  draft.orderItems = resolved.orderItems;
-  draft.totalAmount = resolved.totalAmount;
-  await draft.save();
-  return { order: await populateOrderDetails(draft) };
-}
-
-// elimina il carrello in bozza del cliente, senza lasciare ordini vuoti nella collezione
-async function discardDraft(customerId) {
-  const draft = await findActiveDraft(customerId);
-  if (!draft) {
-    return { error: 'No draft order found', statusCode: 404 };
-  }
-
-  await Order.deleteOne({ _id: draft._id });
-  return {};
-}
-
-/* conferma il carrello in bozza: richiede mode (e delivery se a domicilio),
-   dati non ancora noti finché il cliente non completa l'ordine, e rifiuta un
-   carrello senza righe. per mode "delivery" ricalcola sempre distanceKm e
-   deliveryFee dall'indirizzo tramite deliveryService, ignorando eventuali
-   valori inviati dal client. da qui in poi l'ordine segue la state machine
-   normale (isValidStatusTransition), a partire da "ordered" */
-async function confirmDraft(customerId, { mode, delivery }) {
-  const draft = await findActiveDraft(customerId);
-  if (!draft) {
-    return { error: 'No draft order found', statusCode: 404 };
-  }
-
-  if (draft.orderItems.length === 0) {
-    return { error: 'Cannot confirm an empty draft order', statusCode: 400 };
-  }
-
-  draft.mode = mode;
-  draft.status = 'ordered';
-
-  if (mode === 'delivery' && delivery) {
-    const restaurant = await Restaurant.findById(draft.restaurantId);
-    const { distanceKm, deliveryFee } = await deliveryService.calculateDelivery(restaurant, delivery.address);
-    draft.delivery = { address: delivery.address, distanceKm, deliveryFee };
-  } else {
-    draft.delivery = null;
-  }
-
-  await draft.save();
-
-  return { order: await populateOrderDetails(draft) };
-}
-
 /* filtro per la lista ordini del cliente: 'past' isola gli ordini conclusi,
    'current' quelli ancora in corso; senza filtro restituisce tutti gli ordini
    effettivi del cliente (requirements.md §5). il carrello in bozza non è mai
-   incluso: non è ancora un ordine, ha una sua rotta dedicata (GET /orders/draft) */
+   incluso: non è ancora un ordine, ha una sua rotta dedicata in cartRoutes.js */
 function buildUserOrdersFilter(customerId, statusFilter) {
   const filter = { customerId, status: { $ne: DRAFT_STATUS } };
 
@@ -508,19 +225,10 @@ async function buildRestaurantDashboard(restaurantId) {
 
 module.exports = {
   isValidStatusTransition,
-  populateOrderDetails,
   findOrderWithRestaurant,
   checkOrderAccess,
   checkRestaurantOrdersAccess,
-  validateOrderDishes,
-  createOrderWithUniqueCode,
   createOrder,
-  addDraftItem,
-  getDraft,
-  updateDraftItemQuantity,
-  removeDraftItem,
-  discardDraft,
-  confirmDraft,
   listUserOrders,
   listRestaurantOrders,
   buildRestaurantDashboard
