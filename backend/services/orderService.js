@@ -23,6 +23,13 @@ const COMPLETED_STATUS = 'delivered';
    stessa collezione orders, nessuna tabella separata per il carrello */
 const DRAFT_STATUS = 'draft';
 
+/* generateOrderCode produce un codice casuale su un alfabeto di 36 caratteri
+   e 6 posizioni: la probabilità di collisione è bassissima ma non nulla, e
+   senza un retry esplicito la create() fallirebbe con un errore mongo 500
+   non gestito. questo numero di tentativi rende la collisione persistente
+   (e quindi l'errore restituito al client) un evento praticamente impossibile */
+const MAX_ORDER_CODE_ATTEMPTS = 5;
+
 /* sequenza di stati ammessi per ogni modalità: il ritiro salta lo stato
    "on_delivery" (non c'è consegna), la modalità a domicilio salta "ready"
    (il cliente non ritira di persona). rappresenta l'intera state machine,
@@ -189,6 +196,24 @@ async function resolveDraftItems(items, restaurantId) {
   return { orderItems, totalAmount: sumOrderItems(orderItems) };
 }
 
+/* crea l'ordine gestendo l'estremamente rara collisione di orderCode: se
+   Order.create fallisce per un duplicate key sul campo orderCode, genera un
+   nuovo codice e ritenta invece di lasciar risalire un errore mongo 500 non
+   gestito esplicitamente. qualsiasi altro errore (es. di validazione) viene
+   rilanciato subito, senza ritentare */
+async function createOrderWithUniqueCode(orderData) {
+  for (let attempt = 1; attempt <= MAX_ORDER_CODE_ATTEMPTS; attempt++) {
+    try {
+      return await Order.create({ ...orderData, orderCode: generateOrderCode() });
+    } catch (err) {
+      const isOrderCodeCollision = err.code === 11000 && Object.hasOwn(err.keyPattern || {}, 'orderCode');
+      if (!isOrderCodeCollision || attempt === MAX_ORDER_CODE_ATTEMPTS) {
+        throw err;
+      }
+    }
+  }
+}
+
 /* crea un ordine per il cliente autenticato: verifica che i piatti richiesti
    siano ordinabili nella filiale scelta e ricalcola sempre unitPrice e
    totalAmount dal prezzo reale del piatto (stessa logica di resolveDraftItems,
@@ -211,8 +236,7 @@ async function createOrder({ customerId, restaurant, orderItems, mode, delivery 
     orderItems: resolved.orderItems,
     status: 'ordered',
     mode,
-    totalAmount: resolved.totalAmount,
-    orderCode: generateOrderCode()
+    totalAmount: resolved.totalAmount
   };
 
   if (mode === 'delivery' && delivery) {
@@ -220,7 +244,7 @@ async function createOrder({ customerId, restaurant, orderItems, mode, delivery 
     orderData.delivery = { address: delivery.address, distanceKm, deliveryFee };
   }
 
-  const order = await Order.create(orderData);
+  const order = await createOrderWithUniqueCode(orderData);
   return { order: await populateOrderDetails(order) };
 }
 
@@ -271,13 +295,12 @@ async function addDraftItem(customerId, { restaurantId, dishId, quantity }) {
     return { order: await populateOrderDetails(draft) };
   }
 
-  const created = await Order.create({
+  const created = await createOrderWithUniqueCode({
     customerId,
     restaurantId,
     orderItems: resolved.orderItems,
     totalAmount: resolved.totalAmount,
-    status: DRAFT_STATUS,
-    orderCode: generateOrderCode()
+    status: DRAFT_STATUS
   });
   return { order: await populateOrderDetails(created) };
 }
@@ -490,6 +513,7 @@ module.exports = {
   checkOrderAccess,
   checkRestaurantOrdersAccess,
   validateOrderDishes,
+  createOrderWithUniqueCode,
   createOrder,
   addDraftItem,
   getDraft,
