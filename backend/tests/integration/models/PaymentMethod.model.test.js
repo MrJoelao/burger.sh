@@ -3,8 +3,9 @@ const PaymentMethod = require('../../../models/PaymentMethod');
 const { createUser } = require('../../helpers/factories');
 
 /* test di integrazione per il modello PaymentMethod: verifica l'enum type
-   (card/cash) e il campo customerId obbligatorio. nessun controller usa
-   questo modello, quindi il test copre solo il modello. */
+   (card/cash), il campo customerId obbligatorio e il default di isDefault.
+   il CRUD esposto tramite controller/rotte è coperto separatamente in
+   tests/integration/routes/paymentMethod.routes.test.js. */
 
 beforeAll(dbHandler.connect);
 afterEach(dbHandler.clearDatabase);
@@ -23,6 +24,7 @@ describe('PaymentMethod model', () => {
 
     expect(paymentMethod._id).toBeDefined();
     expect(paymentMethod.type).toBe('card');
+    expect(paymentMethod.isDefault).toBe(false);
   });
 
   test('crea un metodo di pagamento valido di tipo cash', async () => {

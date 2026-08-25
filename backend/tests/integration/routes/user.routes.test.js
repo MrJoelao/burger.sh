@@ -47,11 +47,11 @@ describe('PUT /api/users/me', () => {
     const response = await request(app)
       .put('/api/users/me')
       .set('Authorization', `Bearer ${tokenFor(user)}`)
-      .send({ name: 'Nuovo Nome', preferences: ['vegan'] });
+      .send({ name: 'Nuovo Nome', preferences: ['vegano'] });
 
     expect(response.status).toBe(200);
     expect(response.body.data.name).toBe('Nuovo Nome');
-    expect(response.body.data.preferences).toEqual(['vegan']);
+    expect(response.body.data.preferences).toEqual(['vegano']);
   });
 
   test('aggiorna la password e permette il login con la nuova password', async () => {

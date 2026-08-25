@@ -11,7 +11,7 @@ describe('userValidation', () => {
         password: 'password123',
         role: 'admin',
         address: { street: 'via Roma', city: 'Milano', zip: '20100' },
-        preferences: ['vegan']
+        preferences: ['vegano']
       };
 
       // act
@@ -81,6 +81,24 @@ describe('userValidation', () => {
         password: 'password123',
         role: 'customer',
         preferences: [123]
+      };
+
+      // act
+      const { error } = registerSchema.validate(payload);
+
+      // assert
+      expect(error).toBeDefined();
+    });
+
+    test('fallisce se preferences contiene un valore fuori dall\'elenco ammesso', () => {
+      // arrange
+      const payload = {
+        name: 'Luigi',
+        surname: 'Verdi',
+        email: 'luigi.verdi@example.com',
+        password: 'password123',
+        role: 'customer',
+        preferences: ['bitcoin_gratis']
       };
 
       // act
