@@ -12,8 +12,10 @@ const deliverySchema = Joi.object({
   deliveryFee: Joi.number().min(0).optional()
 })
 
+// customerId e orderCode non compaiono qui: il controller li calcola sempre
+// lato server (req.user.id e generateOrderCode()), quindi non vanno richiesti
+// né accettati nel payload
 const createOrderSchema = Joi.object({
-  customerId: Joi.string().hex().length(24).required(),
   restaurantId: Joi.string().hex().length(24).required(),
   orderItems: Joi.array().items(orderItemSchema).min(1).required(),
   status: Joi.string()
@@ -21,7 +23,6 @@ const createOrderSchema = Joi.object({
       .optional(),
   mode: Joi.string().valid('pickup', 'delivery'),
   totalAmount: Joi.number().min(0).required(),
-  orderCode: Joi.string().trim().required(),
   delivery: Joi.alternatives().conditional('mode', {
       is: 'delivery',
       then: deliverySchema.required(),
