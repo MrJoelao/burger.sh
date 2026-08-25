@@ -63,20 +63,70 @@ async function getUserById(req, res, next) {
   }
 }
 
+/* un rifiuto declassa sempre l'utente a customer, così non resta bloccato in
+   uno stato manager "rifiutato" (architecture-and-flows.md §8.6: l'admin
+   "approva o rifiuta" un account manager) */
+function applyManagerRejection(updates) {
+  if (updates.managerStatus !== 'rejected') {
+    return updates;
+  }
+
+  const { managerStatus, ...rest } = updates;
+  return { ...rest, role: 'customer' };
+}
+
+/* managerStatus ha senso solo per un utente che è (o resta) un manager: senza
+   questo controllo un admin potrebbe impostarlo su un customer o su un admin */
+function isManagerStatusConsistent(updates, currentRole) {
+  if (!Object.hasOwn(updates, 'managerStatus')) {
+    return true;
+  }
+
+  const resultingRole = updates.role || currentRole;
+  return resultingRole === 'manager';
+}
+
+/* quando l'update fa uscire l'utente dal ruolo manager, managerStatus non ha
+   più senso e va rimosso esplicitamente: un $set con un valore undefined
+   verrebbe semplicemente ignorato da mongo, lasciando lo stato precedente */
+function buildUserUpdate(updates, isLeavingManagerRole) {
+  const mongoUpdate = { $set: updates };
+  if (isLeavingManagerRole) {
+    mongoUpdate.$unset = { managerStatus: '' };
+  }
+  return mongoUpdate;
+}
+
 /* update utente: usata sia per modificare i dati di un utente, sia per
-   approvare un manager pending impostando managerStatus a "approved" */
+   approvare o rifiutare un manager pending (managerStatus "approved"/"rejected").
+   se l'update declassa un manager proprietario di una filiale, la filiale
+   viene trasferita o chiusa con la stessa regola già usata da deleteUser,
+   così Restaurant.managerId non resta mai orfano */
 async function updateUser(req, res, next) {
   try {
-    const updates = await applyPasswordUpdate(req.validated);
-
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true
-    }).select('-passwordHash');
-
-    if (!updatedUser) {
+    const targetUser = await User.findById(req.params.id);
+    if (!targetUser) {
       return jsonError(res, 404, 'User not found');
     }
+
+    const { newManagerId, ...rawUpdates } = req.validated;
+
+    if (!isManagerStatusConsistent(rawUpdates, targetUser.role)) {
+      return jsonError(res, 400, 'managerStatus can only be set on a manager');
+    }
+
+    const updates = await applyPasswordUpdate(applyManagerRejection(rawUpdates));
+    const isLeavingManagerRole = targetUser.role === 'manager' && updates.role && updates.role !== 'manager';
+
+    if (isLeavingManagerRole) {
+      await reassignOrCloseManagerRestaurants(targetUser._id, newManagerId);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      buildUserUpdate(updates, isLeavingManagerRole),
+      { returnDocument: 'after', runValidators: true }
+    ).select('-passwordHash');
 
     return jsonOk(res, 200, updatedUser);
   } catch (err) {

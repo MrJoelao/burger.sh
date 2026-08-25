@@ -137,6 +137,72 @@ describe('PATCH /api/admin/users/:id', () => {
 
     expect(response.status).toBe(404);
   });
+
+  test('rifiuta con 400 un managerStatus impostato su un utente non manager', async () => {
+    const admin = await createAdmin();
+    const customer = await createUser();
+
+    const response = await request(app)
+      .patch(`/api/admin/users/${customer._id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ managerStatus: 'approved' });
+
+    expect(response.status).toBe(400);
+
+    const unchangedCustomer = await User.findById(customer._id);
+    expect(unchangedCustomer.managerStatus).toBeUndefined();
+  });
+
+  test('un admin rifiuta un manager pending, che viene declassato a customer senza managerStatus', async () => {
+    const admin = await createAdmin();
+    const pendingManager = await createUser({ role: 'manager', managerStatus: 'pending' });
+
+    const response = await request(app)
+      .patch(`/api/admin/users/${pendingManager._id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ managerStatus: 'rejected' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.role).toBe('customer');
+    expect(response.body.data.managerStatus).toBeUndefined();
+
+    const updatedUser = await User.findById(pendingManager._id);
+    expect(updatedUser.role).toBe('customer');
+    expect(updatedUser.managerStatus).toBeUndefined();
+  });
+
+  test('declassando un manager proprietario senza newManagerId, la sua filiale viene chiusa', async () => {
+    const admin = await createAdmin();
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .patch(`/api/admin/users/${manager._id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ role: 'customer' });
+
+    expect(response.status).toBe(200);
+
+    const remainingRestaurant = await Restaurant.findById(restaurant._id);
+    expect(remainingRestaurant).toBeNull();
+  });
+
+  test('declassando un manager proprietario con newManagerId, la sua filiale viene trasferita', async () => {
+    const admin = await createAdmin();
+    const manager = await createManager();
+    const newManager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .patch(`/api/admin/users/${manager._id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ role: 'customer', newManagerId: newManager._id.toString() });
+
+    expect(response.status).toBe(200);
+
+    const transferredRestaurant = await Restaurant.findById(restaurant._id);
+    expect(transferredRestaurant.managerId.toString()).toBe(newManager._id.toString());
+  });
 });
 
 describe('DELETE /api/admin/users/:id', () => {
