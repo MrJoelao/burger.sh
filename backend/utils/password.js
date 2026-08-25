@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 
-const SALT_ROUNDS = 10;
+// 12 round, in linea con la raccomandazione OWASP corrente per bcrypt
+const SALT_ROUNDS = 12;
 
 async function hashPassword(plainPassword) {
   // bcrypt.hash genera internamente un sale e calcola l'hash
