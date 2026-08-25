@@ -1,5 +1,6 @@
 const Dish = require('../models/Dish');
 const Restaurant = require('../models/Restaurant');
+const Ingredient = require('../models/Ingredient');
 
 const {
   isAdmin,
@@ -8,6 +9,7 @@ const {
   unauthorized
 } = require('../utils/authorization');
 const { jsonOk, jsonMessage, jsonPaginated, handleAuth, notFound, badRequest } = require('../utils/httpResponses');
+const { containsFilter, parseOptionalNonNegativeNumber, combineFilters } = require('../utils/searchFilters');
 
 /* gestisce sia i piatti del menu base sia i piatti
    custom, creati da un manager per un ristorante specifico. */
@@ -62,6 +64,59 @@ async function populateDish(dish) {
   ]);
 }
 
+// trova gli id degli ingredienti il cui nome contiene il testo cercato
+async function ingredientIdsByName(name) {
+  const ingredients = await Ingredient.find({ name: containsFilter(name) }, '_id');
+  return ingredients.map((ingredient) => ingredient._id);
+}
+
+// trova gli id degli ingredienti che hanno tra i loro allergeni un match con il testo cercato
+async function ingredientIdsByAllergen(allergen) {
+  const ingredients = await Ingredient.find({ allergens: containsFilter(allergen) }, '_id');
+  return ingredients.map((ingredient) => ingredient._id);
+}
+
+/* costruisce le condizioni di ricerca opzionali per GET /api/dishes: nome e
+   tipologia sono match parziali diretti sul piatto, prezzo è un range,
+   ingrediente e allergene passano invece dalla collezione Ingredient (un
+   piatto "per allergene" viene escluso se uno dei suoi ingredienti contiene
+   quell'allergene, così il cliente allergico può filtrare via i piatti a
+   rischio) */
+async function buildDishSearchConditions({ name, type, minPrice, maxPrice, ingredient, allergen }) {
+  const conditions = [];
+
+  const nameFilter = containsFilter(name);
+  if (nameFilter) {
+    conditions.push({ name: nameFilter });
+  }
+
+  const typeFilter = containsFilter(type);
+  if (typeFilter) {
+    conditions.push({ type: typeFilter });
+  }
+
+  const min = parseOptionalNonNegativeNumber(minPrice, 'minPrice');
+  const max = parseOptionalNonNegativeNumber(maxPrice, 'maxPrice');
+  if (min !== undefined || max !== undefined) {
+    conditions.push({
+      price: {
+        ...(min !== undefined ? { $gte: min } : {}),
+        ...(max !== undefined ? { $lte: max } : {})
+      }
+    });
+  }
+
+  if (ingredient) {
+    conditions.push({ ingredientIds: { $in: await ingredientIdsByName(ingredient) } });
+  }
+
+  if (allergen) {
+    conditions.push({ ingredientIds: { $nin: await ingredientIdsByAllergen(allergen) } });
+  }
+
+  return conditions;
+}
+
 /* esegue la query paginata dei piatti in base al filtro passato, condivisa
    tra il listing generale e quello per ristorante */
 async function listDishes(filter, { limit, skip }) {
@@ -77,12 +132,13 @@ async function listDishes(filter, { limit, skip }) {
   return { total, dishes };
 }
 
-// get tutti i piatti
+// get tutti i piatti, con filtri di ricerca opzionali (nome, tipologia, prezzo, ingrediente, allergene)
 async function getAllDishes(req, res, next) {
   try {
     const pagination = req.pagination || { page: 1, limit: 10, skip: 0 };
 
-    const { total, dishes } = await listDishes({}, pagination);
+    const filter = combineFilters(await buildDishSearchConditions(req.query));
+    const { total, dishes } = await listDishes(filter, pagination);
 
     return jsonPaginated(res, 200, pagination.page, pagination.limit, total, dishes);
   } catch (err) {
@@ -91,18 +147,21 @@ async function getAllDishes(req, res, next) {
 }
 
 /* get piatti per ristorante: restituisce i piatti del menu base (validi
-   per tutti i ristoranti) uniti ai piatti custom di quel ristorante */
+   per tutti i ristoranti) uniti ai piatti custom di quel ristorante,
+   con gli stessi filtri di ricerca opzionali di getAllDishes */
 async function getDishesByRestaurant(req, res, next) {
   try {
     const { restaurantId } = req.params;
     const pagination = req.pagination || { page: 1, limit: 10, skip: 0 };
 
-    const filter = {
+    const belongsToRestaurantMenu = {
       $or: [
         { isCustom: false },
         { isCustom: true, restaurantId }
       ]
     };
+    const searchConditions = await buildDishSearchConditions(req.query);
+    const filter = combineFilters([belongsToRestaurantMenu, ...searchConditions]);
 
     const { total, dishes } = await listDishes(filter, pagination);
 

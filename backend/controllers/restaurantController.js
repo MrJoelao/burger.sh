@@ -1,11 +1,56 @@
 const Restaurant = require('../models/Restaurant');
 const User = require('../models/User');
+const Dish = require('../models/Dish');
 const { isAdmin, isOwner, unauthorized } = require('../utils/authorization');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
+const { containsFilter, combineFilters } = require('../utils/searchFilters');
 
 /* controller dei ristoranti: consultazione pubblica (lista e dettaglio) e
    gestione riservata a admin (creazione/eliminazione) e al manager
    proprietario (modifica dei propri dati). */
+
+/* risolve il filtro sul ristorante a partire dal nome di un piatto offerto:
+   un piatto del menu comune (isCustom: false) è ordinabile in qualsiasi
+   filiale, quindi non restringe la ricerca; un piatto custom la restringe
+   invece ai soli ristoranti proprietari di quel piatto */
+async function restaurantIdsOfferingDish(dishName) {
+  const matchingDishes = await Dish.find(
+    { name: containsFilter(dishName) },
+    'isCustom restaurantId'
+  );
+
+  const offersCommonDish = matchingDishes.some((dish) => !dish.isCustom);
+  if (offersCommonDish) {
+    return null;
+  }
+
+  return matchingDishes.filter((dish) => dish.isCustom).map((dish) => dish.restaurantId);
+}
+
+// costruisce il filtro Mongoose per GET /api/restaurants a partire dai
+// parametri di ricerca opzionali name, city e dishName
+async function buildRestaurantSearchFilter({ name, city, dishName }) {
+  const conditions = [];
+
+  const nameFilter = containsFilter(name);
+  if (nameFilter) {
+    conditions.push({ name: nameFilter });
+  }
+
+  const cityFilter = containsFilter(city);
+  if (cityFilter) {
+    conditions.push({ city: cityFilter });
+  }
+
+  if (dishName) {
+    const restaurantIds = await restaurantIdsOfferingDish(dishName);
+    if (restaurantIds) {
+      conditions.push({ _id: { $in: restaurantIds } });
+    }
+  }
+
+  return combineFilters(conditions);
+}
 
 /* chi può modificare un ristorante: admin (globale) oppure il manager
    proprietario di quel ristorante specifico */
@@ -17,14 +62,17 @@ function canModifyRestaurant(req, restaurant) {
   return unauthorized('Not authorized to modify this restaurant');
 }
 
-// get tutti i ristoranti (con paginazione offset-based)
+// get tutti i ristoranti (con paginazione offset-based e filtri di ricerca opzionali)
 async function getAllRestaurants(req, res, next) {
   try {
     // estrae paginazione dal middleware (già validata e calcolata)
     const { page, limit, skip } = req.pagination;
+    const { name, city, dishName } = req.query;
 
-    const total = await Restaurant.countDocuments();
-    const restaurants = await Restaurant.find()
+    const filter = await buildRestaurantSearchFilter({ name, city, dishName });
+
+    const total = await Restaurant.countDocuments(filter);
+    const restaurants = await Restaurant.find(filter)
       .skip(skip)
       .limit(limit)
       .populate('managerId', 'name surname email');
