@@ -4,6 +4,13 @@ const Restaurant = require('../models/Restaurant');
 const generateOrderCode = require('../utils/generateOrderCode');
 const { isAdmin, isOwner, unauthorized } = require('../utils/authorization');
 const { jsonOk, jsonError, jsonPaginated, handleAuth } = require('../utils/httpResponses');
+const { countsByKey } = require('../utils/aggregation');
+
+// numero di piatti più venduti mostrati nella dashboard del manager
+const TOP_DISHES_LIMIT = 5;
+
+// solo gli ordini effettivamente conclusi contribuiscono agli incassi della filiale
+const REVENUE_STATUS = 'delivered';
 
 /* controller degli ordini: creazione, consultazione e avanzamento di stato
    (ordered -> preparing -> ready/on_delivery -> delivered), con regole di
@@ -292,10 +299,60 @@ async function confirmDelivery(req, res, next) {
   }
 }
 
+/* dashboard del manager per una filiale: ordini raggruppati per stato, incassi
+   (somma degli ordini consegnati) e i piatti più venduti (requirements.md §4).
+   riusa lo stesso controllo di autorizzazione già previsto per la lista ordini
+   della filiale (manager proprietario o admin). */
+async function getRestaurantDashboard(req, res, next) {
+  try {
+    const { restaurantId } = req.params;
+
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) {
+      return jsonError(res, 404, 'Restaurant not found');
+    }
+
+    const authCheck = checkRestaurantOrdersAccess(req, restaurant);
+    if (!authCheck.authorized) {
+      return handleAuth(res, authCheck);
+    }
+
+    const [ordersByStatus, revenueResult, topDishes] = await Promise.all([
+      Order.aggregate([
+        { $match: { restaurantId: restaurant._id } },
+        { $group: { _id: '$status', count: { $sum: 1 } } }
+      ]),
+      Order.aggregate([
+        { $match: { restaurantId: restaurant._id, status: REVENUE_STATUS } },
+        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+      ]),
+      Order.aggregate([
+        { $match: { restaurantId: restaurant._id } },
+        { $unwind: '$orderItems' },
+        { $group: { _id: '$orderItems.dishId', quantitySold: { $sum: '$orderItems.quantity' } } },
+        { $sort: { quantitySold: -1 } },
+        { $limit: TOP_DISHES_LIMIT },
+        { $lookup: { from: 'dishes', localField: '_id', foreignField: '_id', as: 'dish' } },
+        { $unwind: '$dish' },
+        { $project: { _id: 0, dishId: '$_id', name: '$dish.name', quantitySold: 1 } }
+      ])
+    ]);
+
+    return jsonOk(res, 200, {
+      ordersByStatus: countsByKey(ordersByStatus),
+      revenue: revenueResult[0]?.total || 0,
+      topDishes
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   createOrder,
   getUserOrders,
   getRestaurantOrders,
+  getRestaurantDashboard,
   getOrderById,
   updateOrderStatus,
   confirmDelivery

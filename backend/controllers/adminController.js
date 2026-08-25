@@ -3,6 +3,7 @@ const Restaurant = require('../models/Restaurant');
 const Order = require('../models/Order');
 const { applyPasswordUpdate } = require('../utils/password');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated } = require('../utils/httpResponses');
+const { countsByKey } = require('../utils/aggregation');
 const { reassignOrCloseManagerRestaurants } = require('./userController');
 
 /* controller di amministrazione: gestione degli utenti della piattaforma
@@ -87,14 +88,6 @@ async function deleteUser(req, res, next) {
   } catch (err) {
     next(err);
   }
-}
-
-// aggrega i conteggi per ruolo/stato di un array di risultati $group in un oggetto { chiave: conteggio }
-function countsByKey(groupedResults) {
-  return groupedResults.reduce((counts, { _id, count }) => {
-    counts[_id] = count;
-    return counts;
-  }, {});
 }
 
 // get statistiche aggregate della piattaforma (utenti, filiali, ordini)
