@@ -47,4 +47,34 @@ const updateOrderSchema = Joi.object({
   })
 });
 
-module.exports = {orderItemSchema, deliverySchema, createOrderSchema, updateOrderSchema};
+// carrello in bozza (data-model.md §5): il client indica solo dishId e
+// quantity, mai un prezzo, che il server calcola sempre dal Dish reale
+const addDraftItemSchema = Joi.object({
+  restaurantId: Joi.string().hex().length(24).required(),
+  dishId: Joi.string().hex().length(24).required(),
+  quantity: Joi.number().positive().required()
+});
+
+const updateDraftItemSchema = Joi.object({
+  quantity: Joi.number().positive().required()
+});
+
+// conferma del carrello: mode e delivery si specificano solo qui, non alla creazione del carrello
+const confirmDraftSchema = Joi.object({
+  mode: Joi.string().valid('pickup', 'delivery').required(),
+  delivery: Joi.alternatives().conditional('mode', {
+    is: 'delivery',
+    then: deliverySchema.required(),
+    otherwise: Joi.allow(null).forbidden()
+  })
+});
+
+module.exports = {
+  orderItemSchema,
+  deliverySchema,
+  createOrderSchema,
+  updateOrderSchema,
+  addDraftItemSchema,
+  updateDraftItemSchema,
+  confirmDraftSchema
+};

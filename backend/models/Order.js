@@ -58,18 +58,25 @@ const orderSchema = new mongoose.Schema(
     orderItems: [orderItemSchema], // righe dell'ordine embedded, lette e aggiornate insieme all'ordine
     status: {
       type: String,
-      enum: ["ordered", "preparing", "ready", "on_delivery", "delivered"],
+      // "draft" rappresenta il carrello prima della conferma (data-model.md §5):
+      // stessa collezione, nessuna tabella separata per il carrello
+      enum: ["draft", "ordered", "preparing", "ready", "on_delivery", "delivered"],
       required: true,
       default: "ordered",
     },
     mode: {
       type: String,
       enum: ["pickup", "delivery"], // modalità di completamento dell'ordine
-      required: true,
+      // richiesto solo a partire dalla conferma dell'ordine: un carrello in
+      // bozza non ha ancora scelto tra ritiro e consegna
+      required: function () {
+        return this.status !== "draft";
+      },
     },
     totalAmount: {
       type: Number,
       required: true,
+      default: 0, // 0 per un carrello in bozza appena creato o svuotato
       min: 0, // importo totale dell'ordine
     },
     orderCode: {
