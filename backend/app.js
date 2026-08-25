@@ -1,5 +1,12 @@
 require('dotenv').config();
 
+/* stesso principio già usato in config/db.js per MONGODB_URI: senza questo
+   controllo, jwt.js firmerebbe e verificherebbe i token con un secret
+   undefined, rendendoli falsificabili da chiunque conosca la libreria usata */
+if (!process.env.JWT_SECRET) {
+  throw new Error('Errore: JWT_SECRET non definita nel file .env');
+}
+
 var express = require('express');
 var helmet = require('helmet');
 var cookieParser = require('cookie-parser');
