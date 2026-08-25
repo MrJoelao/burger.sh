@@ -142,6 +142,24 @@ describe('POST /api/dishes', () => {
     expect(response.status).toBe(403);
   });
 
+  test('un manager proprietario con managerStatus "pending" riceve 403 nel creare un piatto custom', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .post('/api/dishes')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Panino Speciale',
+        type: 'burger',
+        price: 9,
+        isCustom: true,
+        restaurantId: restaurant._id.toString()
+      });
+
+    expect(response.status).toBe(403);
+  });
+
   test('rifiuta con 400 un piatto custom senza restaurantId', async () => {
     const admin = await createAdmin();
 
@@ -213,6 +231,19 @@ describe('PUT /api/dishes/:id', () => {
 
     expect(response.status).toBe(403);
   });
+
+  test('un manager proprietario con managerStatus "pending" riceve 403', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    const dish = await createDish({ isCustom: true, restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .put(`/api/dishes/${dish._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({ price: 15 });
+
+    expect(response.status).toBe(403);
+  });
 });
 
 describe('DELETE /api/dishes/:id', () => {
@@ -259,6 +290,18 @@ describe('DELETE /api/dishes/:id', () => {
     const response = await request(app)
       .delete(`/api/dishes/${dish._id}`)
       .set('Authorization', `Bearer ${tokenFor(customer)}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  test('un manager proprietario con managerStatus "pending" riceve 403', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    const dish = await createDish({ isCustom: true, restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .delete(`/api/dishes/${dish._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
 
     expect(response.status).toBe(403);
   });

@@ -110,6 +110,91 @@ describe('GET /api/orders/restaurant/:restaurantId', () => {
 
     expect(response.status).toBe(403);
   });
+
+  test('un manager proprietario con managerStatus "pending" riceve 403', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(403);
+  });
+});
+
+describe('GET /api/orders/restaurant/:restaurantId/dashboard', () => {
+  test('il manager proprietario vede incassi, ordini per stato e piatti più venduti', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    const dish = await createDish({ name: 'Cheeseburger' });
+
+    await createOrder({
+      restaurantId: restaurant._id,
+      status: 'delivered',
+      totalAmount: 10,
+      orderItems: [{ dishId: dish._id, quantity: 2, unitPrice: 5 }]
+    });
+    await createOrder({ restaurantId: restaurant._id, status: 'preparing' });
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${restaurant._id}/dashboard`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.revenue).toBe(10);
+    expect(response.body.data.ordersByStatus.delivered).toBe(1);
+    expect(response.body.data.ordersByStatus.preparing).toBe(1);
+    expect(response.body.data.topDishes[0]).toMatchObject({
+      name: 'Cheeseburger',
+      quantitySold: 2
+    });
+  });
+
+  test('un admin vede la dashboard di qualsiasi ristorante', async () => {
+    const admin = await createAdmin();
+    const restaurant = await createRestaurant();
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${restaurant._id}/dashboard`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.revenue).toBe(0);
+  });
+
+  test('un manager non proprietario riceve 403', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant();
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${restaurant._id}/dashboard`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  test('un manager proprietario con managerStatus "pending" riceve 403', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${restaurant._id}/dashboard`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  test('restituisce 404 per un ristorante inesistente', async () => {
+    const admin = await createAdmin();
+    const fakeId = '64b7a0f9a1234567890abcde';
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${fakeId}/dashboard`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`);
+
+    expect(response.status).toBe(404);
+  });
 });
 
 describe('GET /api/orders/:id', () => {
@@ -217,6 +302,19 @@ describe('PATCH /api/orders/:id/status', () => {
     const manager = await createManager();
     const restaurant = await createRestaurant();
     const order = await createOrder({ restaurantId: restaurant._id, mode: 'delivery', delivery: { address: 'x' } });
+
+    const response = await request(app)
+      .patch(`/api/orders/${order._id}/status`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({ status: 'preparing' });
+
+    expect(response.status).toBe(403);
+  });
+
+  test('un manager proprietario con managerStatus "pending" riceve 403', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    const order = await createOrder({ restaurantId: restaurant._id, mode: 'pickup' });
 
     const response = await request(app)
       .patch(`/api/orders/${order._id}/status`)

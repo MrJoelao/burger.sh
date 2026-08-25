@@ -158,6 +158,18 @@ describe('PUT /api/restaurants/:id', () => {
     expect(response.status).toBe(403);
   });
 
+  test('un manager proprietario con managerStatus "pending" riceve 403', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .put(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({ city: 'Napoli' });
+
+    expect(response.status).toBe(403);
+  });
+
   test('il manager proprietario non può trasferire il ristorante cambiando managerId', async () => {
     const manager = await createManager();
     const otherManager = await createManager();
