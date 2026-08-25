@@ -72,6 +72,41 @@ describe('userValidation', () => {
       expect(error).toBeDefined();
     });
 
+    test('fallisce se un manager si registra con una password di 6 caratteri', () => {
+      // arrange: stessa policy più stringente già applicata in authValidation.js
+      const payload = {
+        name: 'Luigi',
+        surname: 'Verdi',
+        email: 'luigi.verdi@example.com',
+        password: '123456',
+        role: 'manager'
+      };
+
+      // act
+      const { error } = registerSchema.validate(payload);
+
+      // assert
+      expect(error).toBeDefined();
+      expect(error.details[0].path).toContain('password');
+    });
+
+    test('accetta una password di 8 caratteri per un manager', () => {
+      // arrange
+      const payload = {
+        name: 'Luigi',
+        surname: 'Verdi',
+        email: 'luigi.verdi@example.com',
+        password: '12345678',
+        role: 'manager'
+      };
+
+      // act
+      const { error } = registerSchema.validate(payload);
+
+      // assert
+      expect(error).toBeUndefined();
+    });
+
     test('fallisce se manca il nome', () => {
       // arrange
       const payload = {

@@ -70,6 +70,59 @@ describe('authValidation', () => {
       expect(error).toBeDefined();
     });
 
+    test('accetta una password di 6 caratteri per un customer', () => {
+      // arrange
+      const payload = {
+        name: 'Mario',
+        surname: 'Rossi',
+        email: 'mario.rossi@example.com',
+        password: '123456',
+        role: 'customer'
+      };
+
+      // act
+      const { error } = registerSchema.validate(payload);
+
+      // assert
+      expect(error).toBeUndefined();
+    });
+
+    test('fallisce se un manager si registra con una password di 6 caratteri', () => {
+      // arrange: un manager gestisce incassi e ordini di una filiale reale,
+      // richiede una password più lunga del minimo usato per i customer
+      const payload = {
+        name: 'Mario',
+        surname: 'Rossi',
+        email: 'mario.rossi@example.com',
+        password: '123456',
+        role: 'manager'
+      };
+
+      // act
+      const { error } = registerSchema.validate(payload);
+
+      // assert
+      expect(error).toBeDefined();
+      expect(error.details[0].path).toContain('password');
+    });
+
+    test('accetta una password di 8 caratteri per un manager', () => {
+      // arrange
+      const payload = {
+        name: 'Mario',
+        surname: 'Rossi',
+        email: 'mario.rossi@example.com',
+        password: '12345678',
+        role: 'manager'
+      };
+
+      // act
+      const { error } = registerSchema.validate(payload);
+
+      // assert
+      expect(error).toBeUndefined();
+    });
+
     test('fallisce se il ruolo non è tra quelli ammessi', () => {
       // arrange
       const payload = {
