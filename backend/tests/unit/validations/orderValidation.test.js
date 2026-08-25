@@ -16,12 +16,10 @@ describe('orderValidation', () => {
     test('valida un ordine pickup senza dati di consegna', () => {
       // arrange
       const payload = {
-        customerId: validObjectId,
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'pickup',
-        totalAmount: 10,
-        orderCode: 'FF-ABC123'
+        totalAmount: 10
       };
 
       // act
@@ -34,12 +32,10 @@ describe('orderValidation', () => {
     test('richiede il campo delivery quando mode è delivery', () => {
       // arrange
       const payload = {
-        customerId: validObjectId,
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'delivery',
-        totalAmount: 10,
-        orderCode: 'FF-ABC123'
+        totalAmount: 10
       };
 
       // act
@@ -53,12 +49,10 @@ describe('orderValidation', () => {
     test('valida un ordine delivery con i dati di consegna completi', () => {
       // arrange
       const payload = {
-        customerId: validObjectId,
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'delivery',
         totalAmount: 10,
-        orderCode: 'FF-ABC123',
         delivery: { address: 'via Roma 1' }
       };
 
@@ -72,12 +66,10 @@ describe('orderValidation', () => {
     test('fallisce se delivery è presente ma mode è pickup', () => {
       // arrange
       const payload = {
-        customerId: validObjectId,
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'pickup',
         totalAmount: 10,
-        orderCode: 'FF-ABC123',
         delivery: { address: 'via Roma 1' }
       };
 
@@ -91,12 +83,10 @@ describe('orderValidation', () => {
     test('fallisce se orderItems è vuoto', () => {
       // arrange
       const payload = {
-        customerId: validObjectId,
         restaurantId: validObjectId,
         orderItems: [],
         mode: 'pickup',
-        totalAmount: 10,
-        orderCode: 'FF-ABC123'
+        totalAmount: 10
       };
 
       // act
@@ -106,9 +96,27 @@ describe('orderValidation', () => {
       expect(error).toBeDefined();
     });
 
-    test('fallisce se manca customerId', () => {
+    test('fallisce se manca restaurantId', () => {
       // arrange
       const payload = {
+        orderItems: [buildOrderItem()],
+        mode: 'pickup',
+        totalAmount: 10
+      };
+
+      // act
+      const { error } = createOrderSchema.validate(payload);
+
+      // assert
+      expect(error).toBeDefined();
+      expect(error.details[0].path).toContain('restaurantId');
+    });
+
+    test('rifiuta customerId e orderCode come campi sconosciuti (calcolati lato server, non nel payload)', () => {
+      // arrange: la route reale li scarta comunque grazie a stripUnknown,
+      // ma lo schema non li accetta più come campi validi
+      const payload = {
+        customerId: validObjectId,
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'pickup',
@@ -121,19 +129,17 @@ describe('orderValidation', () => {
 
       // assert
       expect(error).toBeDefined();
-      expect(error.details[0].path).toContain('customerId');
+      expect(error.details.every(detail => ['customerId', 'orderCode'].includes(detail.path[0]))).toBe(true);
     });
 
     test('fallisce se status non è tra i valori ammessi', () => {
       // arrange
       const payload = {
-        customerId: validObjectId,
         restaurantId: validObjectId,
         orderItems: [buildOrderItem()],
         mode: 'pickup',
         status: 'cancelled',
-        totalAmount: 10,
-        orderCode: 'FF-ABC123'
+        totalAmount: 10
       };
 
       // act

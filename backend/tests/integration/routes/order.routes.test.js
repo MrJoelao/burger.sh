@@ -28,19 +28,14 @@ describe('POST /api/orders', () => {
       .post('/api/orders')
       .set('Authorization', `Bearer ${tokenFor(customer)}`)
       .send({
-        // richiesti dallo schema Joi anche se il controller userà req.user.id
-        customerId: customer._id.toString(),
         restaurantId: restaurant._id.toString(),
         orderItems: [{ dishId: dish._id.toString(), quantity: 1, unitPrice: 8.5 }],
         mode: 'pickup',
-        totalAmount: 8.5,
-        orderCode: 'FF-CREATE01'
+        totalAmount: 8.5
       });
 
     expect(response.status).toBe(201);
 
-    // nota: il controller genera un proprio orderCode con generateOrderCode(),
-    // ignorando quello inviato nel payload, quindi si cerca per customerId
     const savedOrder = await Order.findOne({ customerId: customer._id });
     expect(savedOrder).not.toBeNull();
     expect(savedOrder.customerId.toString()).toBe(customer._id.toString());
@@ -52,9 +47,50 @@ describe('POST /api/orders', () => {
     const response = await request(app)
       .post('/api/orders')
       .set('Authorization', `Bearer ${tokenFor(customer)}`)
-      .send({ customerId: customer._id.toString() });
+      .send({ mode: 'pickup' });
 
     expect(response.status).toBe(400);
+  });
+
+  test('rifiuta con 400 se un piatto custom non appartiene al ristorante scelto', async () => {
+    const customer = await createUser();
+    const restaurant = await createRestaurant();
+    const otherRestaurant = await createRestaurant();
+    // piatto custom di un'altra filiale: non ordinabile presso "restaurant"
+    const dishOfAnotherRestaurant = await createDish({ isCustom: true, restaurantId: otherRestaurant._id });
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
+      .send({
+        restaurantId: restaurant._id.toString(),
+        orderItems: [{ dishId: dishOfAnotherRestaurant._id.toString(), quantity: 1, unitPrice: 8.5 }],
+        mode: 'pickup',
+        totalAmount: 8.5
+      });
+
+    expect(response.status).toBe(400);
+
+    const savedOrder = await Order.findOne({ customerId: customer._id });
+    expect(savedOrder).toBeNull();
+  });
+
+  test('accetta un piatto custom quando appartiene al ristorante scelto', async () => {
+    const customer = await createUser();
+    const restaurant = await createRestaurant();
+    const customDish = await createDish({ isCustom: true, restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .post('/api/orders')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
+      .send({
+        restaurantId: restaurant._id.toString(),
+        orderItems: [{ dishId: customDish._id.toString(), quantity: 1, unitPrice: 8.5 }],
+        mode: 'pickup',
+        totalAmount: 8.5
+      });
+
+    expect(response.status).toBe(201);
   });
 });
 
@@ -70,6 +106,35 @@ describe('GET /api/orders/user', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveLength(1);
+    expect(response.body.pagination).toBeDefined();
+  });
+
+  test('con status=current restituisce solo gli ordini non ancora consegnati', async () => {
+    const customer = await createUser();
+    await createOrder({ customerId: customer._id, status: 'ordered' });
+    await createOrder({ customerId: customer._id, status: 'delivered' });
+
+    const response = await request(app)
+      .get('/api/orders/user?status=current')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].status).toBe('ordered');
+  });
+
+  test('con status=past restituisce solo gli ordini consegnati', async () => {
+    const customer = await createUser();
+    await createOrder({ customerId: customer._id, status: 'ordered' });
+    await createOrder({ customerId: customer._id, status: 'delivered' });
+
+    const response = await request(app)
+      .get('/api/orders/user?status=past')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].status).toBe('delivered');
   });
 });
 
