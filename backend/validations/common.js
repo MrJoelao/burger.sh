@@ -8,4 +8,12 @@ const addressSchema = Joi.object({
   zip: Joi.string().optional().allow('')
 });
 
-module.exports = { addressSchema };
+/* indirizzo di consegna, condiviso tra la creazione diretta di un ordine
+   (orderValidation) e la conferma del carrello (cartValidation): distanza e
+   costo non sono mai accettati dal client, sono sempre ricalcolati lato
+   server da deliveryService a partire da questo indirizzo */
+const deliverySchema = Joi.object({
+  address: Joi.string().min(2).trim().required()
+});
+
+module.exports = { addressSchema, deliverySchema };

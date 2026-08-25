@@ -1,7 +1,8 @@
 const Order = require('../models/Order');
 const Restaurant = require('../models/Restaurant');
 const orderService = require('../services/orderService');
-const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
+const { populateOrderDetails } = require('../services/orderRecordService');
+const { jsonOk, jsonError, jsonPaginated, handleAuth } = require('../utils/httpResponses');
 const { findOrThrow } = require('../utils/authorization');
 
 /* controller degli ordini: legge la richiesta, delega la logica di dominio a
@@ -28,101 +29,6 @@ async function createOrder(req, res, next) {
     }
 
     return jsonOk(res, 201, result.order);
-  } catch (err) {
-    next(err);
-  }
-}
-
-/* carrello in bozza (data-model.md §5): il cliente aggiunge/rimuove piatti
-   prima di confermare l'ordine. il client indica solo dishId/quantity, mai un
-   prezzo: il totale è sempre calcolato dal service dal prezzo reale del piatto */
-async function addDraftItem(req, res, next) {
-  try {
-    const { restaurantId, dishId, quantity } = req.validated;
-
-    const result = await orderService.addDraftItem(req.user.id, { restaurantId, dishId, quantity });
-    if (result.error) {
-      return jsonError(res, result.statusCode, result.error);
-    }
-
-    return jsonOk(res, 200, result.order);
-  } catch (err) {
-    next(err);
-  }
-}
-
-// get carrello in bozza del cliente autenticato
-async function getDraft(req, res, next) {
-  try {
-    const result = await orderService.getDraft(req.user.id);
-    if (result.error) {
-      return jsonError(res, result.statusCode, result.error);
-    }
-
-    return jsonOk(res, 200, result.order);
-  } catch (err) {
-    next(err);
-  }
-}
-
-// aggiorna la quantity di un piatto già presente nel carrello in bozza
-async function updateDraftItem(req, res, next) {
-  try {
-    const { dishId } = req.params;
-    const { quantity } = req.validated;
-
-    const result = await orderService.updateDraftItemQuantity(req.user.id, dishId, quantity);
-    if (result.error) {
-      return jsonError(res, result.statusCode, result.error);
-    }
-
-    return jsonOk(res, 200, result.order);
-  } catch (err) {
-    next(err);
-  }
-}
-
-// rimuove un piatto dal carrello in bozza
-async function removeDraftItem(req, res, next) {
-  try {
-    const { dishId } = req.params;
-
-    const result = await orderService.removeDraftItem(req.user.id, dishId);
-    if (result.error) {
-      return jsonError(res, result.statusCode, result.error);
-    }
-
-    return jsonOk(res, 200, result.order);
-  } catch (err) {
-    next(err);
-  }
-}
-
-// elimina il carrello in bozza del cliente
-async function discardDraft(req, res, next) {
-  try {
-    const result = await orderService.discardDraft(req.user.id);
-    if (result.error) {
-      return jsonError(res, result.statusCode, result.error);
-    }
-
-    return jsonMessage(res, 200, 'Draft order discarded');
-  } catch (err) {
-    next(err);
-  }
-}
-
-// conferma il carrello in bozza: da qui diventa un ordine vero e proprio, in stato "ordered"
-async function confirmDraft(req, res, next) {
-  try {
-    const { mode, delivery } = req.validated;
-
-    const result = await orderService.confirmDraft(req.user.id, { mode, delivery });
-    if (result.error) {
-      return jsonError(res, result.statusCode, result.error);
-    }
-
-    return jsonOk(res, 200, result.order);
   } catch (err) {
     next(err);
   }
@@ -169,7 +75,7 @@ async function getOrderById(req, res, next) {
   try {
     const { id } = req.params;
 
-    const order = await findOrThrow(orderService.populateOrderDetails(Order.findById(id)), 'Order not found');
+    const order = await findOrThrow(populateOrderDetails(Order.findById(id)), 'Order not found');
 
     const authCheck = orderService.checkOrderAccess(req.user, order, 'view');
     if (!authCheck.authorized) {
@@ -202,7 +108,7 @@ async function updateOrderStatus(req, res, next) {
     order.status = status;
     await order.save();
 
-    const updatedOrder = await orderService.populateOrderDetails(order);
+    const updatedOrder = await populateOrderDetails(order);
 
     return jsonOk(res, 200, updatedOrder);
   } catch (err) {
@@ -233,7 +139,7 @@ async function confirmDelivery(req, res, next) {
     order.status = 'delivered';
     await order.save();
 
-    const updatedOrder = await orderService.populateOrderDetails(order);
+    const updatedOrder = await populateOrderDetails(order);
 
     return jsonOk(res, 200, updatedOrder);
   } catch (err) {
@@ -266,12 +172,6 @@ async function getRestaurantDashboard(req, res, next) {
 
 module.exports = {
   createOrder,
-  addDraftItem,
-  getDraft,
-  updateDraftItem,
-  removeDraftItem,
-  discardDraft,
-  confirmDraft,
   getUserOrders,
   getRestaurantOrders,
   getRestaurantDashboard,
