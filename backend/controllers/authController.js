@@ -1,9 +1,28 @@
 const User = require('../models/User');
 const { hashPassword, comparePassword } = require('../utils/password');
 const { signUser } = require('../utils/jwt');
+const { jsonOk, jsonError } = require('../utils/httpResponses');
 
-// arrivati a questo punto i dati sono già stati validati nel middleware quindi non c'è bisogno di fare nessuna verifica
+/* controller di autenticazione: gestisce registrazione e login.
+   i dati in req.validated sono già passati dal middleware di validazione,
+   quindi qui non serve ricontrollare formato o campi obbligatori. */
 
+// costruisce la risposta { token, user } comune a register e login
+function buildAuthResponse(user) {
+  return {
+    token: signUser(user),
+    user: {
+      id: user._id.toString(),
+      name: user.name,
+      surname: user.surname,
+      email: user.email,
+      role: user.role,
+      managerStatus: user.managerStatus ?? null
+    }
+  };
+}
+
+// register: crea un nuovo utente (customer o manager) e restituisce subito un token
 async function register(req, res, next) {
   try {
     const { name, surname, email, password, role } = req.validated;
@@ -11,10 +30,7 @@ async function register(req, res, next) {
     // controllo che l'email non sia già usata
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Email already in use'
-      });
+      return jsonError(res, 409, 'Email already in use');
     }
 
     const passwordHash = await hashPassword(password);
@@ -34,65 +50,30 @@ async function register(req, res, next) {
 
     const user = await User.create(userData);
 
-    const token = signUser(user);
-
-    return res.status(201).json({
-      success: true,
-      data: {
-        token,
-        user: {
-          id: user._id.toString(),
-          name: user.name,
-          surname: user.surname,
-          email: user.email,
-          role: user.role,
-          managerStatus: user.managerStatus ?? null
-        }
-      }
-    });
+    return jsonOk(res, 201, buildAuthResponse(user));
   } catch (err) {
     next(err);
   }
 }
 
+// login: verifica le credenziali e restituisce un token se sono corrette
 async function login(req, res, next) {
   try {
     const { email, password } = req.validated;
 
-    // trovo l'utente cercando la password
+    // cerco l'utente tramite email
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials: email not found'
-      });
+      return jsonError(res, 401, 'Invalid credentials: email not found');
     }
 
     // verifico la password
     const isMatch = await comparePassword(password, user.passwordHash);
     if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials: invalid password'
-      });
+      return jsonError(res, 401, 'Invalid credentials: invalid password');
     }
 
-    const token = signUser(user);
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        token,
-        user: {
-          id: user._id.toString(),
-          name: user.name,
-          surname: user.surname,
-          email: user.email,
-          role: user.role,
-          managerStatus: user.managerStatus ?? null
-        }
-      }
-    });
+    return jsonOk(res, 200, buildAuthResponse(user));
   } catch (err) {
     next(err);
   }
