@@ -15,25 +15,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-/**
- * PROTEZIONE GLOBALE: Rate limiting per richieste pubbliche (non autenticate)
- * 
- * Limite: 100 richieste per IP ogni 15 minuti
- * Motivo: Protezione base contro DoS da parte di clienti non autenticati
- * Applicato a: Tutti gli endpoint pubblici (login, registrazione, liste pubbliche)
- * 
- * Utenti autenticati hanno limiti più alti definiti in authMiddleware.js
- */
+/* limita le richieste pubbliche (non autenticate) a 100 per ip ogni 15 minuti,
+   come protezione di base contro abusi da parte di client non autenticati.
+   gli utenti autenticati hanno limiti diversi, definiti in authMiddleware.js */
 const publicLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,     // 15 minuti
-  max: 100,                     // 100 richieste per IP
+  max: 100,                     // 100 richieste per ip
   keyGenerator: (req) => {
-    // Limita per IP (gli utenti non autenticati non hanno ID)
+    // limita per ip, perché le richieste non autenticate non hanno un id utente
     return req.ip;
   },
   skip: (req) => {
-    // Salta il rate limit per utenti autenticati
-    // (loro hanno limiti diversi in authMiddleware)
+    // salta il rate limit per le richieste autenticate, che hanno limiti propri in authMiddleware
     return req.headers.authorization?.startsWith('Bearer ');
   },
   message: 'Too many requests from this IP, please try again later.'
@@ -62,13 +55,13 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 
-// middleware che gestisce le richieste che non corrispondenti a nessuna delle route definite.
-// deve essere registrata dopo tutte le route, altrimenti intercetterebbe ogni richiesta prima che possa
-// raggiungere il controller corretto.
+/* gestisce le richieste che non corrispondono a nessuna rotta definita. va registrato
+   dopo tutte le rotte, altrimenti intercetterebbe ogni richiesta prima che raggiunga
+   il controller corretto */
 app.use(notFound);
 
-// middleware globale per la gestione degli errori. deve essere l'ultimo middleware perché deve poter ricevere
-// gli errori generati dalle route e dai middleware precedenti.
+/* middleware globale per la gestione degli errori. deve essere l'ultimo, perché deve
+   poter ricevere gli errori generati dalle rotte e dai middleware precedenti */
 app.use(errorHandler);
 
 module.exports = app;
