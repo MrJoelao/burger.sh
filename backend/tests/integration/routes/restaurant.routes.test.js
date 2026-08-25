@@ -250,6 +250,32 @@ describe('PUT /api/restaurants/:id', () => {
     expect(response.status).toBe(200);
     expect(response.body.data.managerId._id.toString()).toBe(manager._id.toString());
   });
+
+  test('cambiare address invalida la location geocodificata in cache', async () => {
+    const admin = await createAdmin();
+    const restaurant = await createRestaurant({ location: { lat: 45.0, lng: 9.0 } });
+
+    const response = await request(app)
+      .put(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ address: 'Via Nuova 99' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.location).toBeUndefined();
+  });
+
+  test('cambiare solo il nome non tocca la location geocodificata in cache', async () => {
+    const admin = await createAdmin();
+    const restaurant = await createRestaurant({ location: { lat: 45.0, lng: 9.0 } });
+
+    const response = await request(app)
+      .put(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ name: 'Nuovo Nome' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.location).toEqual({ lat: 45.0, lng: 9.0 });
+  });
 });
 
 describe('DELETE /api/restaurants/:id', () => {

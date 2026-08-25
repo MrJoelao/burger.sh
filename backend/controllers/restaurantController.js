@@ -147,7 +147,16 @@ async function updateRestaurant(req, res, next) {
       return handleAuth(res, authCheck);
     }
 
-    const updatedRestaurant = await Restaurant.findByIdAndUpdate(id, updates, {
+    /* address/city cambiati invalidano la location geocodificata in cache
+       (deliveryService.ensureRestaurantLocation): senza questo, le consegne
+       continuerebbero a calcolare la distanza dalla vecchia posizione fino
+       al prossimo riavvio del processo */
+    const mongoUpdate = { $set: updates };
+    if (updates.address !== undefined || updates.city !== undefined) {
+      mongoUpdate.$unset = { location: 1 };
+    }
+
+    const updatedRestaurant = await Restaurant.findByIdAndUpdate(id, mongoUpdate, {
       returnDocument: 'after',
       runValidators: true
     }).populate('managerId', 'name surname email');
