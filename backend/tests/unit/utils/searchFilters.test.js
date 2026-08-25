@@ -1,7 +1,7 @@
 const {
   escapeRegex,
   containsFilter,
-  parseOptionalNonNegativeNumber,
+  parseNonNegativeNumber,
   combineFilters
 } = require('@utils/searchFilters');
 
@@ -43,21 +43,21 @@ describe('searchFilters utils', () => {
     });
   });
 
-  describe('parseOptionalNonNegativeNumber', () => {
+  describe('parseNonNegativeNumber', () => {
     test('restituisce undefined se il valore non è passato', () => {
-      expect(parseOptionalNonNegativeNumber(undefined, 'minPrice')).toBeUndefined();
+      expect(parseNonNegativeNumber(undefined, 'minPrice')).toBeUndefined();
     });
 
     test('converte una stringa numerica valida in un numero', () => {
-      expect(parseOptionalNonNegativeNumber('5.5', 'minPrice')).toBe(5.5);
+      expect(parseNonNegativeNumber('5.5', 'minPrice')).toBe(5.5);
     });
 
     test('lancia un errore 400 se il valore non è un numero', () => {
-      expect(() => parseOptionalNonNegativeNumber('abc', 'minPrice')).toThrow('minPrice must be a non-negative number');
+      expect(() => parseNonNegativeNumber('abc', 'minPrice')).toThrow('minPrice must be a non-negative number');
     });
 
     test('lancia un errore 400 se il valore è negativo', () => {
-      expect(() => parseOptionalNonNegativeNumber('-1', 'maxPrice')).toThrow('maxPrice must be a non-negative number');
+      expect(() => parseNonNegativeNumber('-1', 'maxPrice')).toThrow('maxPrice must be a non-negative number');
     });
   });
 

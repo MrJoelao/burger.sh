@@ -6,7 +6,7 @@ const { updateProfileSchema, deleteAccountSchema } = require('../validations/use
 const { createPaymentMethodSchema, updatePaymentMethodSchema } = require('../validations/paymentMethodValidation');
 const { getMe, updateMe, deleteMe } = require('../controllers/userController');
 const {
-  getMyPaymentMethods,
+  getPaymentMethods,
   getPaymentMethodById,
   createPaymentMethod,
   updatePaymentMethod,
@@ -21,7 +21,7 @@ router.put('/me', authMiddleware, validate(updateProfileSchema), updateMe);
 router.delete('/me', authMiddleware, validate(deleteAccountSchema), deleteMe);
 
 // metodi di pagamento del cliente autenticato, sempre sotto req.user.id (nessun id cliente nel path)
-router.get('/me/payment-methods', authMiddleware, getMyPaymentMethods);
+router.get('/me/payment-methods', authMiddleware, getPaymentMethods);
 router.get('/me/payment-methods/:id', authMiddleware, validateObjectId('id'), getPaymentMethodById);
 router.post('/me/payment-methods', authMiddleware, validate(createPaymentMethodSchema), createPaymentMethod);
 router.put('/me/payment-methods/:id', authMiddleware, validateObjectId('id'), validate(updatePaymentMethodSchema), updatePaymentMethod);

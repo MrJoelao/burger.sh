@@ -8,12 +8,32 @@ const { jsonOk, jsonError, jsonMessage, badRequest } = require('../utils/httpRes
    o admin) può consultare, modificare ed eliminare i propri dati tramite
    req.user.id, senza bisogno di passare l'id nel path. */
 
+// verifica che newManagerId appartenga a un manager esistente e approvato
+async function assertApprovedManager(newManagerId) {
+  const newManager = await User.findById(newManagerId);
+  if (!newManager || newManager.role !== 'manager' || newManager.managerStatus !== 'approved') {
+    throw badRequest('newManagerId must belong to an approved manager');
+  }
+}
+
+// riassegna le filiali indicate a un nuovo manager approvato
+async function transferRestaurants(restaurantIds, newManagerId) {
+  await assertApprovedManager(newManagerId);
+  await Restaurant.updateMany({ _id: { $in: restaurantIds } }, { managerId: newManagerId });
+}
+
+// chiude le filiali indicate, eliminandole insieme ai loro piatti custom
+async function closeRestaurants(restaurantIds) {
+  await Dish.deleteMany({ restaurantId: { $in: restaurantIds } });
+  await Restaurant.deleteMany({ _id: { $in: restaurantIds } });
+}
+
 /* trasferisce le filiali indicate a un altro manager approvato, oppure le
-   chiude (eliminandole insieme ai loro piatti custom) se non viene indicato
-   un successore. condivisa tra la chiusura dell'account di un manager
-   (tutte le sue filiali) e la chiusura di una singola filiale da parte del
-   manager proprietario, così le due operazioni seguono sempre la stessa regola. */
-async function closeOrTransferRestaurants(restaurants, newManagerId) {
+   chiude se non viene indicato un successore. condivisa tra la chiusura
+   dell'account di un manager (tutte le sue filiali) e la chiusura di una
+   singola filiale da parte del manager proprietario, così le due operazioni
+   seguono sempre la stessa regola. */
+async function settleRestaurants(restaurants, newManagerId) {
   if (restaurants.length === 0) {
     return;
   }
@@ -21,25 +41,18 @@ async function closeOrTransferRestaurants(restaurants, newManagerId) {
   const restaurantIds = restaurants.map(restaurant => restaurant._id);
 
   if (newManagerId) {
-    const newManager = await User.findById(newManagerId);
-    if (!newManager || newManager.role !== 'manager' || newManager.managerStatus !== 'approved') {
-      throw badRequest('newManagerId must belong to an approved manager');
-    }
-
-    await Restaurant.updateMany({ _id: { $in: restaurantIds } }, { managerId: newManagerId });
-    return;
+    return transferRestaurants(restaurantIds, newManagerId);
   }
 
-  await Dish.deleteMany({ restaurantId: { $in: restaurantIds } });
-  await Restaurant.deleteMany({ _id: { $in: restaurantIds } });
+  return closeRestaurants(restaurantIds);
 }
 
 /* trasferisce o chiude tutte le filiali di un manager, usata quando il manager
    stesso esce dal ruolo (eliminazione dell'account o declassamento da parte
    dell'admin). condivisa con adminController. */
-async function reassignOrCloseManagerRestaurants(managerId, newManagerId) {
+async function resolveManagerRestaurants(managerId, newManagerId) {
   const restaurants = await Restaurant.find({ managerId });
-  await closeOrTransferRestaurants(restaurants, newManagerId);
+  await settleRestaurants(restaurants, newManagerId);
 }
 
 // get i propri dati
@@ -86,7 +99,7 @@ async function deleteMe(req, res, next) {
 
     if (user.role === 'manager') {
       const { newManagerId } = req.validated;
-      await reassignOrCloseManagerRestaurants(user._id, newManagerId);
+      await resolveManagerRestaurants(user._id, newManagerId);
     }
 
     await User.findByIdAndDelete(user._id);
@@ -101,6 +114,6 @@ module.exports = {
   getMe,
   updateMe,
   deleteMe,
-  reassignOrCloseManagerRestaurants,
-  closeOrTransferRestaurants
+  resolveManagerRestaurants,
+  settleRestaurants
 };

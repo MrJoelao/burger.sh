@@ -18,7 +18,7 @@ async function clearOtherDefaults(customerId, excludeId) {
 }
 
 // get tutti i metodi di pagamento del cliente autenticato
-async function getMyPaymentMethods(req, res, next) {
+async function getPaymentMethods(req, res, next) {
   try {
     const paymentMethods = await PaymentMethod.find({ customerId: req.user.id });
 
@@ -108,7 +108,7 @@ async function deletePaymentMethod(req, res, next) {
 }
 
 module.exports = {
-  getMyPaymentMethods,
+  getPaymentMethods,
   getPaymentMethodById,
   createPaymentMethod,
   updatePaymentMethod,

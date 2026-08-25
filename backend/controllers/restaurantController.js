@@ -4,7 +4,7 @@ const Dish = require('../models/Dish');
 const { isAdmin, isOwner, unauthorized, findOrThrow } = require('../utils/authorization');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
 const { containsFilter, combineFilters } = require('../utils/searchFilters');
-const { closeOrTransferRestaurants } = require('./userController');
+const { settleRestaurants } = require('./userController');
 
 /* controller dei ristoranti: consultazione pubblica (lista e dettaglio) e
    gestione riservata a admin (creazione/eliminazione) e al manager
@@ -14,7 +14,7 @@ const { closeOrTransferRestaurants } = require('./userController');
    un piatto del menu comune (isCustom: false) è ordinabile in qualsiasi
    filiale, quindi non restringe la ricerca; un piatto custom la restringe
    invece ai soli ristoranti proprietari di quel piatto */
-async function restaurantIdsOfferingDish(dishName) {
+async function restaurantIdsForDish(dishName) {
   const matchingDishes = await Dish.find(
     { name: containsFilter(dishName) },
     'isCustom restaurantId'
@@ -44,7 +44,7 @@ async function buildRestaurantSearchFilter({ name, city, dishName }) {
   }
 
   if (dishName) {
-    const restaurantIds = await restaurantIdsOfferingDish(dishName);
+    const restaurantIds = await restaurantIdsForDish(dishName);
     if (restaurantIds) {
       conditions.push({ _id: { $in: restaurantIds } });
     }
@@ -175,7 +175,7 @@ async function deleteRestaurant(req, res, next) {
       return handleAuth(res, authCheck);
     }
 
-    await closeOrTransferRestaurants([restaurant], newManagerId);
+    await settleRestaurants([restaurant], newManagerId);
 
     return jsonMessage(res, 200, 'Restaurant deleted successfully');
   } catch (err) {

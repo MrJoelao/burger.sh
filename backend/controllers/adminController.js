@@ -4,7 +4,7 @@ const Order = require('../models/Order');
 const { applyPasswordUpdate } = require('../utils/password');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated } = require('../utils/httpResponses');
 const { countsByKey } = require('../utils/aggregation');
-const { reassignOrCloseManagerRestaurants } = require('./userController');
+const { resolveManagerRestaurants } = require('./userController');
 
 /* valori ammessi per i filtri di getAllUsers: qualsiasi altro valore (comprese
    stringhe fuori da questo elenco o oggetti come { $ne: null }, che qs può
@@ -119,7 +119,7 @@ async function updateUser(req, res, next) {
     const isLeavingManagerRole = targetUser.role === 'manager' && updates.role && updates.role !== 'manager';
 
     if (isLeavingManagerRole) {
-      await reassignOrCloseManagerRestaurants(targetUser._id, newManagerId);
+      await resolveManagerRestaurants(targetUser._id, newManagerId);
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -144,7 +144,7 @@ async function deleteUser(req, res, next) {
 
     if (user.role === 'manager') {
       const { newManagerId } = req.validated;
-      await reassignOrCloseManagerRestaurants(user._id, newManagerId);
+      await resolveManagerRestaurants(user._id, newManagerId);
     }
 
     await User.findByIdAndDelete(user._id);

@@ -10,7 +10,7 @@ const {
   findOrThrow
 } = require('../utils/authorization');
 const { jsonOk, jsonMessage, jsonPaginated, handleAuth, notFound, badRequest } = require('../utils/httpResponses');
-const { containsFilter, parseOptionalNonNegativeNumber, combineFilters } = require('../utils/searchFilters');
+const { containsFilter, parseNonNegativeNumber, combineFilters } = require('../utils/searchFilters');
 
 /* gestisce sia i piatti del menu base sia i piatti
    custom, creati da un manager per un ristorante specifico. */
@@ -84,8 +84,8 @@ async function buildDishSearchConditions({ name, type, minPrice, maxPrice, ingre
     conditions.push({ type: typeFilter });
   }
 
-  const min = parseOptionalNonNegativeNumber(minPrice, 'minPrice');
-  const max = parseOptionalNonNegativeNumber(maxPrice, 'maxPrice');
+  const min = parseNonNegativeNumber(minPrice, 'minPrice');
+  const max = parseNonNegativeNumber(maxPrice, 'maxPrice');
   if (min !== undefined || max !== undefined) {
     conditions.push({
       price: {

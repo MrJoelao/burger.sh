@@ -24,7 +24,7 @@ function containsFilter(value) {
 
 /* converte un parametro di query opzionale in un numero non negativo,
    lanciando un errore 400 se il valore è presente ma non valido */
-function parseOptionalNonNegativeNumber(value, fieldName) {
+function parseNonNegativeNumber(value, fieldName) {
   if (value === undefined) {
     return undefined;
   }
@@ -56,6 +56,6 @@ function combineFilters(conditions) {
 module.exports = {
   escapeRegex,
   containsFilter,
-  parseOptionalNonNegativeNumber,
+  parseNonNegativeNumber,
   combineFilters
 };
