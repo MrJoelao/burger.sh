@@ -264,13 +264,56 @@ describe('DELETE /api/restaurants/:id', () => {
     expect(response.status).toBe(200);
   });
 
-  test('il manager proprietario riceve 403 nell\'eliminare il proprio ristorante (solo admin)', async () => {
+  test('il manager proprietario può chiudere la propria filiale senza chiudere l\'account', async () => {
     const manager = await createManager();
     const restaurant = await createRestaurant({ managerId: manager._id });
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
       .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(200);
+
+    const User = require('../../../models/User');
+    const stillExists = await User.findById(manager._id);
+    expect(stillExists).not.toBeNull();
+  });
+
+  test('il manager proprietario può trasferire la filiale con newManagerId invece di chiuderla', async () => {
+    const manager = await createManager();
+    const newManager = await createManager({ managerStatus: 'approved' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({ newManagerId: newManager._id.toString() });
+
+    expect(response.status).toBe(200);
+
+    const Restaurant = require('../../../models/Restaurant');
+    const transferred = await Restaurant.findById(restaurant._id);
+    expect(transferred.managerId.toString()).toBe(newManager._id.toString());
+  });
+
+  test('un manager non proprietario riceve 403 nell\'eliminare un ristorante altrui', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant();
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  test('un customer riceve 403 nell\'eliminare un ristorante', async () => {
+    const customer = await createUser();
+    const restaurant = await createRestaurant();
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(customer)}`);
 
     expect(response.status).toBe(403);
   });

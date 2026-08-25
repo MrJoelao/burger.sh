@@ -1,9 +1,10 @@
 const Restaurant = require('../models/Restaurant');
 const User = require('../models/User');
 const Dish = require('../models/Dish');
-const { isAdmin, isOwner, unauthorized } = require('../utils/authorization');
+const { isAdmin, isOwner, unauthorized, findOrThrow } = require('../utils/authorization');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
 const { containsFilter, combineFilters } = require('../utils/searchFilters');
+const { closeOrTransferRestaurants } = require('./userController');
 
 /* controller dei ristoranti: consultazione pubblica (lista e dettaglio) e
    gestione riservata a admin (creazione/eliminazione) e al manager
@@ -139,10 +140,7 @@ async function updateRestaurant(req, res, next) {
        che un manager proprietario ceda/rubi la propria filiale a chiunque) */
     delete updates.managerId;
 
-    const restaurant = await Restaurant.findById(id);
-    if (!restaurant) {
-      return jsonError(res, 404, 'Restaurant not found');
-    }
+    const restaurant = await findOrThrow(Restaurant.findById(id), 'Restaurant not found');
 
     const authCheck = canModifyRestaurant(req, restaurant);
     if (!authCheck.authorized) {
@@ -150,7 +148,7 @@ async function updateRestaurant(req, res, next) {
     }
 
     const updatedRestaurant = await Restaurant.findByIdAndUpdate(id, updates, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true
     }).populate('managerId', 'name surname email');
 
@@ -160,15 +158,24 @@ async function updateRestaurant(req, res, next) {
   }
 }
 
-// delete ristorante (solo admin)
+/* delete ristorante: l'admin può chiudere qualsiasi filiale, il manager
+   proprietario può chiudere la propria senza dover eliminare l'intero
+   account (a differenza di prima, quando l'unico modo era DELETE /api/users/me).
+   con newManagerId nel body, la filiale viene trasferita invece di essere
+   chiusa, riusando la stessa regola già applicata alla dismissione di un manager. */
 async function deleteRestaurant(req, res, next) {
   try {
     const { id } = req.params;
+    const { newManagerId } = req.validated || {};
 
-    const restaurant = await Restaurant.findByIdAndDelete(id);
-    if (!restaurant) {
-      return jsonError(res, 404, 'Restaurant not found');
+    const restaurant = await findOrThrow(Restaurant.findById(id), 'Restaurant not found');
+
+    const authCheck = canModifyRestaurant(req, restaurant);
+    if (!authCheck.authorized) {
+      return handleAuth(res, authCheck);
     }
+
+    await closeOrTransferRestaurants([restaurant], newManagerId);
 
     return jsonMessage(res, 200, 'Restaurant deleted successfully');
   } catch (err) {
