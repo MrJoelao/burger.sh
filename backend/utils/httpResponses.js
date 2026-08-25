@@ -39,6 +39,22 @@ function handleAuth(res, authCheck) {
   return jsonError(res, authCheck.statusCode, authCheck.message);
 }
 
+// risposta di successo con solo un messaggio (es. conferma di un'eliminazione): { success: true, message }
+function jsonMessage(res, statusCode, message) {
+  return res.status(statusCode).json({
+    success: true,
+    message
+  });
+}
+
+// risposta di successo paginata: { success: true, data, pagination }
+function jsonPaginated(res, statusCode, page, limit, total, data) {
+  return res.status(statusCode).json({
+    success: true,
+    ...paginate(page, limit, total, data)
+  });
+}
+
 // crea un errore con statusCode 404, da lanciare e far gestire all'error handler globale
 function notFound(message) {
   const error = new Error(message);
@@ -58,6 +74,8 @@ module.exports = {
   jsonError,
   paginate,
   handleAuth,
+  jsonMessage,
+  jsonPaginated,
   notFound,
   badRequest
 };
