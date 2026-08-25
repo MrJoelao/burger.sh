@@ -52,11 +52,15 @@ const authRoutes = require('./routes/authRoutes');
 const restaurantRoutes = require('./routes/restaurantRoutes');
 const dishRoutes = require('./routes/dishRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/dishes', dishRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 // middleware che gestisce le richieste che non corrispondenti a nessuna delle route definite.
 // deve essere registrata dopo tutte le route, altrimenti intercetterebbe ogni richiesta prima che possa
