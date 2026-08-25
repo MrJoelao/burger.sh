@@ -43,7 +43,10 @@ const userSchema = new mongoose.Schema(
     address: addressSchema,
     managerStatus: {
       type: String,
-      enum: ["pending", "approved"], // un manager deve essere "approvato" dall'admin
+      /* "rejected" è transitorio: adminController.updateUser lo traduce subito
+         in un declassamento a "customer" con managerStatus rimosso, così
+         nessun utente resta bloccato in uno stato manager rifiutato */
+      enum: ["pending", "approved", "rejected"],
     },
     preferences: [{ type: String, trim: true, enum: ALLOWED_PREFERENCES }],
   },

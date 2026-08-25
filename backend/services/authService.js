@@ -7,18 +7,25 @@ const { signUser } = require('../utils/jwt');
    queste funzioni e tradurne il risultato in una risposta http, esattamente
    come fa orderController con orderService. */
 
-// costruisce la risposta { token, user } comune a register e login
+/* costruisce la risposta { token, user } comune a register e login.
+   managerStatus va incluso solo se presente sull'utente (data-model.md):
+   per customer e admin il campo non esiste affatto, non è null */
 function buildAuthResponse(user) {
+  const responseUser = {
+    id: user._id.toString(),
+    name: user.name,
+    surname: user.surname,
+    email: user.email,
+    role: user.role
+  };
+
+  if (user.managerStatus) {
+    responseUser.managerStatus = user.managerStatus;
+  }
+
   return {
     token: signUser(user),
-    user: {
-      id: user._id.toString(),
-      name: user.name,
-      surname: user.surname,
-      email: user.email,
-      role: user.role,
-      managerStatus: user.managerStatus ?? null
-    }
+    user: responseUser
   };
 }
 

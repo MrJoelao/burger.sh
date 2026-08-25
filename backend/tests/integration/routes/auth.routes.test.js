@@ -28,6 +28,36 @@ describe('POST /api/auth/register', () => {
     expect(response.body.data.user.email).toBe('mario@example.com');
   });
 
+  test('non include managerStatus nella risposta di un customer registrato', async () => {
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        name: 'Mario',
+        surname: 'Rossi',
+        email: 'customer-senza-status@example.com',
+        password: 'password123',
+        role: 'customer'
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.user).not.toHaveProperty('managerStatus');
+  });
+
+  test('include managerStatus "pending" nella risposta di un manager appena registrato', async () => {
+    const response = await request(app)
+      .post('/api/auth/register')
+      .send({
+        name: 'Luigi',
+        surname: 'Verdi',
+        email: 'manager@example.com',
+        password: 'password123',
+        role: 'manager'
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.user.managerStatus).toBe('pending');
+  });
+
   test('rifiuta la registrazione con email già in uso restituendo 409', async () => {
     await createUser({ email: 'duplicato@example.com' });
 
@@ -72,6 +102,20 @@ describe('POST /api/auth/login', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.token).toBeDefined();
+  });
+
+  test('non include managerStatus nella risposta di login di un customer', async () => {
+    await createUser({
+      email: 'customer-login@example.com',
+      passwordHash: await hashPassword('password123')
+    });
+
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'customer-login@example.com', password: 'password123' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.user).not.toHaveProperty('managerStatus');
   });
 
   test('rifiuta il login con email inesistente restituendo 401', async () => {
