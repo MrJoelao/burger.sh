@@ -7,7 +7,7 @@ const {
   isOwner,
   unauthorized
 } = require('../utils/authorization');
-const { jsonOk, paginate, handleAuth, notFound, badRequest } = require('../utils/httpResponses');
+const { jsonOk, jsonMessage, jsonPaginated, handleAuth, notFound, badRequest } = require('../utils/httpResponses');
 
 /* gestisce sia i piatti del menu base sia i piatti
    custom, creati da un manager per un ristorante specifico. */
@@ -64,7 +64,7 @@ async function populateDish(dish) {
 
 /* esegue la query paginata dei piatti in base al filtro passato, condivisa
    tra il listing generale e quello per ristorante */
-async function listDishes(filter, { page, limit, skip }) {
+async function listDishes(filter, { limit, skip }) {
   const [total, dishes] = await Promise.all([
     Dish.countDocuments(filter),
     Dish.find(filter)
@@ -74,7 +74,7 @@ async function listDishes(filter, { page, limit, skip }) {
       .populate('restaurantId', 'name city')
   ]);
 
-  return paginate(page, limit, total, dishes);
+  return { total, dishes };
 }
 
 // get tutti i piatti
@@ -82,12 +82,9 @@ async function getAllDishes(req, res, next) {
   try {
     const pagination = req.pagination || { page: 1, limit: 10, skip: 0 };
 
-    const result = await listDishes({}, pagination);
+    const { total, dishes } = await listDishes({}, pagination);
 
-    return res.status(200).json({
-      success: true,
-      ...result
-    });
+    return jsonPaginated(res, 200, pagination.page, pagination.limit, total, dishes);
   } catch (err) {
     return next(err);
   }
@@ -107,12 +104,9 @@ async function getDishesByRestaurant(req, res, next) {
       ]
     };
 
-    const result = await listDishes(filter, pagination);
+    const { total, dishes } = await listDishes(filter, pagination);
 
-    return res.status(200).json({
-      success: true,
-      ...result
-    });
+    return jsonPaginated(res, 200, pagination.page, pagination.limit, total, dishes);
   } catch (err) {
     return next(err);
   }
@@ -235,10 +229,7 @@ async function deleteDish(req, res, next) {
 
     await dish.constructor.deleteOne({ _id: dish._id });
 
-    return res.status(200).json({
-      success: true,
-      message: 'Dish deleted successfully'
-    });
+    return jsonMessage(res, 200, 'Dish deleted successfully');
   } catch (err) {
     return next(err);
   }

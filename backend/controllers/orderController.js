@@ -3,19 +3,36 @@ const Dish = require('../models/Dish');
 const Restaurant = require('../models/Restaurant');
 const generateOrderCode = require('../utils/generateOrderCode');
 const { isAdmin, isOwner, unauthorized } = require('../utils/authorization');
-const { jsonOk, jsonError, paginate, handleAuth } = require('../utils/httpResponses');
+const { jsonOk, jsonError, jsonPaginated, handleAuth } = require('../utils/httpResponses');
 
 /* controller degli ordini: creazione, consultazione e avanzamento di stato
    (ordered -> preparing -> ready/on_delivery -> delivered), con regole di
    accesso diverse per cliente, manager del ristorante e admin. */
 
-/* stati ammessi per ogni modalità: il ritiro salta lo stato "on_delivery"
-   (non c'è consegna), la modalità a domicilio salta "ready" (il cliente
-   non ritira di persona) */
+/* sequenza di stati ammessi per ogni modalità: il ritiro salta lo stato
+   "on_delivery" (non c'è consegna), la modalità a domicilio salta "ready"
+   (il cliente non ritira di persona). rappresenta l'intera state machine,
+   non solo l'insieme di stati validi per la modalità */
 const VALID_STATUS_TRANSITIONS = {
   pickup: ['ordered', 'preparing', 'ready', 'delivered'],
   delivery: ['ordered', 'preparing', 'on_delivery', 'delivered']
 };
+
+/* verifica che lo stato richiesto sia effettivamente il prossimo stato
+   raggiungibile da quello corrente per la modalità dell'ordine, e non solo
+   uno stato genericamente ammesso per quella modalità (altrimenti si
+   potrebbero saltare stati, es. da "ordered" a "delivered", o tornare indietro) */
+function isValidStatusTransition(mode, currentStatus, nextStatus) {
+  const sequence = VALID_STATUS_TRANSITIONS[mode];
+  if (!sequence) {
+    return false;
+  }
+
+  const currentIndex = sequence.indexOf(currentStatus);
+  const nextIndex = sequence.indexOf(nextStatus);
+
+  return currentIndex !== -1 && nextIndex === currentIndex + 1;
+}
 
 /* aggiunge a un ordine i dati essenziali di cliente, ristorante e piatti,
    così la risposta al client è sempre completa senza ripetere la stessa
@@ -179,10 +196,7 @@ async function getRestaurantOrders(req, res, next) {
       )
     ]);
 
-    return res.status(200).json({
-      success: true,
-      ...paginate(page, limit, total, orders)
-    });
+    return jsonPaginated(res, 200, page, limit, total, orders);
   } catch (err) {
     next(err);
   }
@@ -228,9 +242,8 @@ async function updateOrderStatus(req, res, next) {
       return handleAuth(res, authCheck);
     }
 
-    const allowedStatuses = VALID_STATUS_TRANSITIONS[order.mode];
-    if (!allowedStatuses.includes(status)) {
-      return jsonError(res, 400, `Invalid status ${status} for order mode ${order.mode}`);
+    if (!isValidStatusTransition(order.mode, order.status, status)) {
+      return jsonError(res, 400, `Cannot transition order from ${order.status} to ${status} for mode ${order.mode}`);
     }
 
     order.status = status;

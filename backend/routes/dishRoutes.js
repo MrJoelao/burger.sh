@@ -2,6 +2,7 @@ const express = require('express');
 const validate = require('../middlewares/validateRequest');
 const authMiddleware = require('../middlewares/authMiddleware');
 const paginationMiddleware = require('../middlewares/paginationMiddleware');
+const validateObjectId = require('../middlewares/validateObjectId');
 const { createDishSchema, updateDishSchema } = require('../validations/dishValidation');
 const {
   getAllDishes,
@@ -16,12 +17,12 @@ const router = express.Router();
 
 // rotte pubbliche
 router.get('/', paginationMiddleware, getAllDishes);
-router.get('/restaurant/:restaurantId', paginationMiddleware, getDishesByRestaurant);
-router.get('/:id', getDishById);
+router.get('/restaurant/:restaurantId', validateObjectId('restaurantId'), paginationMiddleware, getDishesByRestaurant);
+router.get('/:id', validateObjectId('id'), getDishById);
 
 // rotte protette (richiedono autenticazione)
 router.post('/', authMiddleware, validate(createDishSchema), createDish);
-router.put('/:id', authMiddleware, validate(updateDishSchema), updateDish);
-router.delete('/:id', authMiddleware, deleteDish);
+router.put('/:id', authMiddleware, validateObjectId('id'), validate(updateDishSchema), updateDish);
+router.delete('/:id', authMiddleware, validateObjectId('id'), deleteDish);
 
 module.exports = router;

@@ -225,6 +225,44 @@ describe('PATCH /api/orders/:id/status', () => {
 
     expect(response.status).toBe(403);
   });
+
+  test('rifiuta con 400 un salto di stato che non passa per gli stati intermedi', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    const order = await createOrder({
+      restaurantId: restaurant._id,
+      mode: 'delivery',
+      status: 'ordered',
+      delivery: { address: 'Via Milano 5' }
+    });
+
+    const response = await request(app)
+      .patch(`/api/orders/${order._id}/status`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({ status: 'delivered' });
+
+    expect(response.status).toBe(400);
+
+    const untouchedOrder = await Order.findById(order._id);
+    expect(untouchedOrder.status).toBe('ordered');
+  });
+
+  test('rifiuta con 400 un tentativo di tornare a uno stato precedente', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    const order = await createOrder({
+      restaurantId: restaurant._id,
+      mode: 'pickup',
+      status: 'ready'
+    });
+
+    const response = await request(app)
+      .patch(`/api/orders/${order._id}/status`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({ status: 'preparing' });
+
+    expect(response.status).toBe(400);
+  });
 });
 
 describe('PATCH /api/orders/:id/confirm-delivery', () => {
