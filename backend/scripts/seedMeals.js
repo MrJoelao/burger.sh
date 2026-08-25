@@ -18,7 +18,7 @@ async function seedMeals() {
       Dish.findOneAndUpdate(
         { name: meal.name, isCustom: false },
         { ...meal, isCustom: false, restaurantId: null },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
       )
     )
   );
