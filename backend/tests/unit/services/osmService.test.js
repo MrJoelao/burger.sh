@@ -1,3 +1,5 @@
+// timeout ridotto per non far durare 5 secondi il test che lo esercita
+process.env.OSM_TIMEOUT_MS = '50';
 const { geocodeAddress } = require('@services/osmService');
 
 /* test unitari di osmService: mocka la fetch globale così nessun test parla
@@ -62,6 +64,31 @@ describe('osmService', () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('network error'));
 
       await expect(geocodeAddress('Via Roma 1, Milano')).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    test('rifiuta con statusCode 502 se il servizio non risponde entro il timeout', async () => {
+      // fetch che non si risolve mai finché non arriva l'abort, come una vera richiesta appesa
+      global.fetch = jest.fn((url, options) => new Promise((resolve, reject) => {
+        options.signal.addEventListener('abort', () => {
+          const abortError = new Error('The operation was aborted');
+          abortError.name = 'AbortError';
+          reject(abortError);
+        });
+      }));
+
+      await expect(geocodeAddress('Via Roma 1, Milano')).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    test('passa a fetch un AbortSignal per poter interrompere richieste appese', async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve([{ lat: '45.0', lon: '9.0' }])
+      });
+
+      await geocodeAddress('Via Roma 1, Milano');
+
+      const [, options] = global.fetch.mock.calls[0];
+      expect(options.signal).toBeInstanceOf(AbortSignal);
     });
   });
 });

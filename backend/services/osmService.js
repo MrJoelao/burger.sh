@@ -13,8 +13,15 @@ const NOMINATIM_URL = process.env.OSM_NOMINATIM_URL || 'https://nominatim.openst
    (https://operations.osmfoundation.org/policies/nominatim/) */
 const USER_AGENT = process.env.OSM_USER_AGENT || 'burger.sh (https://github.com/MrJoelao/burger.sh)';
 
+/* senza un timeout esplicito, una richiesta Nominatim lenta o appesa blocca
+   a tempo indefinito la richiesta del cliente: oltre al disservizio, è un
+   vettore di denial-of-service applicativo, perché sature le connessioni
+   in attesa lato server */
+const REQUEST_TIMEOUT_MS = Number(process.env.OSM_TIMEOUT_MS) || 5000;
+
 // stima lat/lng di un indirizzo. lancia un errore con statusCode 422 se
 // l'indirizzo non è geocodificabile, 502 se il servizio OSM non risponde
+// (anche per timeout scaduto)
 async function geocodeAddress(address) {
   if (!address || !address.trim()) {
     throw httpError(422, 'Address is required to estimate the delivery distance');
@@ -28,9 +35,13 @@ async function geocodeAddress(address) {
       headers: {
         'User-Agent': USER_AGENT,
         'Accept': 'application/json'
-      }
+      },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
     });
   } catch (err) {
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      throw httpError(502, 'OpenStreetMap service did not respond in time');
+    }
     throw httpError(502, `OpenStreetMap service is unreachable: ${err.message}`);
   }
 
