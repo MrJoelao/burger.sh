@@ -106,6 +106,34 @@ describe('Order model', () => {
     })).rejects.toThrow();
   });
 
+  test('crea un carrello in bozza senza mode, con totalAmount di default a 0', async () => {
+    const { customer, restaurant } = await createRefs();
+
+    const draft = await Order.create({
+      customerId: customer._id,
+      restaurantId: restaurant._id,
+      status: 'draft',
+      orderCode: 'FF-DRAFT01'
+    });
+
+    expect(draft.mode).toBeUndefined();
+    expect(draft.totalAmount).toBe(0);
+    expect(draft.orderItems).toHaveLength(0);
+  });
+
+  test('rifiuta un ordine "ordered" senza mode', async () => {
+    const { customer, restaurant, dish } = await createRefs();
+
+    await expect(Order.create({
+      customerId: customer._id,
+      restaurantId: restaurant._id,
+      orderItems: [{ dishId: dish._id, quantity: 1, unitPrice: 8 }],
+      status: 'ordered',
+      totalAmount: 8,
+      orderCode: 'FF-BAD005'
+    })).rejects.toThrow();
+  });
+
   test('rifiuta due ordini con lo stesso orderCode (unique)', async () => {
     const { customer, restaurant, dish } = await createRefs();
     // assicura che l'indice unique sia stato costruito prima del test
