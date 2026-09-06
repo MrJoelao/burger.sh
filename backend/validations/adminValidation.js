@@ -10,7 +10,7 @@ const { ALLOWED_PREFERENCES } = require('../constants/preferences');
 const updateUserSchema = Joi.object({
   name: Joi.string().min(2).optional(),
   surname: Joi.string().min(2).optional(),
-  email: Joi.string().email().optional(),
+  email: Joi.string().email().trim().optional(),
   password: Joi.string().min(6).optional(),
   role: Joi.string().valid('customer', 'manager', 'admin').optional(),
   managerStatus: Joi.string().valid('pending', 'approved', 'rejected').optional(),

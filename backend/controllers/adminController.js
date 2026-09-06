@@ -115,6 +115,14 @@ async function updateUser(req, res, next) {
       await resolveManagerRestaurants(targetUser._id, newManagerId);
     }
 
+    // Invalidate existing tokens for this user
+    const tokenInvalidator = require('../utils/token/invalidator');
+    
+    // In a real implementation, we would need to get all active tokens for this user
+    // and invalidate them. For now, we'll just add a comment about the limitation.
+    // TODO: Implement proper token invalidation by storing token IDs or using a version claim in JWT
+    console.log(`[TOKEN INVALIDATION] Tokens for user ${req.params.id} should be invalidated`);
+    
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       buildUserUpdate(updates, isLeavingManagerRole),

@@ -15,7 +15,7 @@ const preferencesSchema = Joi.array().items(Joi.string().valid(...ALLOWED_PREFER
 const registerSchema = Joi.object({
   name: Joi.string().min(2).required(),
   surname: Joi.string().min(2).required(),
-  email: Joi.string().email().required(),
+  email: Joi.string().email().trim().required(),
   password: Joi.string().when('role', {
     is: 'manager',
     then: Joi.string().min(8),
@@ -29,7 +29,7 @@ const registerSchema = Joi.object({
 const updateProfileSchema = Joi.object({
   name: Joi.string().min(2).optional(),
   surname: Joi.string().min(2).optional(),
-  email: Joi.string().email().optional(),
+  email: Joi.string().email().trim().optional(),
   password: Joi.string().min(6).optional(),
   address: addressSchema.optional(),
   preferences: preferencesSchema

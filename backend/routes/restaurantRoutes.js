@@ -1,6 +1,7 @@
 const express = require('express');
 const validate = require('../middlewares/validateRequest');
 const authMiddleware = require('../middlewares/authMiddleware');
+const requirePasswordChange = require('../middlewares/requirePasswordChange');
 const { requireAdmin, requireApprovedManager } = require('../middlewares/roleMiddleware');
 const paginationMiddleware = require('../middlewares/paginationMiddleware');
 const validateObjectId = require('../middlewares/validateObjectId');

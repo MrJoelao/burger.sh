@@ -23,6 +23,9 @@ function buildAuthResponse(user) {
     responseUser.managerStatus = user.managerStatus;
   }
 
+  // Include mustChangePassword nel response user
+  responseUser.mustChangePassword = user.mustChangePassword || false;
+
   return {
     token: signUser(user),
     user: responseUser
@@ -65,7 +68,7 @@ async function register({ name, surname, email, password, role }) {
 
 // verifica le credenziali e restituisce un token se sono corrette
 async function login({ email, password }) {
-  /* stesso motivo del register: l'email è salvata in lowercase, quindi va
+  /* stesso motivo del register: l'email e' salvata in lowercase, quindi va
      normalizzata prima della query o un login con casing diverso da quello
      usato in fase di registrazione fallirebbe anche con password corretta */
   const normalizedEmail = email.toLowerCase().trim();
@@ -77,6 +80,16 @@ async function login({ email, password }) {
   const isMatch = user && await comparePassword(password, user.passwordHash);
   if (!isMatch) {
     return { error: 'Invalid credentials', statusCode: 401 };
+  }
+
+  // Blocca login per manager in attesa di approvazione
+  if (user.role === 'manager' && user.managerStatus === 'pending') {
+    return { error: 'Account in attesa di approvazione. Contatta l\'admin.', statusCode: 403 };
+  }
+
+  // Blocca login per manager rifiutati
+  if (user.role === 'manager' && user.managerStatus === 'rejected') {
+    return { error: 'Accesso negato. Account non approvato.', statusCode: 403 };
   }
 
   return { result: buildAuthResponse(user) };

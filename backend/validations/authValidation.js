@@ -6,17 +6,17 @@ const Joi = require('joi');
 const registerSchema = Joi.object({
   name: Joi.string().min(2).required(),
   surname: Joi.string().min(2).required(),
-  email: Joi.string().email().required(),
+  email: Joi.string().email().trim().required(),
   password: Joi.string().when('role', {
     is: 'manager',
-    then: Joi.string().min(8),
+    then: Joi.string().min(12),
     otherwise: Joi.string().min(6)
   }).required(),
   role: Joi.string().valid('customer', 'manager').required()
 });
 
 const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email().trim().required(),
   password: Joi.string().required()
 });
 

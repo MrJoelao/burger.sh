@@ -1,8 +1,8 @@
-/* middleware per la gestione degli errori. stesso formato { success: false,
-   message } usato da jsonError in utils/httpResponses.js: prima di questa
-   correzione, un errore lanciato (es. da findOrThrow) e passato a next(err)
-   arrivava qui con una forma diversa ({ error: { status, message } }) da
-   quella di ogni altro errore dell'api, che passa invece da jsonError.
+/* middleware per la gestione degli errori. stesso formato RFC 7807 (Problem Details)
+   usato da jsonError in utils/httpResponses.js: prima di questa correzione, un
+   errore lanciato (es. da findOrThrow) e passato a next(err) arrivava qui con
+   una forma diversa ({ error: { status, message } }) da quella di ogni altro
+   errore dell'api, che passa invece da jsonError.
 
    per statusCode >= 500 il messaggio non arriva mai al client: un CastError
    di Mongoose, un errore di connessione al database o un bug non gestito
@@ -16,15 +16,21 @@ function errorHandler(err, req, res, next) {
   if (statusCode >= 500) {
     console.error(err);
     return res.status(statusCode).json({
-      success: false,
-      message: 'Internal Server Error'
+      type: 'https://httpstatuses.org/500',
+      title: 'Internal Server Error',
+      status: 500,
+      detail: 'Internal Server Error'
     });
   }
 
-  res.status(statusCode).json({
-    success: false,
-    message: err.message || 'Internal Server Error'
-  });
+  const problem = {
+    type: `https://httpstatuses.org/${statusCode}`,
+    title: err.message || 'Error',
+    status: statusCode,
+    detail: err.message || 'Error'
+  };
+  
+  res.status(statusCode).json(problem);
 }
 
 module.exports = errorHandler;

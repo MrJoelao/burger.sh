@@ -92,6 +92,14 @@ const orderSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // mongodb gestirà in automatico la data e ora di creazione/modifica dell'ordine
+    indexes: [
+      { 
+        key: { customerId: 1, status: 1 }, 
+        name: 'unique_draft_per_customer', 
+        partialFilterExpression: { status: 'draft' }, 
+        unique: true 
+      }
+    ]
   },
 );
 
