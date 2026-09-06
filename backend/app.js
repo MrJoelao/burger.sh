@@ -7,10 +7,17 @@ if (!process.env.JWT_SECRET) {
   throw new Error('Errore: JWT_SECRET non definita nel file .env');
 }
 
+/* validazione lunghezza JWT_SECRET: secret troppo corti sono vulnerabili ad attacchi brute-force.
+   consigliato minimo 32 caratteri per sicurezza equivalente a 256 bit */
+if (process.env.JWT_SECRET.length < 32) {
+  throw new Error(`Errore: JWT_SECRET troppo corta (${process.env.JWT_SECRET.length} caratteri). Lunghezza minima richiesta: 32 caratteri.`);
+}
+
 var express = require('express');
 var helmet = require('helmet');
 var logger = require('morgan');
 var rateLimit = require('express-rate-limit');
+var { ipKeyGenerator } = require('express-rate-limit');
 var swaggerUi = require('swagger-ui-express');
 var YAML = require('yamljs');
 var path = require('path');
@@ -19,6 +26,13 @@ var notFound = require('./middlewares/notFound');
 var errorHandler = require('./middlewares/errorHandler');
 
 var app = express();
+
+/* trust proxy per supporto reverse proxy e CDN: necessario per gestire
+   IP reali dietro proxy, load balancer, etc. */
+app.set('trust proxy', true);
+
+// Serve frontend static files (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 /* imposta gli header http di sicurezza di base (X-Content-Type-Options,
    Strict-Transport-Security, niente X-Powered-By, ecc.), mancanti finora */
@@ -33,10 +47,7 @@ app.use(express.urlencoded({ extended: false }));
 const publicLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,     // 15 minuti
   max: 100,                     // 100 richieste per ip
-  keyGenerator: (req) => {
-    // limita per ip, perché le richieste non autenticate non hanno un id utente
-    return req.ip;
-  },
+  keyGenerator: ipKeyGenerator, // helper integrato per supporto IPv4/IPv6
   skip: (req) => {
     // salta il rate limit per le richieste autenticate, che hanno limiti propri in authMiddleware
     return req.headers.authorization?.startsWith('Bearer ');
@@ -68,7 +79,10 @@ const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const setupRoutes = require('./routes/setupRoutes');
+const requirePasswordChange = require('./middlewares/requirePasswordChange');
 
+// Apply routes that require authentication
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/dishes', dishRoutes);
@@ -76,6 +90,36 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Global middleware: if user has mustChangePassword=true, block access
+// to all routes except /api/setup/change-password
+// This must come AFTER authentication routes so req.user is populated
+app.use('/api', requirePasswordChange);
+
+// Setup routes (no auth required)
+app.use('/api/setup', setupRoutes);
+
+// Fallback: serve frontend HTML files if they exist, otherwise serve index.html for SPA
+app.use(function spaFallback(req, res, next) {
+  if (req.path.startsWith('/api') || req.path.startsWith('/api-docs')) {
+    return next();
+  }
+  
+  // Check if the requested file exists in frontend directory
+  const filePath = path.join(__dirname, '../frontend', req.path);
+  const fs = require('fs');
+  
+  try {
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+  } catch (err) {
+    // Ignore errors
+  }
+  
+  // Fall back to index.html for SPA routing
+  return res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+});
 
 /* gestisce le richieste che non corrispondono a nessuna rotta definita. va registrato
    dopo tutte le rotte, altrimenti intercetterebbe ogni richiesta prima che raggiunga

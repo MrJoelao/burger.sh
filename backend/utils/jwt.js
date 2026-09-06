@@ -1,23 +1,20 @@
 const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET;
+const secretManager = require('../utils/secretManager');
 
 function signUser(user) {
-  // salvo nella payload user id e il suo ruolo.
   const payload = {
     id: user._id.toString(),
     role: user.role,
   };
 
-  // metto una scadenza di 3h per la sua validitàs
-  return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: '3h',
-    });
+  return jwt.sign(payload, secretManager.getCurrentSecret(), {
+    expiresIn: '3h',
+  });
 }
 
-// verifico il token e ritorno la payload
+// Verifica il token e ritorna la payload
 function verifyToken(token) {
-  return jwt.verify(token, JWT_SECRET);
+  return secretManager.verifyToken(token);
 }
 
 module.exports = {

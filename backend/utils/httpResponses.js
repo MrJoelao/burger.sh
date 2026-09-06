@@ -2,6 +2,22 @@
    e per generare errori applicativi con uno status code associato. usate da tutti i controller,
    così il formato della risposta json resta identico in tutta l'api. */
 
+// RFC 7807 Problem Details format
+function problemDetails(type, title, status, detail, instance) {
+  const problem = {
+    type,
+    title,
+    status,
+    detail: detail || title
+  };
+  
+  if (instance) {
+    problem.instance = instance;
+  }
+  
+  return problem;
+}
+
 // risposta di successo: { success: true, data? }
 function jsonOk(res, statusCode, data) {
   return res.status(statusCode).json({
@@ -10,12 +26,17 @@ function jsonOk(res, statusCode, data) {
   });
 }
 
-// risposta di errore: { success: false, message }
-function jsonError(res, statusCode, message) {
-  return res.status(statusCode).json({
-    success: false,
-    message
-  });
+// risposta di errore in RFC 7807 format: { type, title, status, detail }
+function jsonError(res, statusCode, message, instance = null) {
+  const problem = problemDetails(
+    `https://httpstatuses.org/${statusCode}`,
+    message,
+    statusCode,
+    message,
+    instance
+  );
+  
+  return res.status(statusCode).json(problem);
 }
 
 // avvolge i dati con i metadati di paginazione (pagina, totale, hasNext/hasPrevPage)

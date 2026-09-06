@@ -64,8 +64,16 @@ function authMiddleware(req, res, next) {
   const token = authHeader.slice(7);
 
   try {
-    req.user = verifyToken(token);
+    const decoded = verifyToken(token);
     
+    // Check if token is invalidated
+    const tokenInvalidator = require('../utils/token/invalidator');
+    if (tokenInvalidator.isTokenInvalidated(token)) {
+      throw new Error('Token invalidated');
+    }
+    
+    req.user = decoded;
+
     /* nuovo: applica rate limiting basato sul ruolo.
        ogni ruolo ha un limiter dedicato che controlla se deve essere applicato.
        il limiter per il ruolo dell'utente lo processerà, gli altri lo skipperanno */
