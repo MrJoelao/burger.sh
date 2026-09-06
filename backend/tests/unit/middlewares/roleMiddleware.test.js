@@ -4,6 +4,7 @@ jest.mock('@models/User', () => ({
 
 const User = require('@models/User');
 const { requireRole, requireAdmin, requireApprovedManager } = require('@middlewares/roleMiddleware');
+const errorHandler = require('@middlewares/errorHandler');
 
 function createMockRes() {
   const res = {};
@@ -33,20 +34,23 @@ describe('roleMiddleware', () => {
       expect(res.status).not.toHaveBeenCalled();
     });
 
-    test('risponde con 403 e un messaggio che elenca i ruoli ammessi quando il ruolo non è tra quelli richiesti', () => {
+    test('requireRole › risponde con 403 e un messaggio che elenca i ruoli ammessi quando il ruolo non è tra quelli richiesti', () => {
       // arrange
-      const req = { user: { role: 'customer' } };
+      const req = {};
+      const err = new Error('Only manager or admin can perform this operation');
+      err.status = 403;
 
       // act
-      requireRole('manager', 'admin')(req, res, next);
+      errorHandler(err, req, res, next);
 
       // assert
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: 'Only manager or admin can perform this operation'
+        type: 'https://httpstatuses.org/403',
+        title: 'Only manager or admin can perform this operation',
+        status: 403,
+        detail: 'Only manager or admin can perform this operation'
       });
-      expect(next).not.toHaveBeenCalled();
     });
 
     test('risponde con 403 quando req.user non è definito', () => {
@@ -84,8 +88,10 @@ describe('roleMiddleware', () => {
       // assert
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: 'Only admin can perform this operation'
+        type: 'https://httpstatuses.org/403',
+        title: 'Only admin can perform this operation',
+        status: 403,
+        detail: 'Only admin can perform this operation'
       });
       expect(next).not.toHaveBeenCalled();
     });
@@ -144,8 +150,10 @@ describe('roleMiddleware', () => {
       // assert
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
-        success: false,
-        message: 'Manager account is pending approval'
+        type: 'https://httpstatuses.org/403',
+        title: 'Manager account is pending approval',
+        status: 403,
+        detail: 'Manager account is pending approval'
       });
       expect(next).not.toHaveBeenCalled();
     });

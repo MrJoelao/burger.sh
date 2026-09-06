@@ -32,8 +32,10 @@ describe('errorHandler middleware', () => {
     // assert
     expect(res.status).toHaveBeenCalledWith(418);
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'errore custom'
+      type: 'https://httpstatuses.org/418',
+      title: 'errore custom',
+      status: 418,
+      detail: 'errore custom'
     });
   });
 
@@ -48,8 +50,10 @@ describe('errorHandler middleware', () => {
     // assert
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'non trovato'
+      type: 'https://httpstatuses.org/404',
+      title: 'non trovato',
+      status: 404,
+      detail: 'non trovato'
     });
   });
 
@@ -73,8 +77,10 @@ describe('errorHandler middleware', () => {
 
     // assert
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Internal Server Error'
+      type: 'https://httpstatuses.org/500',
+      title: 'Internal Server Error',
+      status: 500,
+      detail: 'Internal Server Error'
     });
   });
 
@@ -89,8 +95,10 @@ describe('errorHandler middleware', () => {
 
     // assert
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Internal Server Error'
+      type: 'https://httpstatuses.org/500',
+      title: 'Internal Server Error',
+      status: 500,
+      detail: 'Internal Server Error'
     });
   });
 
@@ -117,8 +125,10 @@ describe('errorHandler middleware', () => {
     // assert
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Email already in use'
+      type: 'https://httpstatuses.org/409',
+      title: 'Email already in use',
+      status: 409,
+      detail: 'Email already in use'
     });
   });
 });

@@ -44,12 +44,14 @@ describe('validateRequest middleware', () => {
     // act
     middleware(req, res, next);
 
-    // assert: stesso formato { success: false, message } usato da tutte le
+    // assert: stesso formato RFC 7807 usato da tutte le
     // altre risposte di errore dell'api (vedi utils/httpResponses.js)
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: expect.any(String)
+      type: 'https://httpstatuses.org/400',
+      title: expect.any(String),
+      status: 400,
+      detail: expect.any(String)
     });
     expect(next).not.toHaveBeenCalled();
   });

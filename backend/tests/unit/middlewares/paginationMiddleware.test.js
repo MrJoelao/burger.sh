@@ -48,7 +48,12 @@ describe('paginationMiddleware', () => {
 
     // assert
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Page must be >= 1' });
+    expect(res.json).toHaveBeenCalledWith({
+      type: 'https://httpstatuses.org/400',
+      title: 'Page must be >= 1',
+      status: 400,
+      detail: 'Page must be >= 1'
+    });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -61,7 +66,12 @@ describe('paginationMiddleware', () => {
 
     // assert
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Limit must be between 1 and 100' });
+    expect(res.json).toHaveBeenCalledWith({
+      type: 'https://httpstatuses.org/400',
+      title: 'Limit must be between 1 and 100',
+      status: 400,
+      detail: 'Limit must be between 1 and 100'
+    });
     expect(next).not.toHaveBeenCalled();
   });
 

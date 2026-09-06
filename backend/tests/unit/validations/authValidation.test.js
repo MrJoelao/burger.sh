@@ -106,13 +106,13 @@ describe('authValidation', () => {
       expect(error.details[0].path).toContain('password');
     });
 
-    test('accetta una password di 8 caratteri per un manager', () => {
+    test('accetta una password di 12 caratteri per un manager', () => {
       // arrange
       const payload = {
         name: 'Mario',
         surname: 'Rossi',
         email: 'mario.rossi@example.com',
-        password: '12345678',
+        password: '123456789012',
         role: 'manager'
       };
 

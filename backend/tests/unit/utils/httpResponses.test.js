@@ -49,7 +49,12 @@ describe('httpResponses utils', () => {
 
       // assert
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ success: false, message: 'richiesta non valida' });
+      expect(res.json).toHaveBeenCalledWith({
+        type: 'https://httpstatuses.org/400',
+        title: 'richiesta non valida',
+        status: 400,
+        detail: 'richiesta non valida'
+      });
     });
   });
 
@@ -92,7 +97,12 @@ describe('httpResponses utils', () => {
 
       // assert
       expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({ success: false, message: 'non autorizzato' });
+      expect(res.json).toHaveBeenCalledWith({
+        type: 'https://httpstatuses.org/403',
+        title: 'non autorizzato',
+        status: 403,
+        detail: 'non autorizzato'
+      });
     });
   });
 

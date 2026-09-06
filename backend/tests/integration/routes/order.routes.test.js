@@ -435,7 +435,7 @@ describe('GET /api/orders/:id', () => {
       .set('Authorization', `Bearer ${tokenFor(customer)}`);
 
     expect(response.status).toBe(404);
-    expect(response.body.message).toBe('Order not found');
+    438 |     expect(response.body.detail).toBe('Order not found');
   });
 });
 

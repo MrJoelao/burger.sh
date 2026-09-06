@@ -36,7 +36,12 @@ describe('validateObjectId', () => {
 
     // assert
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Invalid id' });
+    expect(res.json).toHaveBeenCalledWith({
+      type: 'https://httpstatuses.org/400',
+      title: 'Invalid id',
+      status: 400,
+      detail: 'Invalid id'
+    });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -49,7 +54,12 @@ describe('validateObjectId', () => {
 
     // assert
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ success: false, message: 'Invalid restaurantId' });
+    expect(res.json).toHaveBeenCalledWith({
+      type: 'https://httpstatuses.org/400',
+      title: 'Invalid restaurantId',
+      status: 400,
+      detail: 'Invalid restaurantId'
+    });
     expect(next).not.toHaveBeenCalled();
   });
 });

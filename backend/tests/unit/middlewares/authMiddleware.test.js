@@ -16,7 +16,7 @@ describe('authMiddleware', () => {
     next = jest.fn();
   });
 
-  test('risponde con 401 se manca l\'header Authorization', () => {
+  test("risponde con 401 se manca l'header Authorization", () => {
     // arrange
     const req = { headers: {} };
 
@@ -26,13 +26,15 @@ describe('authMiddleware', () => {
     // assert
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Missing token or invalid format'
+      type: 'https://httpstatuses.org/401',
+      title: 'Missing token or invalid format',
+      status: 401,
+      detail: 'Missing token or invalid format'
     });
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('risponde con 401 se l\'header non inizia con "Bearer "', () => {
+  test("risponde con 401 se l'header non inizia con 'Bearer '", () => {
     // arrange
     const req = { headers: { authorization: 'Token abc123' } };
 
@@ -42,8 +44,10 @@ describe('authMiddleware', () => {
     // assert
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Missing token or invalid format'
+      type: 'https://httpstatuses.org/401',
+      title: 'Missing token or invalid format',
+      status: 401,
+      detail: 'Missing token or invalid format'
     });
     expect(next).not.toHaveBeenCalled();
   });
@@ -60,8 +64,10 @@ describe('authMiddleware', () => {
     // assert
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Invalid or expired token'
+      type: 'https://httpstatuses.org/401',
+      title: 'Invalid or expired token',
+      status: 401,
+      detail: 'Invalid or expired token'
     });
     expect(next).not.toHaveBeenCalled();
   });

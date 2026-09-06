@@ -23,7 +23,7 @@ describe('app - validazione JWT_SECRET', () => {
   });
 
   test('non lancia errori se JWT_SECRET è definita', () => {
-    process.env.JWT_SECRET = 'a-secret-for-tests';
+    process.env.JWT_SECRET = 'a-secret-for-tests-that-is-long-enough';
 
     expect(() => require('../../app')).not.toThrow();
   });
