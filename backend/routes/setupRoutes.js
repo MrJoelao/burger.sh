@@ -16,10 +16,6 @@ const router = express.Router();
 const setupRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5,
-  keyGenerator: (req) => {
-    // Use trusted proxy IP if available
-    return req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip;
-  },
   message: 'Too many setup requests from this IP, please try again later.'
 });
 

@@ -13,10 +13,25 @@
   "license": "MIT",
   "author": "joelao",
   "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend:dev\"",
     "backend": "cd backend && npm run dev",
-    "backend:start": "cd backend && npm start"
+    "backend:start": "cd backend && npm start",
+    "frontend:dev": "cd frontend && vite",
+    "frontend:build": "cd frontend && vite build",
+    "frontend:preview": "cd frontend && vite preview",
+    "frontend:test": "cd frontend && vitest",
+    "frontend:test:ui": "cd frontend && vitest --ui"
   },
   "dependencies": {
     "joi": "^18.2.3"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "concurrently": "^9.0.0",
+    "htm": "^3.1.1",
+    "preact": "^10.29.8",
+    "vitest": "^2.1.8",
+    "@vitest/ui": "^2.1.8",
+    "jsdom": "^26.1.0"
   }
 }

@@ -14,7 +14,7 @@
 
 ## 1. Obiettivo del documento
 
-Questa sezione descrive come il domain model di FastFood viene tradotto in collezioni e documenti MongoDB.
+Questa sezione descrive come il domain model di burger.sh viene tradotto in collezioni e documenti MongoDB.
 L'obiettivo è mantenere lo schema coerente con i principali pattern di accesso dell'applicazione, preservando una chiara separazione tra dati condivisi, dati riutilizzabili e dati specifici dell'ordine.
 
 ---

@@ -18,18 +18,18 @@
 
 ## 1. Obiettivo del documento
 
-Questo documento descrive l'architettura ad alto livello del progetto **FastFood**: come frontend, backend, database e servizi esterni collaborano tra loro.
+Questo documento descrive l'architettura ad alto livello del progetto **burger.sh**: come frontend, backend, database e servizi esterni collaborano tra loro.
 Fa da ponte tra i requisiti (`requirements.md`), il modello dei dati (`data-model.md`) e l'implementazione futura del codice.
 
 ---
 
 ## 2. Panoramica dell'architettura
 
-FastFood è una **web application client-server** composta da tre componenti principali e un servizio esterno di supporto.
+burger.sh è una **web application client-server** composta da tre componenti principali e un servizio esterno di supporto.
 
 | Componente | Tecnologia | Ruolo |
 |---|---|---|
-| Frontend | HTML5, CSS3, Bootstrap, JavaScript | Interfaccia utente e interazione con l'API |
+| Frontend | HTML5, CSS3, CyberOS Design System, JavaScript | Interfaccia utente e interazione con l'API |
 | Backend | Node.js + Express | Logica applicativa ed esposizione delle API REST |
 | Database | MongoDB | Persistenza dei dati |
 | Servizio esterno | API OpenStreetMap | Calcolo distanze per le consegne a domicilio |
@@ -41,8 +41,10 @@ FastFood è una **web application client-server** composta da tre componenti pri
 Il frontend gestisce interfaccia utente e presentazione dei contenuti.
 
 - **HTML** per la struttura delle pagine.
-- **CSS + Bootstrap** per stile e responsività.
-- **JavaScript** per la logica lato client e le chiamate `fetch` verso le API REST.
+- **CSS + CyberOS Design System** per stile e responsività (CSS variables, palette semantica, typography).
+- **htm + Preact** per componenti UI dichiarativi e gestione dello stato reattivo.
+- **JavaScript vanilla** per la logica di business e le chiamate `fetch` verso le API REST.
+- **SPA Architecture** per navigazione senza ricaricamenti di pagina.
 
 Funzionalità principali offerte all'utente:
 
