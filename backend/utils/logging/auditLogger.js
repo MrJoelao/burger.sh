@@ -17,8 +17,8 @@ function logSetupRequested(req) {
 }
 
 /* log pin generated event */
-function logPinGenerated(req, pin) {
-  logAuditEvent('pin generated', req, { pin });
+function logPinGenerated(req) {
+  logAuditEvent('pin generated', req);
 }
 
 /* log setup executed event */

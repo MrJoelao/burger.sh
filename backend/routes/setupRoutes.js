@@ -8,7 +8,7 @@ const {
   executeSetup,
   changePassword
 } = require('../controllers/setupController');
-const { changePasswordSchema } = require('../validations/setupValidation');
+const { executeSetupSchema, changePasswordSchema } = require('../validations/setupValidation');
 
 const router = express.Router();
 
@@ -22,7 +22,7 @@ const setupRateLimiter = rateLimit({
 // Setup endpoints (no auth required)
 router.get('/status', getSetupStatus);
 router.post('/request-pin', setupRateLimiter, requestPin);
-router.post('/', setupRateLimiter, executeSetup);
+router.post('/', setupRateLimiter, validate(executeSetupSchema), executeSetup);
 
 // Change password endpoint (requires auth and mustChangePassword flag)
 router.post('/change-password', authMiddleware, validate(changePasswordSchema), changePassword);

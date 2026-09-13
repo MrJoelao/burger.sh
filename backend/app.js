@@ -27,9 +27,24 @@ var errorHandler = require('./middlewares/errorHandler');
 
 var app = express();
 
-/* trust proxy per supporto reverse proxy e CDN: necessario per gestire
-   IP reali dietro proxy, load balancer, etc. */
-app.set('trust proxy', true);
+/* trust proxy configurabile:
+   - default: loopback (sicuro in dev/reverse proxy locale)
+   - produzione: impostare TRUST_PROXY a "true", un numero (hop), o un CIDR */
+function parseTrustProxy(value) {
+  if (value === undefined || value === null || value === '') {
+    return 'loopback';
+  }
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+
+  const hops = Number(value);
+  if (Number.isInteger(hops) && hops >= 0) {
+    return hops;
+  }
+
+  return value;
+}
+app.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY));
 
 // Serve frontend static files (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, '../frontend')));

@@ -66,7 +66,7 @@ async function executeSetup(req, res) {
     const admin = await AdminCredentialsService.createAdminUser(adminEmail, adminPassword);
 
     console.log(`\n[SETUP] Admin creato: ${adminEmail}`);
-    console.log(`[SETUP] Password provvisoria: ${adminPassword}`);
+    console.log('[SETUP] Credenziali amministratore generate (password non loggata).');
     console.log('[SETUP] IMPORTANT: Cambia subito la password al primo accesso!\n');
 
     // 6. Seed meals (idempotent)
@@ -91,12 +91,8 @@ async function executeSetup(req, res) {
 
 /* check if request is from localhost */
 function isLocalRequest(req) {
-  const ip = getRealIp(req) || '';
-  if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') return true;
-  if (ip.startsWith('::ffff:')) return true;
-  const socketAddr = req.socket?.remoteAddress || '';
-  if (socketAddr === '127.0.0.1' || socketAddr === '::1' || socketAddr.startsWith('::ffff:')) return true;
-  return false;
+  const ip = getRealIp(req);
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
 }
 
 module.exports = {

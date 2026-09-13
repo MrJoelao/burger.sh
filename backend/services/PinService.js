@@ -35,6 +35,13 @@ function removePinForIp(ip) {
 
 /* timing-safe PIN comparison */
 function validatePin(providedPin, storedPin) {
+  if (typeof providedPin !== 'string' || typeof storedPin !== 'string') {
+    return false;
+  }
+  if (providedPin.length > 6 || storedPin.length > 6) {
+    return false;
+  }
+
   return crypto.timingSafeEqual(
     Buffer.from(providedPin.padEnd(6)),
     Buffer.from(storedPin.padEnd(6))

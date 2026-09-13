@@ -8,103 +8,78 @@ const { comparePassword, hashPassword } = require('../utils/password');
 const { jsonOk, jsonError } = require('../utils/httpResponses');
 
 /** getSetupStatus: restituisce lo stato del setup e se esiste già un admin */
-async function getSetupStatus(req, res) {
+async function getSetupStatus(req, res, next) {
   try {
     const adminExists = await User.exists({ role: 'admin' });
     const setupCompleted = await User.exists({ setupCompleted: true });
-    console.log('[SETUP STATUS] adminExists:', adminExists, 'setupCompleted:', setupCompleted);
-    res.json({
-      success: true,
-      data: {
-        setupCompleted: !!setupCompleted || !!adminExists,
-        adminExists: !!adminExists,
-      },
+    return jsonOk(res, 200, {
+      setupCompleted: !!setupCompleted || !!adminExists,
+      adminExists: !!adminExists
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 }
 
 /** requestPin: genera un PIN per il setup remoto, o lo bypassa su localhost */
 function requestPin(req, res) {
-  const isLocal = (() => {
-    const ip = getRealIp(req) || '';
-    if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') return true;
-    if (ip.startsWith('::ffff:')) return true;
-    const socketAddr = req.socket?.remoteAddress || '';
-    if (socketAddr === '127.0.0.1' || socketAddr === '::1' || socketAddr.startsWith('::ffff:')) return true;
-    return false;
-  })();
-
-  console.log('[PIN] real ip:', getRealIp(req), '| isLocal:', isLocal);
+  const isLocal = isLocalRequest(req);
 
   if (isLocal) {
-    return res.json({
-      success: true,
-      data: { pinRequired: false, message: 'Connessione locale rilevata. Procedi con il setup.' },
+    return jsonOk(res, 200, {
+      pinRequired: false,
+      message: 'Connessione locale rilevata. Procedi con il setup.'
     });
   }
 
+  const ip = getRealIp(req);
+  if (!ip) {
+    return jsonError(res, 400, 'Impossibile determinare IP client');
+  }
+
   const pin = PinService.generatePin();
-  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minuti
-  PinService.storePinForIp(getRealIp(req), pin, expiresAt);
-  setTimeout(() => PinService.removePinForIp(getRealIp(req)), 5 * 60 * 1000);
+  PinService.storePinForIp(ip, pin);
 
   const auditLogger = require('../utils/logging/auditLogger');
-  auditLogger.logPinGenerated(req, pin);
+  auditLogger.logPinGenerated(req);
 
-  console.log(`[PIN SETUP] Il PIN per il setup è: ${pin}`);
-  console.log(`[PIN SETUP] Valido fino a: ${new Date(expiresAt).toLocaleString('it-IT')}`);
-  console.log(`[PIN SETUP] Richiesto da IP: ${getRealIp(req)}`);
-  console.log('');
-
-  res.json({
-    success: true,
-    data: { pinRequired: true, message: 'Esegui questo setup su una macchina locale per saltare la verifica PIN.' },
+  return jsonOk(res, 200, {
+    pinRequired: true,
+    message: 'Esegui questo setup su una macchina locale per saltare la verifica PIN.'
   });
 }
 
 /** executeSetup: completa il flusso di setup iniziale */
-async function executeSetup(req, res) {
+async function executeSetup(req, res, next) {
   try {
     // 1. Controllo ambiente
     if (process.env.NODE_ENV === 'production' && process.env.ALLOW_FIRST_RUN_SETUP !== 'true') {
-      return res.status(403).json({
-        success: false,
-        message: 'Setup disabilitato in produzione. Imposta ALLOW_FIRST_RUN_SETUP=true per abilitarlo.',
-      });
+      return jsonError(res, 403, 'Setup disabilitato in produzione. Imposta ALLOW_FIRST_RUN_SETUP=true per abilitarlo.');
     }
 
     // 2. Verifica se il setup è già stato eseguito
     const existingAdmin = await User.findOne({ role: 'admin' });
     if (existingAdmin) {
-      return res.status(409).json({
-        success: false,
-        message: "Setup già completato. È presente un account admin esistente.",
-      });
+      return jsonError(res, 409, "Setup già completato. È presente un account admin esistente.");
     }
 
     // 3. Verifica PIN se necessario
     const isLocal = isLocalRequest(req);
     if (!isLocal) {
-      const body = req.body || {};
-      const { pin } = body;
+      const { pin } = req.validated;
       if (!pin) {
-        return res.status(400).json({
-          success: false,
-          message: 'PIN richiesto per setup remoto. Richiedi un PIN con POST /setup/request-pin.',
-        });
+        return jsonError(res, 400, 'PIN richiesto per setup remoto. Richiedi un PIN con POST /api/setup/request-pin.');
       }
 
       const ip = getRealIp(req);
       const pinData = PinService.getPinForIp(ip);
       if (!pinData) {
-        return res.status(401).json({ success: false, message: 'PIN non valido o scaduto.' });
+        return jsonError(res, 401, 'PIN non valido o scaduto.');
       }
 
       if (!PinService.validatePin(pin, pinData.pin)) {
         PinService.removePinForIp(ip);
-        return res.status(401).json({ success: false, message: 'PIN non valido.' });
+        return jsonError(res, 401, 'PIN non valido.');
       }
       PinService.removePinForIp(ip);
     }
@@ -112,11 +87,7 @@ async function executeSetup(req, res) {
     // 4. Generazione credenziali admin
     const adminEmail = AdminCredentialsService.generateAdminEmail();
     const adminPassword = AdminCredentialsService.generateRandomPassword();
-    const admin = await AdminCredentialsService.createAdminUser(adminEmail, adminPassword);
-
-    console.log(`\n[SETUP] Admin creato: ${adminEmail}`);
-    console.log(`[SETUP] Password provvisoria: ${adminPassword}`);
-    console.log('[SETUP] IMPORTANT: Cambia subito la password al primo accesso!\n');
+    await AdminCredentialsService.createAdminUser(adminEmail, adminPassword);
 
     // 5. Seed meals (idempotente)
     await SeederService.seedMeals();
@@ -126,53 +97,47 @@ async function executeSetup(req, res) {
     auditLogger.logSetupExecuted(req, adminEmail);
 
     // 6. Restituisci credenziali (una sola volta)
-    res.status(201).json({
-      success: true,
-      message: 'Setup completato con successo.',
-      data: { adminEmail, adminPassword, mustChangePassword: true, redirectUrl: '/change-password' },
+    return jsonOk(res, 201, {
+      adminEmail,
+      adminPassword,
+      mustChangePassword: true,
+      redirectUrl: '/change-password'
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 }
 
 /** Helper: verifica se la richiesta proviene da localhost */
 function isLocalRequest(req) {
-  const ip = getRealIp(req) || '';
-  if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') return true;
-  if (ip.startsWith('::ffff:')) return true;
-  const socketAddr = req.socket?.remoteAddress || '';
-  if (socketAddr === '127.0.0.1' || socketAddr === '::1' || socketAddr.startsWith('::ffff:')) return true;
-  return false;
+  const ip = getRealIp(req);
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
 }
 
 /** changePassword: gestisce il flusso di cambio password obbligatorio */
-async function changePassword(req, res) {
+async function changePassword(req, res, next) {
   try {
-    const { currentPassword, newPassword } = req.body;
+    const { currentPassword, newPassword } = req.validated;
     const userId = req.user.id;
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'Utente non trovato.' });
+      return jsonError(res, 404, 'Utente non trovato.');
     }
     if (!user.mustChangePassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Non sei obbligato a cambiare password. Usa la normale modifica profilo.',
-      });
+      return jsonError(res, 400, 'Non sei obbligato a cambiare password. Usa la normale modifica profilo.');
     }
     const isValid = await comparePassword(currentPassword, user.passwordHash);
     if (!isValid) {
-      return res.status(401).json({ success: false, message: 'Password attuale non corretta.' });
+      return jsonError(res, 401, 'Password attuale non corretta.');
     }
     user.passwordHash = await hashPassword(newPassword);
     user.mustChangePassword = false;
     await user.save();
     const auditLogger = require('../utils/logging/auditLogger');
     auditLogger.logPasswordChanged(req, user._id);
-    res.json({ success: true, message: 'Password aggiornata con successo.', data: { redirectUrl: '/index.html' } });
+    return jsonOk(res, 200, { redirectUrl: '/index.html' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    next(error);
   }
 }
 
@@ -180,5 +145,5 @@ module.exports = {
   getSetupStatus,
   requestPin,
   executeSetup,
-  changePassword,
+  changePassword
 };
