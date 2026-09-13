@@ -2,6 +2,7 @@ const { verifyToken } = require('../utils/jwt');
 const { jsonError } = require('../utils/httpResponses');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
+const User = require('../models/User');
 
 const ROLE_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuto
 
@@ -40,6 +41,10 @@ const invalidTokenRateLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.'
 });
 
+function isPasswordChangeAllowedPath(path) {
+  return path === '/api/setup/change-password';
+}
+
 /**
  * middleware di autenticazione + rate limiting per utenti autenticati
  * 
@@ -54,7 +59,7 @@ const invalidTokenRateLimiter = rateLimit({
  *   - manager: 1k req/min (gestione ristorante, operazioni moderate)
  *   - customer: 500 req/min (operazioni semplici, protezione anti-DoS)
  */
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -62,28 +67,46 @@ function authMiddleware(req, res, next) {
   }
 
   const token = authHeader.slice(7);
+  let decoded;
 
   try {
-    const decoded = verifyToken(token);
-    
+    decoded = verifyToken(token);
+
     // Check if token is invalidated
     const tokenInvalidator = require('../utils/token/invalidator');
     if (tokenInvalidator.isTokenInvalidated(token)) {
       throw new Error('Token invalidated');
     }
-    
-    req.user = decoded;
+  } catch (error) {
+    return invalidTokenRateLimiter(req, res, () => jsonError(res, 401, 'Invalid or expired token'));
+  }
+
+  try {
+    const user = await User.findById(decoded.id).select('role mustChangePassword');
+    if (!user) {
+      return invalidTokenRateLimiter(req, res, () => jsonError(res, 401, 'Invalid or expired token'));
+    }
+
+    req.user = {
+      id: user._id.toString(),
+      role: user.role,
+      mustChangePassword: !!user.mustChangePassword
+    };
+
+    if (req.user.mustChangePassword && !isPasswordChangeAllowedPath(req.path)) {
+      return jsonError(res, 403, 'Password change required. Please change your password before accessing this resource.');
+    }
 
     /* nuovo: applica rate limiting basato sul ruolo.
        ogni ruolo ha un limiter dedicato che controlla se deve essere applicato.
        il limiter per il ruolo dell'utente lo processerà, gli altri lo skipperanno */
-    adminRateLimiter(req, res, () => {
+    return adminRateLimiter(req, res, () => {
       managerRateLimiter(req, res, () => {
         customerRateLimiter(req, res, next);
       });
     });
   } catch (error) {
-    return invalidTokenRateLimiter(req, res, () => jsonError(res, 401, 'Invalid or expired token'));
+    return next(error);
   }
 }
 

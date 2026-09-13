@@ -95,7 +95,6 @@ const cartRoutes = require('./routes/cartRoutes');
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const setupRoutes = require('./routes/setupRoutes');
-const requirePasswordChange = require('./middlewares/requirePasswordChange');
 
 // Apply routes that require authentication
 app.use('/api/auth', authRoutes);
@@ -106,33 +105,15 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Global middleware: if user has mustChangePassword=true, block access
-// to all routes except /api/setup/change-password
-// This must come AFTER authentication routes so req.user is populated
-app.use('/api', requirePasswordChange);
-
 // Setup routes (no auth required)
 app.use('/api/setup', setupRoutes);
 
-// Fallback: serve frontend HTML files if they exist, otherwise serve index.html for SPA
+// Fallback: serve index.html for SPA routes only
 app.use(function spaFallback(req, res, next) {
   if (req.path.startsWith('/api') || req.path.startsWith('/api-docs')) {
     return next();
   }
-  
-  // Check if the requested file exists in frontend directory
-  const filePath = path.join(__dirname, '../frontend', req.path);
-  const fs = require('fs');
-  
-  try {
-    if (fs.existsSync(filePath)) {
-      return res.sendFile(filePath);
-    }
-  } catch (err) {
-    // Ignore errors
-  }
-  
-  // Fall back to index.html for SPA routing
+
   return res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
 });
 

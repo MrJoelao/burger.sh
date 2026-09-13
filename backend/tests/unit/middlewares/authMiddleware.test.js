@@ -1,5 +1,8 @@
 const authMiddleware = require('@middlewares/authMiddleware');
 const { signUser } = require('@utils/jwt');
+const User = require('@models/User');
+
+jest.mock('@models/User');
 
 function createMockRes() {
   const res = {};
@@ -14,16 +17,14 @@ describe('authMiddleware', () => {
   beforeEach(() => {
     res = createMockRes();
     next = jest.fn();
+    User.findById.mockReset();
   });
 
   test("risponde con 401 se manca l'header Authorization", () => {
-    // arrange
     const req = { headers: {} };
 
-    // act
     authMiddleware(req, res, next);
 
-    // assert
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
       type: 'https://httpstatuses.org/401',
@@ -35,13 +36,10 @@ describe('authMiddleware', () => {
   });
 
   test("risponde con 401 se l'header non inizia con 'Bearer '", () => {
-    // arrange
     const req = { headers: { authorization: 'Token abc123' } };
 
-    // act
     authMiddleware(req, res, next);
 
-    // assert
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
       type: 'https://httpstatuses.org/401',
@@ -53,15 +51,11 @@ describe('authMiddleware', () => {
   });
 
   test('risponde con 401 se il token non è valido', async () => {
-    // arrange
-    const req = { headers: { authorization: 'Bearer token-fasullo' }, ip: '127.0.0.1' };
+    const req = { headers: { authorization: 'Bearer ' + 'bad-token' }, ip: '127.0.0.1' };
 
-    // act
     authMiddleware(req, res, next);
-    // anche qui il rate limiter per i token non validi risolve in modo asincrono
     await new Promise((resolve) => setImmediate(resolve));
 
-    // assert
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
       type: 'https://httpstatuses.org/401',
@@ -73,20 +67,47 @@ describe('authMiddleware', () => {
   });
 
   test('popola req.user e chiama next quando il token è valido', async () => {
-    // arrange
     const token = signUser({ _id: '507f1f77bcf86cd799439011', role: 'customer' });
-    const req = { headers: { authorization: `Bearer ${token}` } };
+    User.findById.mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: { toString: () => '507f1f77bcf86cd799439011' },
+        role: 'customer',
+        mustChangePassword: false
+      })
+    });
+    const req = { headers: { authorization: 'Bearer ' + token }, path: '/api/users/me' };
 
-    // act
     authMiddleware(req, res, next);
-    // i rate limiter di express-rate-limit risolvono in modo asincrono, quindi aspetto il prossimo tick
     await new Promise((resolve) => setImmediate(resolve));
 
-    // assert
     expect(req.user).toEqual(
       expect.objectContaining({ id: '507f1f77bcf86cd799439011', role: 'customer' })
     );
     expect(next).toHaveBeenCalledTimes(1);
     expect(res.status).not.toHaveBeenCalled();
+  });
+
+  test('risponde con 403 se mustChangePassword è attivo fuori da setup/change-password', async () => {
+    const token = signUser({ _id: '507f1f77bcf86cd799439011', role: 'customer' });
+    User.findById.mockReturnValue({
+      select: jest.fn().mockResolvedValue({
+        _id: { toString: () => '507f1f77bcf86cd799439011' },
+        role: 'customer',
+        mustChangePassword: true
+      })
+    });
+    const req = { headers: { authorization: 'Bearer ' + token }, path: '/api/users/me' };
+
+    authMiddleware(req, res, next);
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      type: 'https://httpstatuses.org/403',
+      title: 'Password change required. Please change your password before accessing this resource.',
+      status: 403,
+      detail: 'Password change required. Please change your password before accessing this resource.'
+    });
+    expect(next).not.toHaveBeenCalled();
   });
 });
