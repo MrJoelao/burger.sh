@@ -6,12 +6,18 @@ import { navigate } from '../../router/navigate.js';
 const links = [
   { label: 'dashboard', path: '/dashboard/admin' },
   { label: 'utenti', path: '/admin/users' },
+  { label: 'filiali', path: '/admin/branches' },
   { label: 'statistiche', path: '/admin/stats' },
   { label: 'profilo', path: '/profile' }
 ];
 
+/* le sezioni operative stanno nella directory laterale, il profilo resta solo
+   nella barra in alto */
+const directoryLinks = links.slice(0, 4);
+
 export function AdminShell({ children, title = 'admin-ops', subtitle = 'system control' }) {
   const { user } = useAuthStore();
+  const currentPath = window.location.pathname;
   return html`
     <div class="crt-noise" aria-hidden="true"></div>
     <main class="console management-shell" aria-label="Administrator operations console">
@@ -24,7 +30,7 @@ export function AdminShell({ children, title = 'admin-ops', subtitle = 'system c
       <div class="management-grid">
         <nav class="command-list" aria-label="Admin directory">
           <p class="eyebrow">directory</p>
-          ${links.slice(0, 3).map((link, index) => html`<button class="nav-command" type="button" onClick=${() => navigate(link.path)}><kbd>0${index + 1}</kbd> ${link.label}</button>`)}
+          ${directoryLinks.map((link, index) => html`<button class=${`nav-command ${link.path === currentPath ? 'active' : ''}`} type="button" onClick=${() => navigate(link.path)}><kbd>0${index + 1}</kbd> ${link.label}</button>`)}
           <div class="nav-footer"><span>tty / admin</span><span>scope / platform</span><span>user / ${user?.name || 'admin'}</span></div>
         </nav>
         <section class="workspace"><header class="workspace-head"><p>/ admin / ${title}</p><p>access <b>GRANTED</b></p></header><div>${children}</div></section>

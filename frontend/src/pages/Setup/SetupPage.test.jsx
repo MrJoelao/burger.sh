@@ -36,6 +36,13 @@ describe('SetupPage', () => {
     await screen.findByText('VERIFICA ACCESSO');
   });
 
+  test('al primo avvio riproduce la sequenza di boot', async () => {
+    const { container } = render(<SetupPage />);
+
+    expect(container.querySelector('.setup-boot')).not.toBeNull();
+    await screen.findByText('VERIFICA ACCESSO');
+  });
+
   test('dopo il setup mostra le credenziali provvisorie', async () => {
     setupService.executeSetup.mockResolvedValue({
       success: true,

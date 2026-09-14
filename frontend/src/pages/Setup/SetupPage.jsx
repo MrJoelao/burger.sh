@@ -61,6 +61,7 @@ export function SetupPage() {
       section="first-run-setup"
       context="system bootstrap"
       status=${credentials ? 'setup complete' : 'awaiting bootstrap'}
+      boot
     >
       ${credentials
         ? html`<${CredentialsPanel} credentials=${credentials} />`

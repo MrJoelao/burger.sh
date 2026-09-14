@@ -84,6 +84,24 @@ export function AuthStoreProvider({ children }) {
     return response;
   }, []);
 
+  /* chiude il cambio password forzato: ricarica l'utente da /users/me per
+     leggere il flag aggiornato lato server. se il refresh fallisce subito dopo
+     il cambio, il backend ha comunque già azzerato mustChangePassword, quindi
+     sblocco l'utente in memoria per non lasciarlo nel redirect forzato. */
+  const completePasswordChange = useCallback(async () => {
+    try {
+      const response = await authService.getProfile();
+      if (response.success) {
+        setUser(response.data);
+        return;
+      }
+    } catch (_error) {
+      /* ricaduta gestita sotto */
+    }
+
+    setUser(previous => (previous ? { ...previous, mustChangePassword: false } : previous));
+  }, []);
+
   const value = {
     user,
     token,
@@ -96,7 +114,8 @@ export function AuthStoreProvider({ children }) {
     login,
     register,
     logout,
-    updateProfile
+    updateProfile,
+    completePasswordChange
   };
 
   return html`<${AuthContext.Provider} value=${value}>${children}<//>`;

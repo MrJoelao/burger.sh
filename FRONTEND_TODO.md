@@ -19,6 +19,8 @@ Le decisioni prese:
 
 Restano aperti: T6 (verifica campi con risposte reali), T12 (UI mancanti), T13 (architettura, in particolare `restaurantStore` non collegato). Blocco da risolvere col backend: `user.restaurantId` non e definito su `AuthUser`, senza quel campo la dashboard del manager non ha la filiale. La sezione 11 (task UX/UI, T14-T22) e chiusa: era nata dalla revisione del sito (larghezza desktop, wizard di registrazione, navigazione centrata, shell separate per manager e admin, home estesa, pagina profilo, setup al primo avvio, menu senza hardcode, polish) ed e tutta implementata.
 
+Sessione dashboard admin. Il loop del cambio password al primo avvio e chiuso: `completePasswordChange()` in `state/authStore.js` azzera il flag dopo il cambio e `ChangePasswordPage` porta l'admin su `/dashboard/admin` via `domain/roles.js`. L'area admin e stata ricostruita in `pages/Admin/`: overview con telemetria (utenti, filiali, ordini) e coda approvazioni, directory utenti, filiali, statistiche e una console di debug (health, setup, sessione con token mascherato e scadenza). `pages/Dashboard/AdminDashboard.jsx` e stato cancellato, sostituito da `AdminOverview.jsx`; aggiunta la rotta `/admin/branches`. Logica pura in `domain/admin.js` e `domain/debug.js`, stile in `terminal.css` (sezione "Admin console", prima delle media query). L'admin ora atterra sulla dashboard dopo il login (`navigate(dashboardPathFor(role))` in `AppRouter`) e resta confinato nella sua console: `redirectFor` in `domain/roles.js` lo riporta su `/dashboard/admin` da qualsiasi rotta non sua (storefront, aree cliente e manager), e la decisione avviene in render cosi non lampeggia mai la pagina sbagliata.
+
 Regole fisse:
 
 - non riscrivere da zero quello che funziona (`MenuPage`, `RestaurantListPage`, `HomePage` sono integrati con le API e vanno lasciati)
@@ -313,7 +315,7 @@ Accettazione: i tab past/current restituiscono gli ordini giusti, nessuna lista 
 
 ### T9 - FATTO - Sistemare `AdminDashboard.jsx`
 
-Esito: `role: 'manager'` aggiunto al filtro. La sezione statistiche vuota e stato tolta, soltanto rimozione: `getStats()` non aveva ancora una UI che lo consumasse ed e restato nel servizio per T12.
+Esito: `role: 'manager'` aggiunto al filtro. La sezione statistiche vuota e stato tolta, soltanto rimozione: `getStats()` non aveva ancora una UI che lo consumasse ed e restato nel servizio per T12. Il file e stato poi cancellato: ora l'admin vive in `pages/Admin/AdminOverview.jsx` (vedi la nota sulla sessione dashboard admin in testa al documento).
 
 - riga 26: chiede `managerStatus=pending` senza `role=manager`, ma lo swagger (`openapi.yaml:1118`) dice che `managerStatus` vale solo insieme a `role=manager`. Aggiungi il filtro
 - riga 125: la sezione statistiche e uno stub ("Additional admin stats can be added here"). O la colleghi a `managerAdminService.getStats()` o la togli

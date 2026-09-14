@@ -45,11 +45,31 @@ export const managerAdminService = {
   },
 
   /**
+   * Get one user by id
+   * GET /admin/users/{id}
+   */
+  async getUser(id) {
+    return api.get(`/admin/users/${id}`);
+  },
+
+  /**
    * Update user (e.g., approve manager)
    * PATCH /admin/users/{id}
    */
   async updateUser(id, data) {
     return api.patch(`/admin/users/${id}`, data);
+  },
+
+  /**
+   * Delete a user, optionally transferring owned branches
+   * DELETE /admin/users/{id}
+   */
+  async deleteUser(id, options = {}) {
+    const config = {};
+    if (options.newManagerId) {
+      config.body = JSON.stringify({ newManagerId: options.newManagerId });
+    }
+    return api.delete(`/admin/users/${id}`, config);
   },
 
   /**

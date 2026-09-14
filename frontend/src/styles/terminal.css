@@ -1476,36 +1476,69 @@
   inset: 0;
   display: grid;
   align-content: center;
-  gap: 5px;
-  padding: 40px;
+  justify-items: start;
+  gap: 16px;
+  padding: 40px clamp(24px, 8vw, 120px);
   background: var(--ink);
   color: var(--acid);
-  font-size: 11px;
+  font-size: 12px;
   pointer-events: none;
-  animation: setup-boot 0.95s ease both;
+  animation: setup-boot 1.7s ease both;
 }
 
-.setup-boot span {
+.setup-boot-log {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+}
+
+.setup-boot-log span {
   opacity: 0;
-  animation: setup-boot-line 0.18s ease both;
+  animation: setup-boot-line 0.2s ease both;
+  animation-delay: calc(var(--boot-index, 0) * 0.15s);
 }
 
-.setup-boot span:nth-child(2) { animation-delay: 0.15s; }
-.setup-boot span:nth-child(3) { animation-delay: 0.3s; }
-.setup-boot span:nth-child(4) { animation-delay: 0.45s; }
-
-.setup-boot span::before {
+.setup-boot-log span::before {
   content: "> ";
   color: var(--dirty);
 }
 
+.setup-boot-log span:last-child {
+  color: var(--amber);
+}
+
+.setup-boot-track {
+  width: min(420px, 100%);
+  height: 6px;
+  border: 1px solid var(--line);
+}
+
+.setup-boot-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(242, 191, 78, 0.5);
+  animation: setup-boot-fill 0.9s ease-out both;
+}
+
 @keyframes setup-boot {
-  0%, 70% { opacity: 1; }
+  0%, 80% { opacity: 1; }
   100% { opacity: 0; visibility: hidden; }
 }
 
 @keyframes setup-boot-line {
   to { opacity: 1; }
+}
+
+@keyframes setup-boot-fill {
+  to { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .setup-boot {
+    display: none;
+  }
 }
 
 @keyframes setup-rise {
@@ -1784,6 +1817,483 @@
 .access-console {
   display: flex;
   flex-direction: column;
+}
+
+/* ============================================================
+   Admin console
+   Telemetria, coda approvazioni, directory, filiali, statistiche e
+   console di debug. I toni riusano i token: nessun hex qui dentro.
+   ============================================================ */
+
+/* Toni: impostano solo --tone, chi li usa decide dove applicarlo */
+.tone-paper { --tone: var(--paper); }
+.tone-amber { --tone: var(--amber); }
+.tone-acid { --tone: var(--acid); }
+.tone-alert { --tone: var(--alert); }
+.tone-dirty { --tone: var(--dirty); }
+.tone-white { --tone: var(--white); }
+
+.panel-block {
+  margin-top: 28px;
+}
+
+.panel-block > .section-heading {
+  margin-bottom: 14px;
+}
+
+/* Telemetria: il numero dice quanto, la barra dice di cosa è fatto */
+.telemetry-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.telemetry-card {
+  padding: 18px 20px;
+  background: var(--ink);
+}
+
+.telemetry-value {
+  margin: 4px 0 0;
+  color: var(--white);
+  font: 44px/0.9 "Archivo Black", Impact, sans-serif;
+  letter-spacing: -0.06em;
+}
+
+.telemetry-caption {
+  margin: 6px 0 0;
+  color: var(--dirty);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+/* Meter: barra proporzionale + legenda */
+.meter {
+  margin-top: 14px;
+}
+
+.meter-track {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--ink);
+}
+
+.meter-segment {
+  width: var(--share, 0);
+  height: 100%;
+}
+
+.meter-segment + .meter-segment {
+  border-left: 1px solid var(--ink);
+}
+
+.meter-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meter-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dirty);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.meter-legend b {
+  color: var(--white);
+}
+
+.meter-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+}
+
+.meter-segment,
+.meter-dot {
+  background: var(--tone, var(--dirty));
+}
+
+/* Etichetta di ruolo o stato */
+.tag {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  background: var(--tone, var(--dirty));
+  color: var(--ink);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--dirty);
+}
+
+/* Coda delle approvazioni */
+.action-queue {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.queue-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.queue-item:last-child {
+  border-bottom: 0;
+}
+
+.queue-identity {
+  display: grid;
+  gap: 2px;
+}
+
+.queue-identity b {
+  color: var(--white);
+}
+
+.queue-identity span {
+  color: var(--dirty);
+  font-size: 10px;
+}
+
+.queue-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.queue-empty {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--line);
+  color: var(--dirty);
+}
+
+.shortcut-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Filtri */
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.filter-field {
+  display: grid;
+  gap: 6px;
+  color: var(--dirty);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.filter-field select,
+.profile-form select {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 9px 10px;
+  background: var(--ink);
+  color: var(--white);
+  font: inherit;
+}
+
+.filter-field select {
+  min-width: 180px;
+}
+
+.profile-form select {
+  width: 100%;
+}
+
+.filter-field select:focus,
+.profile-form select:focus {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+/* Tabelle: su schermo stretto scorrono invece di rompere il layout */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.directory-table,
+.composition-table {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.directory-table th,
+.composition-table th {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--dirty);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.directory-table td,
+.composition-table td {
+  padding: 12px 14px;
+  border-bottom: 1px dashed var(--line);
+  vertical-align: middle;
+}
+
+.directory-table tr:last-child td,
+.composition-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.cell-identity {
+  display: grid;
+  gap: 2px;
+}
+
+.cell-identity b {
+  color: var(--white);
+}
+
+.cell-identity span {
+  color: var(--dirty);
+  font-size: 10px;
+}
+
+.cell-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.composition-table .meter-dot {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.num {
+  text-align: right;
+}
+
+.stat-total {
+  margin: 0;
+  color: var(--paper);
+  font-size: 13px;
+}
+
+.stat-total b {
+  margin-right: 6px;
+  color: var(--white);
+  font: 30px/1 "Archivo Black", Impact, sans-serif;
+}
+
+/* Filiali */
+.branch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.branch-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.branch-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.branch-head b {
+  color: var(--white);
+  font-size: 15px;
+}
+
+.branch-meta {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.branch-meta div {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 8px;
+}
+
+.branch-meta dt {
+  color: var(--dirty);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.branch-meta dd {
+  margin: 0;
+  color: var(--paper);
+}
+
+.branch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+/* Conferma a due passi per le azioni distruttive */
+.confirm-action {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirm-prompt {
+  color: var(--alert);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+/* Console di debug */
+.debug-console {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.debug-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.debug-toggle:hover,
+.debug-toggle:focus-visible {
+  color: var(--amber);
+  outline: 0;
+}
+
+.debug-body {
+  padding: 0 16px 16px;
+}
+
+.debug-notice {
+  margin: 0 0 12px;
+  color: var(--acid);
+  font-size: 11px;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.debug-card {
+  padding: 12px 14px;
+  background: var(--ink);
+}
+
+.debug-value {
+  margin: 6px 0 0;
+  color: var(--tone, var(--paper));
+  font-size: 11px;
+}
+
+.debug-list {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 0;
+}
+
+.debug-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+}
+
+.debug-list dt {
+  color: var(--dirty);
+}
+
+.debug-list dd {
+  margin: 0;
+  color: var(--white);
+  overflow-wrap: anywhere;
+}
+
+.debug-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.debug-raw {
+  margin-top: 14px;
+}
+
+.debug-raw summary {
+  cursor: pointer;
+}
+
+.debug-raw pre {
+  max-height: 260px;
+  margin: 10px 0 0;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+}
+
+/* i bottoni dentro le righe restano compatti: la larghezza minima del primary
+   è pensata per i form a colonna, non per le azioni in linea */
+.terminal-button.compact {
+  min-width: 0;
+  gap: 8px;
+  padding: 7px 10px;
 }
 
 /* Responsive Breakpoints */

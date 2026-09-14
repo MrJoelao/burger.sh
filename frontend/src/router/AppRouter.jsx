@@ -14,7 +14,10 @@ import { OrderHistoryPage } from '../pages/Order/OrderHistoryPage.jsx';
 import { OrderDetailPage } from '../pages/Order/OrderDetailPage.jsx';
 import { CustomerDashboard } from '../pages/Dashboard/CustomerDashboard.jsx';
 import { ManagerDashboard } from '../pages/Dashboard/ManagerDashboard.jsx';
-import { AdminDashboard } from '../pages/Dashboard/AdminDashboard.jsx';
+import { AdminOverview } from '../pages/Admin/AdminOverview.jsx';
+import { AdminUsers } from '../pages/Admin/AdminUsers.jsx';
+import { AdminBranches } from '../pages/Admin/AdminBranches.jsx';
+import { AdminStats } from '../pages/Admin/AdminStats.jsx';
 import { ProfilePage } from '../pages/Profile/ProfilePage.jsx';
 import { SetupPage } from '../pages/Setup/SetupPage.jsx';
 import { ChangePasswordPage } from '../pages/Setup/ChangePasswordPage.jsx';
@@ -23,6 +26,7 @@ import { TerminalButton } from '../components/Auth/TerminalButton.jsx';
 import { useAuthStore } from '../state/authStore.js';
 import { useUIStore } from '../state/uiStore.js';
 import { navigate } from './navigate.js';
+import { dashboardPathFor, redirectFor } from '../domain/roles.js';
 import { setupService } from '../services/setupService.js';
 
 /**
@@ -39,12 +43,13 @@ const ROUTES = [
   { path: '/orders/:id', component: OrderDetailPage, roles: ['customer', 'manager', 'admin'] },
   { path: '/dashboard', component: CustomerDashboard, roles: ['customer'] },
   { path: '/dashboard/manager', component: ManagerDashboard, roles: ['manager'] },
-  { path: '/dashboard/admin', component: AdminDashboard, roles: ['admin'] }
-  ,{ path: '/profile', component: ProfilePage, roles: ['customer', 'manager', 'admin'] }
-  ,{ path: '/manager/orders', component: ManagerDashboard, roles: ['manager'] }
-  ,{ path: '/manager/menu', component: ManagerDashboard, roles: ['manager'] }
-  ,{ path: '/admin/users', component: AdminDashboard, roles: ['admin'] }
-  ,{ path: '/admin/stats', component: AdminDashboard, roles: ['admin'] }
+  { path: '/dashboard/admin', component: AdminOverview, roles: ['admin'] },
+  { path: '/profile', component: ProfilePage, roles: ['customer', 'manager', 'admin'] },
+  { path: '/manager/orders', component: ManagerDashboard, roles: ['manager'] },
+  { path: '/manager/menu', component: ManagerDashboard, roles: ['manager'] },
+  { path: '/admin/users', component: AdminUsers, roles: ['admin'] },
+  { path: '/admin/branches', component: AdminBranches, roles: ['admin'] },
+  { path: '/admin/stats', component: AdminStats, roles: ['admin'] }
   ,{ path: '/setup', component: SetupPage }
   ,{ path: '/change-password', component: ChangePasswordPage, roles: ['admin'] }
 ];
@@ -82,6 +87,9 @@ export function AppRouter() {
   const [setupChecked, setSetupChecked] = useState(false);
   const { user } = useAuthStore();
 
+  /* dove deve andare questa sessione su questo percorso, o null se va bene */
+  const redirect = redirectFor(user, path);
+
   useEffect(() => {
     const syncPath = () => setPath(window.location.pathname);
     window.addEventListener('popstate', syncPath);
@@ -104,10 +112,15 @@ export function AppRouter() {
   }, [path]);
 
   useEffect(() => {
-    if (user?.mustChangePassword && path !== '/change-password' && path !== '/setup') navigate('/change-password');
-  }, [user?.mustChangePassword, path]);
+    if (redirect) navigate(redirect);
+  }, [redirect]);
 
   if (!setupChecked) return html`<${TerminalWindow} title="boot" subtitle="setup status"><section class="terminal-screen" style=${{ padding: '48px', textAlign: 'center' }}>verifica configurazione...</section><//>`;
+
+  /* l'admin resta nella sua console: se il percorso non e suo lo riporto alla
+     dashboard, deciso qui in render cosi non lampeggia mai la pagina sbagliata */
+  if (redirect) return html`<${TerminalWindow} title="redirect" subtitle="routing"><section class="terminal-screen" style=${{ padding: '48px', textAlign: 'center' }}>reindirizzamento...</section><//>`;
+
   const match = matchRoute(path);
 
   return html`
@@ -165,7 +178,7 @@ function RouteGuard({ component: Component, roles, routeProps = {} }) {
           return;
         }
 
-        navigate('/');
+        navigate(dashboardPathFor(result.data?.user?.role));
       } catch (submissionError) {
         setError(submissionError.message || 'Operazione non riuscita');
       } finally {

@@ -8,9 +8,12 @@ import { html } from '../../utils/htm.js';
 import { SetupLayout } from './SetupLayout.jsx';
 import { ChangePasswordForm } from './ChangePasswordForm.jsx';
 import { setupService } from '../../services/setupService.js';
+import { useAuthStore } from '../../state/authStore.js';
+import { dashboardPathFor } from '../../domain/roles.js';
 import { navigate } from '../../router/navigate.js';
 
 export function ChangePasswordPage() {
+  const { user, completePasswordChange } = useAuthStore();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -20,7 +23,10 @@ export function ChangePasswordPage() {
     try {
       const result = await setupService.changePassword(currentPassword, newPassword);
       if (result.success) {
-        navigate('/');
+        /* aggiorno la sessione prima di uscire, altrimenti mustChangePassword
+           resta true in memoria e il router riporta qui all'infinito */
+        await completePasswordChange();
+        navigate(dashboardPathFor(user?.role));
         return;
       }
       setError(result.message || 'Cambio password non riuscito.');
