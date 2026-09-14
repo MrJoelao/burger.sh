@@ -7,16 +7,13 @@ import { QuantityControl } from './QuantityControl.jsx';
 import { BufferAction } from './BufferAction.jsx';
 
 export function SelectionPanel({
-  recipe = {
-    code: 'B-01 / CORE',
-    name: 'SMASH CLASSIC',
-    description: 'Doppio smash di manzo, cheddar fuso, cipolla, cetriolini e salsa della casa.',
-    price: 10.50
-  },
+  recipe,
   quantity = 1,
   onQuantityChange = () => {},
   onAddToBuffer = () => {}
 }) {
+  if (!recipe) return null;
+
   const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
   const selectedTotal = recipe.price * quantity;
 

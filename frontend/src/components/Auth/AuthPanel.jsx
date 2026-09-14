@@ -3,6 +3,7 @@
  */
 
 import { html } from '../../utils/htm.js';
+import { useState } from 'preact/hooks';
 import { AuthForm } from './AuthForm.jsx';
 
 export function AuthPanel({
@@ -10,8 +11,10 @@ export function AuthPanel({
   onSubmit = () => {},
   onSwitchMode = () => {},
   error = '',
-  loading = false
+  loading = false,
+  onStepChange = () => {}
 }) {
+  const [registrationStep, setRegistrationStep] = useState(0);
   const config = {
     login: {
       eyebrow: 'identity gate / existing user',
@@ -20,23 +23,29 @@ export function AuthPanel({
       switchCopy: 'Nuovo qui?',
       switchLabel: 'crea un account'
     },
-    register: {
-      eyebrow: 'identity gate / new user',
-      title: 'REGISTRAZIONE.',
-      subtitle: 'Crea un profilo. Ti servirà per salvare ordini e preferiti.',
-      switchCopy: 'Hai già un account?',
-      switchLabel: 'accedi'
-    }
+    register: [
+      ['identity gate / account type', 'SCEGLI IL TUO RUOLO.', 'Partiamo da come userai burger.sh.'],
+      ['identity gate / profile', 'PRESENTATI.', 'Un nome rende ogni ordine riconoscibile.'],
+      ['identity gate / credentials', 'METTI AL SICURO.', 'Crea le credenziali per ritrovare il tuo profilo.'],
+      ['identity gate / delivery', 'DOVE TI TROVI?', 'Così prepariamo consegne e ritiri senza errori.'],
+      ['identity gate / preferences', 'COSA TI VA?', 'Scegli i segnali che vuoi vedere nel menu.']
+    ]
   };
 
-  const current = config[mode];
+  const current = mode === 'register'
+    ? config.register[registrationStep]
+    : config.login;
+  const handleStepChange = (step, role) => {
+    setRegistrationStep(step);
+    onStepChange(step, role);
+  };
 
   return html`
     <section class="auth-panel">
       <header>
-        <p class="eyebrow" id="auth-eyebrow">${current.eyebrow}</p>
-        <h2 id="auth-title">${current.title}</h2>
-        <p id="auth-subtitle">${current.subtitle}</p>
+        <p class="eyebrow" id="auth-eyebrow">${mode === 'register' ? current[0] : current.eyebrow}</p>
+        <h2 id="auth-title">${mode === 'register' ? current[1] : current.title}</h2>
+        <p id="auth-subtitle">${mode === 'register' ? current[2] : current.subtitle}</p>
       </header>
 
       <${AuthForm}
@@ -45,6 +54,7 @@ export function AuthPanel({
         onSwitchMode=${onSwitchMode}
         error=${error}
         loading=${loading}
+        onStepChange=${handleStepChange}
       />
     </section>
   `;

@@ -5,7 +5,7 @@
 
 import { html } from '../../utils/htm.js';
 import { useState, useEffect } from 'preact/hooks';
-import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
+import { ManagerShell } from '../../components/Layout/ManagerShell.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { useAuthStore } from '../../state/authStore.js';
 import { managerAdminService } from '../../services/managerAdminService.js';
@@ -50,7 +50,7 @@ export function ManagerDashboard() {
   const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
 
   return html`
-    <${TerminalWindow} title="dashboard" subtitle="manager">
+    <${ManagerShell} title="dashboard" subtitle="manager">
       <section class="terminal-screen">
         <${SectionHeading} eyebrow="restaurant" title="BENVENUTO_<span>${user.name} (${user.restaurantName || '...'})</span>" />
 

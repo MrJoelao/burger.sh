@@ -4,8 +4,8 @@
  */
 
 import { render, h } from 'preact';
-import htm from 'htm';
 import './index.css';
+import { html } from './utils/htm.js';
 import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import { AuthStoreProvider } from './state/authStore.js';
 import { OrderStoreProvider } from './state/orderStore.js';
@@ -13,8 +13,6 @@ import { RestaurantStoreProvider } from './state/restaurantStore.js';
 import { UIStoreProvider } from './state/uiStore.js';
 import { AppRouter } from './router/AppRouter.jsx';
 import { installRenderDebug } from './debug/renderDebug.js';
-
-const html = htm.bind(h);
 
 installRenderDebug();
 

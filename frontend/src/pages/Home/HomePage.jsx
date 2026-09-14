@@ -5,10 +5,37 @@
  */
 
 import { html } from '../../utils/htm.js';
+import { useEffect, useState } from 'preact/hooks';
 import { navigate } from '../../router/navigate.js';
 import { TitleBar } from '../../components/Layout/TitleBar.jsx';
+import { api } from '../../services/api.js';
+import { restaurantService } from '../../services/restaurantService.js';
 
 export function HomePage() {
+  const [system, setSystem] = useState({ status: 'checking', restaurants: 0, dishes: 0 });
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      api.get('/health'),
+      restaurantService.getRestaurants({ limit: 1 }),
+      restaurantService.getDishes({ limit: 1 })
+    ])
+      .then(([health, restaurants, dishes]) => {
+        if (!cancelled) {
+          setSystem({
+            status: health.success ? 'online' : 'offline',
+            restaurants: restaurants.pagination?.total ?? restaurants.data?.length ?? 0,
+            dishes: dishes.pagination?.total ?? dishes.data?.length ?? 0
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSystem((current) => ({ ...current, status: 'offline' }));
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   return html`
     <div class="crt-noise" aria-hidden="true"></div>
     <main class="console intro-console" aria-label="Burger.sh Welcome">
@@ -75,6 +102,27 @@ export function HomePage() {
             Statistiche in tempo reale, approvazioni, report.
           </p>
         </article>
+      </section>
+
+      <section class="home-live" aria-label="Stato live del sistema">
+        <div>
+          <p class="eyebrow">backend monitor</p>
+          <h2>SYSTEM_<span>${system.status.toUpperCase()}</span></h2>
+          <p>${system.status === 'offline' ? 'Il backend non risponde. Puoi tornare più tardi.' : 'Il servizio risponde e i dati sono disponibili.'}</p>
+        </div>
+        <div class="home-metrics">
+          <div><b>${system.restaurants}</b><span>filiali</span></div>
+          <div><b>${system.dishes}</b><span>piatti</span></div>
+        </div>
+      </section>
+
+      <section class="home-steps" aria-label="Come funziona un ordine">
+        <p class="eyebrow">order protocol</p>
+        <div class="home-step-grid">
+          <article><b>01</b><h3>SCEGLI</h3><p>Seleziona la filiale più comoda.</p></article>
+          <article><b>02</b><h3>COMPONI</h3><p>Scegli i piatti e la quantità.</p></article>
+          <article><b>03</b><h3>CONFERMA</h3><p>Controlla il buffer e invia l'ordine.</p></article>
+        </div>
       </section>
 
       <footer class="footer-status">

@@ -17,30 +17,21 @@ export function MenuPage() {
   const { isAuthenticated } = useAuthStore();
   const [menuLoading, setMenuLoading] = useState(true);
   const [menuError, setMenuError] = useState('');
-  const [restaurant, setRestaurant] = useState(null);
+  const [restaurants, setRestaurants] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      restaurantService.getDishes({ type: 'burger', limit: 50 }),
-      restaurantService.getRestaurants({ limit: 50 })
-    ])
-      .then(([dishResponse, restaurantResponse]) => {
+    restaurantService.getRestaurants({ limit: 50 })
+      .then((restaurantResponse) => {
         if (cancelled) return;
-        if (!dishResponse.success) throw new Error(dishResponse.message || dishResponse.detail || 'Menu non disponibile');
-        const recipes = dishResponse.data.map((dish, index) => ({
-          id: dish.id || dish._id,
-          restaurantId: dish.restaurantId,
-          code: `B-${String(index + 1).padStart(2, '0')} / ${dish.type?.toUpperCase() || 'MENU'}`,
-          name: dish.name.toUpperCase(),
-          description: `${dish.type || 'Piatto'} della selezione burger.sh.`,
-          price: Number(dish.price)
-        }));
-        if (!recipes.length) throw new Error('Il database non contiene piatti disponibili');
-        if (restaurantResponse.success && restaurantResponse.data?.length) {
-          setRestaurant(restaurantResponse.data[0]);
+        if (!restaurantResponse.success) {
+          throw new Error(restaurantResponse.message || 'Impossibile caricare le filiali');
         }
-        order.setRecipes(recipes);
+        const availableRestaurants = restaurantResponse.data || [];
+        setRestaurants(availableRestaurants);
+        if (availableRestaurants.length === 1) {
+          order.selectRestaurant(availableRestaurants[0]);
+        }
       })
       .catch((error) => {
         if (!cancelled) setMenuError(error.message);
@@ -50,6 +41,47 @@ export function MenuPage() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!order.selectedRestaurant) {
+      setMenuLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setMenuLoading(true);
+    setMenuError('');
+    restaurantService.getDishesByRestaurant(
+      order.selectedRestaurant.id || order.selectedRestaurant._id,
+      { type: 'burger', limit: 50 }
+    )
+      .then((dishResponse) => {
+        if (cancelled) return;
+        if (!dishResponse.success) {
+          throw new Error(dishResponse.message || 'Menu non disponibile');
+        }
+        const recipes = (dishResponse.data || []).map((dish, index) => ({
+          id: dish.id || dish._id,
+          restaurantId: dish.restaurantId,
+          code: `B-${String(index + 1).padStart(2, '0')} / ${dish.type?.toUpperCase() || 'MENU'}`,
+          name: dish.name.toUpperCase(),
+          description: `${dish.type || 'Piatto'} della selezione burger.sh.`,
+          price: Number(dish.price)
+        }));
+        order.setRecipes(recipes);
+        if (!recipes.length) setMenuError('Nessun piatto disponibile in questa filiale.');
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          order.setRecipes([]);
+          setMenuError(error.message);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setMenuLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [order.selectedRestaurant]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -65,7 +97,7 @@ export function MenuPage() {
   };
 
   const handleAddToBuffer = async () => {
-    const restaurantId = restaurant?.id || restaurant?._id;
+    const restaurantId = order.selectedRestaurant?.id || order.selectedRestaurant?._id;
     const dishId = order.selectedRecipe?.id;
     if (isAuthenticated && !restaurantId) {
       setMenuError('Nessuna filiale disponibile: il carrello richiede una filiale attiva.');
@@ -94,14 +126,44 @@ export function MenuPage() {
       orderItems=${order.items}
       onClearBuffer=${handleClearBuffer}
     >
-      <${AssemblyLayout}
-        recipe=${order.selectedRecipe}
-        quantity=${order.quantity}
-        onQuantityChange=${handleQuantityChange}
-        onAddToBuffer=${handleAddToBuffer}
-      />
+      ${order.selectedRecipe && html`
+        <${AssemblyLayout}
+          recipe=${order.selectedRecipe}
+          quantity=${order.quantity}
+          onQuantityChange=${handleQuantityChange}
+          onAddToBuffer=${handleAddToBuffer}
+        />
+      `}
       ${menuLoading && html`<p class="menu-state">CARICAMENTO MENU...</p>`}
       ${menuError && html`<p class="menu-state menu-state-error">${menuError}</p>`}
+      ${!menuLoading && !restaurants.length && !menuError && html`
+        <p class="menu-state menu-state-error">Nessuna filiale disponibile. Riprova più tardi.</p>
+      `}
+      ${!menuLoading && restaurants.length > 1 && html`
+        <section class="restaurant-picker" aria-label="Seleziona filiale">
+          <p class="eyebrow">prima scegli la filiale</p>
+          <div class="restaurant-picker-grid">
+            ${restaurants.map((candidate) => {
+              const candidateId = candidate.id || candidate._id;
+              const selectedId = order.selectedRestaurant?.id || order.selectedRestaurant?._id;
+              return html`
+                <button
+                  class=${`restaurant-choice ${candidateId === selectedId ? 'active' : ''}`}
+                  type="button"
+                  onClick=${() => {
+                    if (!order.selectRestaurant(candidate)) {
+                      setMenuError('Svuota il carrello prima di cambiare filiale.');
+                    }
+                  }}
+                >
+                  <strong>${candidate.name}</strong>
+                  <span>${candidate.city || candidate.address?.city || 'filiale'}</span>
+                </button>
+              `;
+            })}
+          </div>
+        </section>
+      `}
       <${RecipeMatrix}
         recipes=${order.recipes}
         activeIndex=${order.activeRecipeIndex}

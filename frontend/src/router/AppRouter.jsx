@@ -15,11 +15,14 @@ import { OrderDetailPage } from '../pages/Order/OrderDetailPage.jsx';
 import { CustomerDashboard } from '../pages/Dashboard/CustomerDashboard.jsx';
 import { ManagerDashboard } from '../pages/Dashboard/ManagerDashboard.jsx';
 import { AdminDashboard } from '../pages/Dashboard/AdminDashboard.jsx';
+import { ProfilePage } from '../pages/Profile/ProfilePage.jsx';
+import { SetupPage } from '../pages/Setup/SetupPage.jsx';
 import { TerminalWindow } from '../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../components/Auth/TerminalButton.jsx';
 import { useAuthStore } from '../state/authStore.js';
 import { useUIStore } from '../state/uiStore.js';
 import { navigate } from './navigate.js';
+import { setupService } from '../services/setupService.js';
 
 /**
  * Route table: ordered patterns with optional role restrictions.
@@ -36,6 +39,13 @@ const ROUTES = [
   { path: '/dashboard', component: CustomerDashboard, roles: ['customer'] },
   { path: '/dashboard/manager', component: ManagerDashboard, roles: ['manager'] },
   { path: '/dashboard/admin', component: AdminDashboard, roles: ['admin'] }
+  ,{ path: '/profile', component: ProfilePage, roles: ['customer', 'manager', 'admin'] }
+  ,{ path: '/manager/orders', component: ManagerDashboard, roles: ['manager'] }
+  ,{ path: '/manager/menu', component: ManagerDashboard, roles: ['manager'] }
+  ,{ path: '/admin/users', component: AdminDashboard, roles: ['admin'] }
+  ,{ path: '/admin/stats', component: AdminDashboard, roles: ['admin'] }
+  ,{ path: '/setup', component: SetupPage }
+  ,{ path: '/change-password', component: SetupPage, props: { changePassword: true }, roles: ['admin'] }
 ];
 
 /**
@@ -68,6 +78,8 @@ function matchRoute(pathname) {
 
 export function AppRouter() {
   const [path, setPath] = useState(window.location.pathname);
+  const [setupChecked, setSetupChecked] = useState(false);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     const syncPath = () => setPath(window.location.pathname);
@@ -75,14 +87,36 @@ export function AppRouter() {
     return () => window.removeEventListener('popstate', syncPath);
   }, []);
 
+  useEffect(() => {
+    if (path === '/setup' || path === '/change-password') {
+      setSetupChecked(true);
+      return undefined;
+    }
+    let cancelled = false;
+    setupService.getStatus()
+      .then(response => {
+        if (!cancelled && response.success && !response.data?.adminExists && !response.data?.setupCompleted) navigate('/setup');
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setSetupChecked(true); });
+    return () => { cancelled = true; };
+  }, [path]);
+
+  useEffect(() => {
+    if (user?.mustChangePassword && path !== '/change-password' && path !== '/setup') navigate('/change-password');
+  }, [user?.mustChangePassword, path]);
+
+  if (!setupChecked) return html`<${TerminalWindow} title="boot" subtitle="setup status"><section class="terminal-screen" style=${{ padding: '48px', textAlign: 'center' }}>verifica configurazione...</section><//>`;
   const match = matchRoute(path);
 
   return html`
-    <${RouteGuard}
-      component=${match ? match.route.component : NotFoundPage}
-      roles=${match?.route.roles}
-      routeProps=${{ ...(match?.route.props || {}), ...(match?.params || {}) }}
-    />
+    <div class="route-root" key=${path}>
+      <${RouteGuard}
+        component=${match ? match.route.component : NotFoundPage}
+        roles=${match?.route.roles}
+        routeProps=${{ ...(match?.route.props || {}), ...(match?.params || {}) }}
+      />
+    </div>
   `;
 }
 

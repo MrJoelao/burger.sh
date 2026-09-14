@@ -5,13 +5,15 @@
 import { html } from '../../utils/htm.js';
 import { useState } from 'preact/hooks';
 import { TerminalButton } from './TerminalButton.jsx';
+import { RegisterWizard } from '../../pages/Auth/RegisterWizard.jsx';
 
 export function AuthForm({
   mode = 'login', // 'login' | 'register'
   onSubmit = () => {},
   onSwitchMode = () => {},
   error = '',
-  loading = false
+  loading = false,
+  onStepChange = () => {}
 }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -67,6 +69,18 @@ export function AuthForm({
   };
 
   const isRegister = mode === 'register';
+
+  if (isRegister) {
+    return html`
+      <${RegisterWizard}
+        onSubmit=${onSubmit}
+        onSwitchMode=${onSwitchMode}
+        error=${error}
+        loading=${loading}
+        onStepChange=${onStepChange}
+      />
+    `;
+  }
 
   return html`
     <form class="auth-form" onSubmit=${handleSubmit} novalidate>

@@ -5,7 +5,7 @@
 
 import { html } from '../../utils/htm.js';
 import { useState, useEffect } from 'preact/hooks';
-import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
+import { AdminShell } from '../../components/Layout/AdminShell.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { managerAdminService } from '../../services/managerAdminService.js';
@@ -54,7 +54,7 @@ export function AdminDashboard() {
   };
 
   return html`
-    <${TerminalWindow} title="dashboard" subtitle="admin">
+    <${AdminShell} title="dashboard" subtitle="admin">
       <section class="terminal-screen">
         <${SectionHeading} eyebrow="admin" title="PANNELLO_<span>DI CONTROLLO</span>" />
 

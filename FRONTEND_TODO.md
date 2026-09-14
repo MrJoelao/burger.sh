@@ -442,6 +442,8 @@ I primi due sono a basso rischio e liberano molto rumore. Fatto quello, il resto
 
 ## 11. Task UX e UI (analisi nuova sessione)
 
+Stato sessione: T14, T15, T16, T17, T18, T19, T20, T21 e T22 implementati. T6 resta dipendente dalle risposte reali del backend, in particolare per la filiale del manager.
+
 Ogni task contiene lo stato attuale, le cause e come implementarlo. Non sono bugfix ma redesign: toccano gli stessi file di T12/T13, quindi vanno fatti dopo la pulizia ma prima di qualunque feature nuova.
 
 Piano rapido, dai problemi segnalati ai task:
@@ -458,6 +460,8 @@ Piano rapido, dai problemi segnalati ai task:
 
 ### T14 - Uso della larghezza su desktop
 
+Stato: fatto. Esito: il console usa lo spazio desktop fino a 1780px e la griglia centrale assorbe la larghezza disponibile.
+
 Stato attuale: `.console` (terminal.css:18-26) ha `width: min(1540px, calc(100vw - 40px))` con `margin: 20px auto`. Su un monitor da 1920px o piu restano bande vuote oltre 150px per lato, e il grid interno `.terminal-grid` non si allarga: le colonne sono dimensionate su 1540px. Le pagine intro e access ereditano lo stesso limite.
 
 Come intervenire:
@@ -470,6 +474,8 @@ Come intervenire:
 Verifica: a 1920 e 2560 il contenuto usa lo schermo senza superare circa 90 caratteri per riga; sotto 1440 il rendering resta quello attuale.
 
 ### T15 - Registrazione guidata (wizard animato)
+
+Stato: fatto. Esito: registrazione divisa in cinque passi con ruolo iniziale, validazione locale, animazione e payload compatibile con RegisterRequest.
 
 Stato attuale: `AuthForm.jsx` in modalita register impila in una colonna nome, cognome, email, password, conferma, ruolo (select in fondo), via, citta, cap e sette checkbox preferenze. Dieci blocchi richiesti tutti insieme e il tipo di account si scopre solo arrivati in fondo.
 
@@ -493,6 +499,8 @@ Implementazione:
 
 ### T16 - Navigazione in alto centrata e stabile
 
+Stato: fatto. Esito: titlebar a tre colonne con navigazione centrata e link di larghezza stabile.
+
 Stato attuale: `components/Layout/TitleBar.jsx` impila window-controls, brand (un paragrafo elastico), `nav.top-links` e `machine-state`. In CSS sia `.top-links` (terminal.css:102) sia `.machine-state` (terminal.css:122) hanno `margin-left: auto`: due auto margin si spartiscono lo spazio libero, quindi i link non stanno al centro dello schermo ma a ridosso di `machine-state`. Il testo del brand cambia con la sezione (`burger.sh / welcome / production` vs `burger.sh / kitchen-ops / production console`), quindi la larghezza sinistra varia da pagina a pagina e il nav slitta anche a parita di link ordina/accedi.
 
 Implementazione:
@@ -504,6 +512,8 @@ Implementazione:
 - non rompere il contratto dei test: `TitleBarConsistency.test.jsx` pretende un nav con `aria-label="Navigazione principale"` linkato nell'ordine `ordina, accedi`, uguali tra `AuthLayout` e `TerminalWindow`, e `TitleBar.test.jsx` copre il resto. I due link nascono da `DEFAULT_NAV_LINKS` (TitleBar.jsx:11-14)
 
 ### T17 - Area manager e admin separate dalla UI cliente
+
+Stato: fatto. Esito: manager e admin usano shell operative senza carrello cliente, con directory e rotte protette per ruolo.
 
 Stato attuale: `ManagerDashboard` e `AdminDashboard` montano lo stesso `TerminalWindow` del cliente, con identity-strip `food assembly interface`, carrello `OrderBuffer` e directory `nuovo ordine / menu completo / allergeni / manifesto`. Le dashboard di gestione vivono dentro una conchiglia pensata per ordinare burger. `TerminalWindow.jsx` codifica fisso tutto questo: `identity-strip` con `food assembly interface / 02` e la frase "Componi l'ordine..." (righe 28-38), i quattro `nav-command` (righe 43-46, bottoni senza `onClick`, oggi inerti), il `footer-status` con "enter add item / esc clear" (righe 61-67) e la colonna `OrderBuffer` (riga 58). `ManagerDashboard` legge inoltre `user.restaurantId` (righe 32 e 48) e `user.restaurantName` (riga 55): nessuno dei due esiste in `AuthUser` (swagger:1322).
 
@@ -518,6 +528,8 @@ Accettazione: il manager vede solo viste di gestione, zero riferimenti all ordin
 
 ### T18 - Home: usare lo spazio in basso
 
+Stato: fatto. Esito: aggiunti monitor backend, conteggi filiali/piatti e protocollo d'ordine sotto l'hero, con fallback offline.
+
 Stato attuale: `HomePage.jsx` e hero + `intro-board` (3 articoli) + footer-status. Tutto sta dentro una viewport, sotto non c e niente. Nessun dato reale, solo dichiarazioni statiche.
 
 Implementazione:
@@ -530,6 +542,8 @@ Implementazione:
 Accettazione: la home ha contenuto sotto il fronte che arriva a scroll, nessun testo segnaposto.
 
 ### T19 - Pagina profilo mancante
+
+Stato: fatto. Esito: aggiunta `/profile` con modifica dati, indirizzo e preferenze e aggiornamento dell'utente in authStore.
 
 Stato attuale: lo swagger definisce GET `/users/me` e PUT `/users/me` (schema `UpdateProfileRequest`), ma non esiste pagina: il cliente non puo aggiornare indirizzo o preferenze, il manager non vede la sua filiale.
 
@@ -545,6 +559,8 @@ Implementazione:
 Nota: `managerStatus` c e in `AuthUser` (swagger:1331) e in `User` (swagger:1312); a mancare sono `restaurantId` e `restaurantName`, quindi la riga filiale e riservata al manager solo quando il backend li aggiunge (blocco gia annotato in T6/T17).
 
 ### T20 - Flusso di setup al primo avvio
+
+Stato: fatto. Esito: aggiunti controllo iniziale, setup con PIN, visualizzazione credenziali provvisorie e cambio password obbligatorio.
 
 Stato: il backend ha gia le rotte (vedi `backend/routes/setupRoutes.js` e `controllers/setupController.js`): GET `/api/setup/status` con `adminExists` e `setupCompleted`, POST `/api/setup/request-pin` che su IP non locale genera un PIN stampato in console del backend valido 5 minuti (rate limit 5 richieste per 15 minuti), POST `/api/setup` di esecuzione con PIN obbligatorio per IP remoto e bypass su localhost, POST `/api/setup/change-password` per il cambio forzato con flag `mustChangePassword`. Non sono nello swagger, il riferimento e il controller.
 
@@ -566,6 +582,8 @@ Accettazione: installazione da zero in localhost completa senza PIN; da IP ester
 
 ### T21 - Menu: rimozione hardcode e scelta del ristorante
 
+Stato: fatto. Esito: rimossi i piatti fittizi, la filiale viene scelta prima del menu e il cambio filiale è bloccato con carrello pieno.
+
 Stato attuale, due problemi:
 
 1. `orderStore.js:14` dichiara `const RECIPES = [...4 piatti...]` come stato iniziale, e lo stesso array si ripete come default prop in `RecipeMatrix.jsx:9` e `SelectionPanel.jsx:13`. Quando la fetch dei piatti fallisce, `MenuPage.jsx:39` mostra l errore `Il database non contiene piatti disponibili` pero lo schermo continua a mostrare i 4 piatti finti di default. L utente vede un menu che non esiste
@@ -585,6 +603,8 @@ Implementazione:
 Verifica: con DB pieno si sceglie filiale poi si vede il menu di quella filiale; senza piatti niente griglia inventata, messaggio coerente.
 
 ### T22 - Polish generale e dinamicita
+
+Stato: fatto. Esito: aggiunti transizione tra route, focus coerenti, feedback animato dello scanner e stato attivo delle ricette.
 
 Sintomo: le pagine si alternano senza transizioni, mancano skeletons, i toast esistono nel store ma quasi nessuno li usa, e molto style e inline nei componenti (per esempio `AuthForm.jsx` alle righe 148 e 196-212, `SelectionPanel.jsx`, blocchi in `AppRouter.jsx` e `RecipeMatrix.jsx`). L app funziona ma le pagine sembrano incollate.
 

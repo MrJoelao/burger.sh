@@ -106,6 +106,9 @@ export function CustomerDashboard() {
         <${TerminalButton} onClick=${() => navigate('/orders')}>
           [ enter ] vedi tutti gli ordini
         <//>
+        <${TerminalButton} onClick=${() => navigate('/profile')}>
+          [ p ] modifica profilo
+        <//>
       </section>
     <//>
   `;

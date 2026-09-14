@@ -6,6 +6,7 @@
 import { AuthPanel } from '../../components/Auth/AuthPanel.jsx';
 import { TitleBar } from '../../components/Layout/TitleBar.jsx';
 import { navigate } from '../../router/navigate.js';
+import { useState } from 'preact/hooks';
 
 export function AuthLayout({
   mode = 'login',
@@ -14,6 +15,15 @@ export function AuthLayout({
   error,
   loading
 }) {
+  const [registrationStep, setRegistrationStep] = useState(0);
+  const registerAside = [
+    ['identity subsystem', 'IL TUO<br />POSTO<br />NELLA<br /><span>CODA.</span>', 'Accedi per salvare gli ordini, tenere d’occhio i preferiti e non riscrivere tutto ogni volta.'],
+    ['profile signal', 'FATTI<br /><span>RICONOSCERE.</span>', 'Un’identità chiara tiene insieme ordini, preferiti e la tua esperienza nella coda.'],
+    ['security gate', 'TIENI<br />TUTTO<br /><span>AL SICURO.</span>', 'Le tue credenziali restano il pass per ritrovare il profilo quando vuoi.'],
+    ['delivery signal', 'DOVE<br />PASSA<br /><span>LA CODA?</span>', 'Un indirizzo completo aiuta la sede a preparare consegne e ritiri correttamente.'],
+    ['taste profile', 'SCEGLI<br />IL TUO<br /><span>SEGNALE.</span>', 'Le preferenze rendono il menu più vicino ai tuoi gusti, senza vincolarti.']
+  ][mode === 'register' ? registrationStep : 0];
+
   return (
     <>
       <div class="crt-noise" aria-hidden="true"></div>
@@ -24,9 +34,9 @@ export function AuthLayout({
           <aside class="access-aside">
             <a class="wordmark" href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>BURGER<span>.SH</span></a>
             <div class="access-aside-copy">
-              <p class="eyebrow">identity subsystem</p>
-              <h1>IL TUO<br />POSTO<br />NELLA<br /><span>CODA.</span></h1>
-              <p>Accedi per salvare gli ordini, tenere d'occhio i preferiti e non riscrivere tutto ogni volta.</p>
+              <p class="eyebrow">{registerAside[0]}</p>
+              <h1 dangerouslySetInnerHTML={{ __html: registerAside[1] }}></h1>
+              <p>{registerAside[2]}</p>
             </div>
             <div class="access-aside-footer">
               <span>session / guest</span>
@@ -41,6 +51,7 @@ export function AuthLayout({
             onSwitchMode={onSwitchMode}
             error={error}
             loading={loading}
+            onStepChange={(step) => setRegistrationStep(step)}
           />
         </section>
 

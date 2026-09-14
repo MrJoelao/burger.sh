@@ -11,21 +11,15 @@ import { orderService } from '../services/orderService.js';
 
 export const OrderContext = createContext(null);
 
-const RECIPES = [
-  { code: 'B-01 / CORE', name: 'SMASH CLASSIC', description: 'Doppio smash di manzo, cheddar fuso, cipolla, cetriolini e salsa della casa.', price: 10.50 },
-  { code: 'B-02 / HEAT', name: 'HOT SIGNAL', description: 'Manzo alla piastra, jalapeño, cheddar, cipolla croccante e salsa habanero.', price: 11.50 },
-  { code: 'B-03 / GREEN', name: 'GREEN MACHINE', description: 'Patty vegetale, lattuga, cipolla, pomodoro e maionese al lime.', price: 9.50 },
-  { code: 'B-04 / BIRD', name: 'CRISPY BIRD', description: 'Pollo fritto, cavolo marinato, lattuga e maionese affumicata.', price: 10.00 }
-];
-
 export function OrderStoreProvider({ children }) {
   // The buffer is available before checkout; cart operations sync it with the backend.
   const [items, setItems] = useState([]);
   const [orderHistory, setOrderHistory] = useState([]);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [recipes, setRecipes] = useState(RECIPES);
-  const [selectedRecipe, setSelectedRecipe] = useState(RECIPES[0]);
+  const [recipes, setRecipes] = useState([]);
+  const [selectedRecipe, setSelectedRecipe] = useState(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [activeRecipeIndex, setActiveRecipeIndex] = useState(0);
 
@@ -51,10 +45,21 @@ export function OrderStoreProvider({ children }) {
   }, []);
 
   const replaceRecipes = useCallback((nextRecipes) => {
-    setRecipes(nextRecipes);
-    setSelectedRecipe(nextRecipes[0]);
+    const availableRecipes = nextRecipes || [];
+    setRecipes(availableRecipes);
+    setSelectedRecipe(availableRecipes[0] || null);
     setActiveRecipeIndex(0);
   }, []);
+
+  const selectRestaurant = useCallback((restaurant) => {
+    const currentId = selectedRestaurant?.id || selectedRestaurant?._id;
+    const nextId = restaurant?.id || restaurant?._id;
+    if (currentId && nextId && currentId !== nextId && items.length > 0) {
+      return false;
+    }
+    setSelectedRestaurant(restaurant);
+    return true;
+  }, [items, selectedRestaurant]);
 
   const addToBuffer = useCallback(() => {
     addItem({ ...selectedRecipe, quantity });
@@ -209,6 +214,8 @@ export function OrderStoreProvider({ children }) {
     setQuantity,
     activeRecipeIndex,
     recipes,
+    selectedRestaurant,
+    selectRestaurant,
     setRecipes: replaceRecipes,
     orderHistory,
     currentOrder,
