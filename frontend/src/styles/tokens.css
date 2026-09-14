@@ -1,0 +1,96 @@
+/**
+ * Design Tokens - Exact Prototype Color Palette & Typography
+ * Replicates the CSS variables from the prototype exactly
+ */
+
+/* Google Fonts Import */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Exact prototype color palette */
+  --ink: #171510;
+  --panel: #211e17;
+  --paper: #c8a565;
+  --amber: #f2bd4e;
+  --dirty: #78633c;
+  --line: #665532;
+  --acid: #d7e96d;
+  --alert: #f06c45;
+  --white: #f0dfb0;
+
+  /* Semantic color aliases for easier reference */
+  --color-bg-primary: var(--ink);
+  --color-bg-panel: var(--panel);
+  --color-bg-paper: var(--paper);
+  --color-accent-primary: var(--amber);
+  --color-text-muted: var(--dirty);
+  --color-border: var(--line);
+  --color-success: var(--acid);
+  --color-error: var(--alert);
+  --color-text-primary: var(--white);
+  --color-text-on-accent: var(--ink);
+  --color-text-on-paper: var(--ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--white);
+  background: var(--ink);
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  letter-spacing: 0.015em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 3px;
+}
+
+/* Selection styles */
+::selection {
+  background: var(--amber);
+  color: var(--ink);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ink);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border: 2px solid var(--ink);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--dirty);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

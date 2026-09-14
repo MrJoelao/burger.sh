@@ -1,0 +1,20 @@
+/**
+ * Main CSS Entry Point
+ * Imports design tokens and terminal base styles
+ */
+
+@import './styles/tokens.css';
+@import './styles/terminal.css';
+
+/* Tailwind v4 directives */
+@import "tailwindcss";
+
+/* Ensure tailwind utilities are available */
+@layer utilities {
+  /* Custom utility for terminal text truncation */
+  .terminal-truncate {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}

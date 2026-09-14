@@ -1,0 +1,43 @@
+/**
+ * SelectionPanel - Active recipe display with quantity control and add-to-buffer
+ */
+
+import { html } from '../../utils/htm.js';
+import { QuantityControl } from './QuantityControl.jsx';
+import { BufferAction } from './BufferAction.jsx';
+
+export function SelectionPanel({
+  recipe = {
+    code: 'B-01 / CORE',
+    name: 'SMASH CLASSIC',
+    description: 'Doppio smash di manzo, cheddar fuso, cipolla, cetriolini e salsa della casa.',
+    price: 10.50
+  },
+  quantity = 1,
+  onQuantityChange = () => {},
+  onAddToBuffer = () => {}
+}) {
+  const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
+  const selectedTotal = recipe.price * quantity;
+
+  return html`
+    <div class="selection-panel">
+      <div class="selected-meta"><span class="eyebrow">active recipe</span><span id="recipe-code">${recipe.code}</span></div>
+      <h3 id="recipe-name">${recipe.name.replace(' ', '<br>')}</h3>
+      <p id="recipe-description">${recipe.description}</p>
+      <p class="price" id="recipe-price">${formatEuro(recipe.price)}</p>
+
+      <${QuantityControl}
+        value=${quantity}
+        onChange=${onQuantityChange}
+      />
+
+      <${BufferAction}
+        total=${selectedTotal}
+        onClick=${onAddToBuffer}
+      />
+    </div>
+  `;
+}
+
+export default SelectionPanel;
