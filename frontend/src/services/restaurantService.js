@@ -27,8 +27,14 @@ export const restaurantService = {
    * Get dishes for a specific restaurant
    * GET /dishes/restaurant/{restaurantId}
    */
-  async getDishesByRestaurant(restaurantId) {
-    return api.get(`/dishes/restaurant/${restaurantId}`);
+  async getDishesByRestaurant(restaurantId, params = {}) {
+    const query = buildQuery(params);
+    return api.get(`/dishes/restaurant/${restaurantId}${query}`);
+  },
+
+  async getDishes(params = {}) {
+    const query = buildQuery(params);
+    return api.get(`/dishes${query}`);
   },
 
   /**

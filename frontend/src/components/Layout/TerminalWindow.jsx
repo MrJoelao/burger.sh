@@ -4,8 +4,16 @@
  */
 
 import { useState, useEffect } from 'preact/hooks';
+import { OrderBuffer } from './OrderBuffer.jsx';
 
-export function TerminalWindow({ children, title = 'kitchen-ops', subtitle = 'production console', showClock = true }) {
+export function TerminalWindow({
+  children,
+  title = 'kitchen-ops',
+  subtitle = 'production console',
+  showClock = true,
+  orderItems = [],
+  onClearBuffer = () => {}
+}) {
   const [time, setTime] = useState('');
 
   useEffect(() => {
@@ -69,21 +77,7 @@ export function TerminalWindow({ children, title = 'kitchen-ops', subtitle = 'pr
             <div>{children}</div>
           </section>
 
-          <aside class="order-buffer" aria-label="Buffer ordine">
-            <header>
-              <p class="eyebrow">order buffer / ram</p>
-              <h2>CURRENT<br />BATCH</h2>
-              <span class="buffer-mark">rw</span>
-            </header>
-            <div class="buffer-list" id="buffer-list">
-              <p class="buffer-empty"><b>_</b> buffer empty<br /><span>aggiungi una ricetta per iniziare.</span></p>
-            </div>
-            <footer class="buffer-total">
-              <p><span>units</span><b id="item-count">00</b></p>
-              <p><span>subtotal</span><strong id="cart-total">€ 0.00</strong></p>
-              <button type="button" id="clear-buffer" class="terminal-button">[ esc ] clear buffer</button>
-            </footer>
-          </aside>
+          <OrderBuffer items={orderItems} onClear={onClearBuffer} />
         </div>
 
         <footer class="footer-status">

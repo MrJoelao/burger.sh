@@ -54,8 +54,8 @@ export function RestaurantListPage({ onRestaurantSelect = () => {} }) {
         setRestaurants(data.data || []);
         setPagination(prev => ({
           ...prev,
-          total: data.meta?.total || 0,
-          totalPages: data.meta?.totalPages || 0
+          total: data.pagination?.total || 0,
+          totalPages: data.pagination?.totalPages || 0
         }));
       } else {
         throw new Error(data.message || 'Failed to fetch restaurants');

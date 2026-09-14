@@ -2,9 +2,6 @@
  * Design tokens for the Burger.sh terminal interface.
  */
 
-/* Google Fonts Import */
-@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
 :root {
   /* Core terminal palette */
   --ink: #171510;

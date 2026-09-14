@@ -36,8 +36,8 @@ export function RestaurantStoreProvider({ children }) {
         setPagination((prev) => ({
           ...prev,
           page,
-          total: response.meta?.total ?? 0,
-          totalPages: response.meta?.totalPages ?? 0
+          total: response.pagination?.total ?? 0,
+          totalPages: response.pagination?.totalPages ?? 0
         }));
       }
       return response;

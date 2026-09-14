@@ -3,11 +3,10 @@
  * Imports design tokens and terminal base styles
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
 @import './styles/tokens.css';
 @import './styles/terminal.css';
-
-/* Tailwind v4 directives */
-@import "tailwindcss";
 
 /* Ensure tailwind utilities are available */
 @layer utilities {

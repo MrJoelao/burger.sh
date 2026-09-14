@@ -24,6 +24,7 @@ export function OrderStoreProvider({ children }) {
   const [orderHistory, setOrderHistory] = useState([]);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [recipes, setRecipes] = useState(RECIPES);
   const [selectedRecipe, setSelectedRecipe] = useState(RECIPES[0]);
   const [quantity, setQuantity] = useState(1);
   const [activeRecipeIndex, setActiveRecipeIndex] = useState(0);
@@ -49,6 +50,12 @@ export function OrderStoreProvider({ children }) {
     setQuantity(1);
   }, []);
 
+  const replaceRecipes = useCallback((nextRecipes) => {
+    setRecipes(nextRecipes);
+    setSelectedRecipe(nextRecipes[0]);
+    setActiveRecipeIndex(0);
+  }, []);
+
   const addToBuffer = useCallback(() => {
     addItem({ ...selectedRecipe, quantity });
   }, [addItem, quantity, selectedRecipe]);
@@ -64,6 +71,12 @@ export function OrderStoreProvider({ children }) {
         return response.data;
       }
       return null;
+    } catch (error) {
+      if (error.status === 404) {
+        setItems([]);
+        return null;
+      }
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -177,7 +190,8 @@ export function OrderStoreProvider({ children }) {
     quantity,
     setQuantity,
     activeRecipeIndex,
-    recipes: RECIPES,
+    recipes,
+    setRecipes: replaceRecipes,
     orderHistory,
     currentOrder,
     loading,

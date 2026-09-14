@@ -23,7 +23,11 @@ export function SelectionPanel({
   return html`
     <div class="selection-panel">
       <div class="selected-meta"><span class="eyebrow">active recipe</span><span id="recipe-code">${recipe.code}</span></div>
-      <h3 id="recipe-name">${recipe.name.replace(' ', '<br>')}</h3>
+      <h3 id="recipe-name">
+        ${recipe.name.split(' ').map((word, index) => html`
+          ${index > 0 && html`<br />`}${word}
+        `)}
+      </h3>
       <p id="recipe-description">${recipe.description}</p>
       <p class="price" id="recipe-price">${formatEuro(recipe.price)}</p>
 

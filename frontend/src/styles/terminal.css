@@ -306,6 +306,17 @@
   font-size: 11px;
 }
 
+.menu-state {
+  margin: 12px 22px;
+  color: var(--acid);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.menu-state-error {
+  color: var(--alert);
+}
+
 /* Assembly Layout - Order Composition */
 .assembly-layout {
   display: grid;
@@ -619,6 +630,8 @@
 .order-buffer {
   display: flex;
   flex-direction: column;
+  grid-column: 3;
+  grid-row: 1;
   border-left: 1px solid var(--line);
   background: #16140f;
 }
@@ -1190,13 +1203,14 @@
 }
 
 /* Responsive Breakpoints */
-@media (max-width: 1050px) {
+@media (max-width:900px) {
   .terminal-grid {
     grid-template-columns: 150px 1fr;
   }
 
   .order-buffer {
     grid-column: 1 / -1;
+    grid-row: auto;
     display: grid;
     grid-template-columns: 150px 1fr 230px;
     border-top: 1px solid var(--line);
@@ -1370,6 +1384,7 @@
   }
 
   .order-buffer {
+    grid-column: auto;
     display: block;
     border-top: 1px solid var(--line);
   }

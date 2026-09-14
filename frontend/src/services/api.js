@@ -63,7 +63,7 @@ export async function fetchWithAuth(endpoint, options = {}) {
 
     if (!response.ok) {
       throw new ApiError(
-        data.message || `Request failed with status ${response.status}`,
+        data.message || data.detail || `Request failed with status ${response.status}`,
         response.status,
         data
       );
