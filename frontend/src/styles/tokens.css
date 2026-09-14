@@ -1,13 +1,12 @@
 /**
- * Design Tokens - Exact Prototype Color Palette & Typography
- * Replicates the CSS variables from the prototype exactly
+ * Design tokens for the Burger.sh terminal interface.
  */
 
 /* Google Fonts Import */
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Exact prototype color palette */
+  /* Core terminal palette */
   --ink: #171510;
   --panel: #211e17;
   --paper: #c8a565;

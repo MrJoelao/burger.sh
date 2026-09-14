@@ -4,18 +4,19 @@
  */
 
 import { html } from '../../utils/htm.js';
-import { useState, useEffect, useContext } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
-import { AuthContext } from '../../App.jsx';
+import { useAuthStore } from '../../state/authStore.js';
+import { managerAdminService } from '../../services/managerAdminService.js';
 import { Loading } from '../../components/UI/Loading.jsx';
 
 export function AdminDashboard() {
   const [pendingManagers, setPendingManagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { token } = useContext(AuthContext);
+  const { token } = useAuthStore();
 
   const fetchPendingManagers = async () => {
     setLoading(true);

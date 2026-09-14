@@ -228,7 +228,7 @@ export function AuthForm({
         </button>
       </footer>
 
-      <p class="prototype-note">Questo è un prototipo. I dati vengono inviati al backend.</p>
+      <p class="prototype-note">I dati vengono inviati in modo sicuro al backend.</p>
     </form>
   `;
 }

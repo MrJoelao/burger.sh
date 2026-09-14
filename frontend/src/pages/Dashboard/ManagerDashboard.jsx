@@ -4,10 +4,15 @@
  */
 
 import { html } from '../../utils/htm.js';
-import { useState, useEffect, useContext } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
-import { AuthContext } from '../../App.jsx';
+import { useAuthStore } from '../../state/authStore.js';
+import { managerAdminService } from '../../services/managerAdminService.js';
+const statusLabels = {
+  ordered: 'ORDINATO', confirmed: 'CONFERMATO', preparing: 'IN PREPARAZIONE',
+  ready: 'PRONTO', delivered: 'CONSEGNATO', cancelled: 'ANNULLATO'
+};
 import { Loading } from '../../components/UI/Loading.jsx';
 
 export function ManagerDashboard() {
@@ -18,7 +23,7 @@ export function ManagerDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user, token } = useContext(AuthContext);
+  const { user, token } = useAuthStore();
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -50,7 +55,7 @@ export function ManagerDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, [user.restaurantId, token]);
+  }, [user?.restaurantId, token]);
 
   const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
 

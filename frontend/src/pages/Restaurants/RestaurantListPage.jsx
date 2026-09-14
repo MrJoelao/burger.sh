@@ -10,6 +10,7 @@ import { RestaurantSearch } from './RestaurantSearch.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { Loading } from '../../components/UI/Loading.jsx';
+import { restaurantService } from '../../services/restaurantService.js';
 
 export function RestaurantListPage({ onRestaurantSelect = () => {} }) {
   const [restaurants, setRestaurants] = useState([]);
@@ -43,14 +44,11 @@ export function RestaurantListPage({ onRestaurantSelect = () => {} }) {
         if (!value) params.delete(key);
       });
 
-      const response = await fetch(`/api/restaurants?${params.toString()}`);
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to fetch restaurants');
-      }
-
-      const data = await response.json();
+      const data = await restaurantService.getRestaurants({
+        page: pagination.page,
+        limit: pagination.limit,
+        ...filters
+      });
 
       if (data.success) {
         setRestaurants(data.data || []);
@@ -99,7 +97,7 @@ export function RestaurantListPage({ onRestaurantSelect = () => {} }) {
       <header class="titlebar">
         <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
         <p><b>burger.sh</b><span>/</span> restaurants <span>/</span> directory</p>
-        <nav class="top-links" aria-label="Pagine del prototipo">
+        <nav class="top-links" aria-label="Navigazione principale">
           <a href="/">presentazione</a>
           <a href="/auth">accedi</a>
           <a class="current" href="/restaurants">filiali</a>

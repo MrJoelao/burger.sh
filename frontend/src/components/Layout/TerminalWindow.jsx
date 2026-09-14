@@ -1,11 +1,11 @@
 /**
  * TerminalWindow - Main console wrapper component
- * Replicates the .console element from prototype with titlebar, identity strip, grid layout
+ * Provides the shared console shell with titlebar, identity strip and responsive grid.
  */
 
 import { useState, useEffect } from 'preact/hooks';
 
-export function TerminalWindow({ children, title = 'kitchen-ops', subtitle = 'local prototype', showClock = true }) {
+export function TerminalWindow({ children, title = 'kitchen-ops', subtitle = 'production console', showClock = true }) {
   const [time, setTime] = useState('');
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function TerminalWindow({ children, title = 'kitchen-ops', subtitle = 'lo
         <header class="titlebar">
           <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
           <p><b>burger.sh</b><span>/</span> {title} <span>/</span> {subtitle}</p>
-          <nav class="top-links" aria-label="Pagine del prototipo">
+          <nav class="top-links" aria-label="Navigazione principale">
             <a href="/">ordina</a>
             <a href="/auth">accedi</a>
           </nav>
@@ -46,7 +46,7 @@ export function TerminalWindow({ children, title = 'kitchen-ops', subtitle = 'lo
           </div>
           <div class="system-copy">
             <p class="eyebrow">food assembly interface / 02</p>
-            <p>Componi l'ordine. Il buffer resta locale, non viene inviato al backend.</p>
+            <p>Componi l'ordine e invialo al backend quando sei pronto.</p>
           </div>
           <div class="shift-stamp"><span>SHIFT</span><b>12:00—23:30</b><small>milano / it</small></div>
         </section>

@@ -1,6 +1,6 @@
 /**
  * Terminal Base Styles - CyberOS Design System
- * Converted from prototype style.css and flows.css
+ * Shared terminal styles for the application shell.
  * Uses CSS variables from tokens.css
  */
 
@@ -16,6 +16,7 @@
 
 /* Main Console Window */
 .console {
+  overflow-x: hidden;
   width: min(1540px, calc(100vw - 40px));
   min-height: calc(100vh - 40px);
   margin: 20px auto;
@@ -63,7 +64,11 @@
 }
 
 .titlebar p {
+  min-width: 0;
+  overflow: hidden;
   margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .titlebar p b {
@@ -1231,6 +1236,17 @@
     border: 0;
     box-shadow: none;
   }
+  .titlebar {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+  .window-controls {
+    flex: 0 0 auto;
+    margin-right: 2px;
+  }
+  .top-links {
+    flex: 0 0 auto;
+  }
 
   .top-links {
     gap: 0;
@@ -1331,6 +1347,9 @@
   .assembly-layout {
     grid-template-columns: 1fr;
   }
+  .selection-panel h3 {
+    font-size: clamp(24px, 9vw, 30px);
+  }
 
   .burger-scanner {
     min-height: 265px;
@@ -1396,5 +1415,44 @@
 
   .footer-status {
     min-height: 30px;
+  }
+}
+
+@media (max-width: 420px) {
+  .identity-strip {
+    grid-template-columns: 1fr 96px;
+  }
+  .brand-block {
+    padding: 14px;
+  }
+  .shift-stamp {
+    padding: 10px;
+  }
+  .shift-stamp b {
+    font-size: 11px;
+  }
+  .terminal-screen {
+    padding: 10px;
+  }
+  .recipe-matrix {
+    grid-template-columns: 1fr;
+  }
+  .recipe,
+  .recipe:nth-child(2) {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .recipe:last-child {
+    border-bottom: 0;
+  }
+  .crosshair {
+    width: 220px;
+    height: 220px;
+  }
+  .burger-art {
+    width: 150px;
+  }
+  .callout {
+    font-size: 8px;
   }
 }

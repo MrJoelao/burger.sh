@@ -4,12 +4,13 @@
  */
 
 import { html } from '../../utils/htm.js';
-import { useState, useEffect, useContext } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { Loading } from '../../components/UI/Loading.jsx';
-import { AuthContext } from '../../App.jsx';
+import { useAuthStore } from '../../state/authStore.js';
+import { orderService } from '../../services/orderService.js';
 
 const statusLabels = {
   ordered: 'ORDINATO',
@@ -34,7 +35,7 @@ export function OrderHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const { token } = useContext(AuthContext);
+  const { token } = useAuthStore();
 
   const fetchOrders = async () => {
     setLoading(true);

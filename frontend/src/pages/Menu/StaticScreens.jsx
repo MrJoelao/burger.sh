@@ -1,6 +1,6 @@
 /**
  * StaticScreens - Read-only screens for menu complete, allergens, manifesto
- * Matches the prototype's static content views
+ * Provides the read-only informational views for the menu.
  */
 
 import { html } from '../../utils/htm.js';
@@ -34,7 +34,7 @@ const staticScreens = {
     content: `
       <p>CARNE. PIASTRA. PANE.</p>
       <p>Ordini chiari, ingredienti dichiarati, burger preparati al momento.</p>
-      <small>questa interfaccia è solo un prototipo locale.</small>
+      <small>interfaccia operativa collegata ai servizi burger.sh.</small>
     `
   }
 };

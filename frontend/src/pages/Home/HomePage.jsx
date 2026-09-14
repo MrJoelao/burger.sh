@@ -12,8 +12,8 @@ export function HomePage({ onNavigate = () => {} }) {
     <main class="console intro-console" aria-label="Burger.sh Welcome">
       <header class="titlebar">
         <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
-        <p><b>burger.sh</b><span>/</span> welcome <span>/</span> prototype</p>
-        <nav class="top-links" aria-label="Pagine del prototipo">
+        <p><b>burger.sh</b><span>/</span> welcome <span>/</span> production</p>
+        <nav class="top-links" aria-label="Navigazione principale">
           <a class="current" href="/">presentazione</a>
           <a href="/auth">accedi</a>
           <a href="/menu">ordina</a>

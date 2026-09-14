@@ -187,7 +187,7 @@ export function OrderProvider({ children }) {
 function MenuPage() {
   return html`
     <${OrderProvider}>
-      <${TerminalWindow} title="kitchen-ops" subtitle="local prototype">
+      <${TerminalWindow} title="kitchen-ops" subtitle="production console">
         <${AssemblyLayout}>
           <${BurgerScanner} />
           <${SelectionPanel} />
@@ -248,8 +248,8 @@ function AuthPage({ navigate }) {
     <main class="console access-console" aria-label="Accesso burger.sh">
       <header class="titlebar">
         <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
-        <p><b>burger.sh</b><span>/</span> identity gate <span>/</span> local prototype</p>
-        <nav class="top-links" aria-label="Pagine del prototipo">
+        <p><b>burger.sh</b><span>/</span> identity gate <span>/</span> production</p>
+        <nav class="top-links" aria-label="Navigazione principale">
           <a href="/">ordina</a>
           <a class="current" href="/auth">accedi</a>
         </nav>

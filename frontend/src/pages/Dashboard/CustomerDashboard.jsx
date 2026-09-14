@@ -4,16 +4,26 @@
  */
 
 import { html } from '../../utils/htm.js';
-import { useState, useEffect, useContext } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
-import { AuthContext } from '../../App.jsx';
+import { useAuthStore } from '../../state/authStore.js';
+import { orderService } from '../../services/orderService.js';
+
+const statusLabels = {
+  ordered: 'ORDINATO', confirmed: 'CONFERMATO', preparing: 'IN PREPARAZIONE',
+  ready: 'PRONTO', delivered: 'CONSEGNATO', cancelled: 'ANNULLATO'
+};
+const statusColors = {
+  ordered: 'var(--amber)', confirmed: 'var(--amber)', preparing: 'var(--amber)',
+  ready: 'var(--acid)', delivered: 'var(--paper)', cancelled: 'var(--alert)'
+};
 
 export function CustomerDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user, token } = useContext(AuthContext);
+  const { user, token } = useAuthStore();
 
   const fetchOrders = async () => {
     setLoading(true);

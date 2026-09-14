@@ -3,7 +3,7 @@
  * fetchWithAuth wrapper with token management, error handling, retry logic
  */
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 let authToken = null;
 
@@ -59,7 +59,7 @@ export async function fetchWithAuth(endpoint, options = {}) {
       throw new ApiError('Session expired. Please login again.', 401);
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
       throw new ApiError(

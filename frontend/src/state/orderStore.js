@@ -19,7 +19,7 @@ const RECIPES = [
 ];
 
 export function OrderStoreProvider({ children }) {
-  // Local buffer (prototype behaviour). Synced with backend cart when authenticated.
+  // The buffer is available before checkout; cart operations sync it with the backend.
   const [items, setItems] = useState([]);
   const [orderHistory, setOrderHistory] = useState([]);
   const [currentOrder, setCurrentOrder] = useState(null);

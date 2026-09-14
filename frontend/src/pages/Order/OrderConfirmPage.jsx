@@ -4,12 +4,13 @@
  */
 
 import { html } from '../../utils/htm.js';
-import { useState, useEffect, useContext } from 'preact/hooks';
+import { useState, useContext } from 'preact/hooks';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { FormMessage } from '../../components/UI/FormMessage.jsx';
-import { OrderContext } from '../../App.jsx';
+import { useOrderStore } from '../../state/orderStore.js';
+import { orderService } from '../../services/orderService.js';
 
 export function OrderConfirmPage({ onConfirm, onBack }) {
   const [mode, setMode] = useState('pickup');
@@ -21,7 +22,7 @@ export function OrderConfirmPage({ onConfirm, onBack }) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const order = useContext(OrderContext);
+  const order = useOrderStore();
 
   const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
 
@@ -53,14 +54,7 @@ export function OrderConfirmPage({ onConfirm, onBack }) {
         ...(mode === 'delivery' && { delivery: { address: `${address.street}, ${address.city} ${address.zip}` } })
       };
 
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-
-      const data = await response.json();
-
+      const data = await orderService.createOrder(orderData);
       if (data.success) {
         order.clearBuffer();
         onConfirm?.(data.data);

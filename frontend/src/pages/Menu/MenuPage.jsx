@@ -32,7 +32,7 @@ export function MenuPage() {
   };
 
   return html`
-    <${TerminalWindow} title="kitchen-ops" subtitle="local prototype">
+    <${TerminalWindow} title="kitchen-ops" subtitle="production console">
       <${AssemblyLayout}>
         <${BurgerScanner} />
         <${SelectionPanel}
