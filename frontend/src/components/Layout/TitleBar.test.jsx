@@ -59,4 +59,16 @@ describe('TitleBar', () => {
     expect(pushState).toHaveBeenCalledWith({}, '', '/');
     pushState.mockRestore();
   });
+
+  test('exposes exactly three top-level regions so the centered grid keeps the nav in place', () => {
+    const { container } = render(
+      <TitleBar section="identity gate" context="production" status="secure local" links={links} current="/auth" />
+    );
+    const bar = container.querySelector('.titlebar');
+
+    expect(bar.children).toHaveLength(3);
+    expect(bar.querySelector(':scope > .titlebar-left .window-controls')).not.toBeNull();
+    expect(bar.children[1]).toHaveAttribute('aria-label', 'Navigazione principale');
+    expect(bar.querySelector(':scope > .machine-state')).not.toBeNull();
+  });
 });

@@ -23,11 +23,13 @@ export function TitleBar({
 }) {
   return html`
     <header class="titlebar">
-      <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
-      <p>
-        <a class="titlebar-brand" href="/" onClick=${goHome}><b>burger.sh</b></a>
-        <span>/</span> ${section} <span>/</span> ${context}
-      </p>
+      <div class="titlebar-left">
+        <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
+        <p>
+          <a class="titlebar-brand" href="/" onClick=${goHome}><b>burger.sh</b></a>
+          <span>/</span> ${section} <span>/</span> ${context}
+        </p>
+      </div>
       <nav class="top-links" aria-label="Navigazione principale">
         ${links.map(link => html`
           <a
