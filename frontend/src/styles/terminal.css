@@ -1218,6 +1218,11 @@
   min-height: 590px;
 }
 
+/* registrazione: l'aside sparisce e il wizard occupa tutta la larghezza */
+.access-layout.register-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .access-aside {
   display: flex;
   flex-direction: column;
@@ -1268,6 +1273,11 @@
   align-self: center;
   width: min(430px, calc(100% - 48px));
   margin: 40px auto;
+}
+
+/* nel register il pannello si allarga e resta centrato */
+.register-layout .auth-panel {
+  width: min(820px, calc(100% - 48px));
 }
 
 .auth-panel header {
@@ -1461,12 +1471,22 @@
   gap: 6px;
 }
 
+/* un campo wide occupa entrambe le colonne della griglia */
+.wizard-field.wide {
+  grid-column: 1 / -1;
+}
+
 .wizard-field .form-message {
   min-height: 0;
 }
 
 .preference-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* nel pannello largo le preferenze si distribuiscono da sole, senza media query */
+.register-layout .preference-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
 .preference-option {

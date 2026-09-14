@@ -64,9 +64,9 @@ function validateStep(step, answers) {
   return errors;
 }
 
-function Field({ label, name, value, onInput, error, type = 'text', autocomplete, placeholder }) {
+function Field({ label, name, value, onInput, error, type = 'text', autocomplete, placeholder, wide = false }) {
   return html`
-    <label class="wizard-field">
+    <label class=${wide ? 'wizard-field wide' : 'wizard-field'}>
       ${label}
       <input
         type=${type}
@@ -95,8 +95,8 @@ export function RegisterWizard({
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    onStepChange(step, answers.role);
-  }, [step, answers.role, onStepChange]);
+    onStepChange(step);
+  }, [step, onStepChange]);
 
   const update = (field, value) => {
     setAnswers(previous => ({ ...previous, [field]: value }));
@@ -181,8 +181,8 @@ export function RegisterWizard({
           `}
 
           ${step === 2 && html`
-            <div class="wizard-fields">
-              <${Field} label="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" value=${answers.email} error=${errors.email} onInput=${event => update('email', event.target.value)} />
+            <div class="wizard-fields two-up">
+              <${Field} label="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" value=${answers.email} error=${errors.email} onInput=${event => update('email', event.target.value)} wide />
               <${Field} label="password" name="password" type="password" autocomplete="new-password" placeholder="••••••••" value=${answers.password} error=${errors.password} onInput=${event => update('password', event.target.value)} />
               <${Field} label="conferma password" name="confirmPassword" type="password" autocomplete="new-password" placeholder="••••••••" value=${answers.confirmPassword} error=${errors.confirmPassword} onInput=${event => update('confirmPassword', event.target.value)} />
             </div>
@@ -190,7 +190,7 @@ export function RegisterWizard({
 
           ${step === 3 && html`
             <div class="wizard-fields two-up">
-              <${Field} label="via (opzionale)" name="street" autocomplete="street-address" placeholder="Via Roma 1" value=${answers.street} error=${errors.street} onInput=${event => update('street', event.target.value)} />
+              <${Field} label="via (opzionale)" name="street" autocomplete="street-address" placeholder="Via Roma 1" value=${answers.street} error=${errors.street} onInput=${event => update('street', event.target.value)} wide />
               <${Field} label="città (opzionale)" name="city" autocomplete="address-level2" placeholder="Milano" value=${answers.city} error=${errors.city} onInput=${event => update('city', event.target.value)} />
               <${Field} label="CAP (opzionale)" name="zip" autocomplete="postal-code" placeholder="20100" value=${answers.zip} error=${errors.zip} onInput=${event => update('zip', event.target.value)} />
             </div>

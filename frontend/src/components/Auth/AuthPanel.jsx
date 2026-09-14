@@ -11,8 +11,7 @@ export function AuthPanel({
   onSubmit = () => {},
   onSwitchMode = () => {},
   error = '',
-  loading = false,
-  onStepChange = () => {}
+  loading = false
 }) {
   const [registrationStep, setRegistrationStep] = useState(0);
   const config = {
@@ -35,10 +34,7 @@ export function AuthPanel({
   const current = mode === 'register'
     ? config.register[registrationStep]
     : config.login;
-  const handleStepChange = (step, role) => {
-    setRegistrationStep(step);
-    onStepChange(step, role);
-  };
+  const handleStepChange = (step) => setRegistrationStep(step);
 
   return html`
     <section class="auth-panel">

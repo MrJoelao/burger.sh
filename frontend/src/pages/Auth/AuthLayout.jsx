@@ -1,12 +1,17 @@
 /**
- * AuthLayout - Access console layout with aside and auth panel
+ * AuthLayout - Access console layout with optional aside and auth panel
  * Used by both LoginPage and RegisterPage
  */
 
 import { AuthPanel } from '../../components/Auth/AuthPanel.jsx';
 import { TitleBar } from '../../components/Layout/TitleBar.jsx';
 import { navigate } from '../../router/navigate.js';
-import { useState } from 'preact/hooks';
+
+const LOGIN_ASIDE = {
+  eyebrow: 'identity subsystem',
+  title: 'IL TUO<br />POSTO<br />NELLA<br /><span>CODA.</span>',
+  copy: 'Accedi per salvare gli ordini, tenere d’occhio i preferiti e non riscrivere tutto ogni volta.'
+};
 
 export function AuthLayout({
   mode = 'login',
@@ -15,14 +20,7 @@ export function AuthLayout({
   error,
   loading
 }) {
-  const [registrationStep, setRegistrationStep] = useState(0);
-  const registerAside = [
-    ['identity subsystem', 'IL TUO<br />POSTO<br />NELLA<br /><span>CODA.</span>', 'Accedi per salvare gli ordini, tenere d’occhio i preferiti e non riscrivere tutto ogni volta.'],
-    ['profile signal', 'FATTI<br /><span>RICONOSCERE.</span>', 'Un’identità chiara tiene insieme ordini, preferiti e la tua esperienza nella coda.'],
-    ['security gate', 'TIENI<br />TUTTO<br /><span>AL SICURO.</span>', 'Le tue credenziali restano il pass per ritrovare il profilo quando vuoi.'],
-    ['delivery signal', 'DOVE<br />PASSA<br /><span>LA CODA?</span>', 'Un indirizzo completo aiuta la sede a preparare consegne e ritiri correttamente.'],
-    ['taste profile', 'SCEGLI<br />IL TUO<br /><span>SEGNALE.</span>', 'Le preferenze rendono il menu più vicino ai tuoi gusti, senza vincolarti.']
-  ][mode === 'register' ? registrationStep : 0];
+  const isRegister = mode === 'register';
 
   return (
     <>
@@ -30,20 +28,22 @@ export function AuthLayout({
       <main class="console access-console" aria-label="Accesso burger.sh">
         <TitleBar section="identity gate" context="production" status="secure local" current="/auth" />
 
-        <section class="access-layout">
-          <aside class="access-aside">
-            <a class="wordmark" href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>BURGER<span>.SH</span></a>
-            <div class="access-aside-copy">
-              <p class="eyebrow">{registerAside[0]}</p>
-              <h1 dangerouslySetInnerHTML={{ __html: registerAside[1] }}></h1>
-              <p>{registerAside[2]}</p>
-            </div>
-            <div class="access-aside-footer">
-              <span>session / guest</span>
-              <span>encryption / mock</span>
-              <span>status / ready</span>
-            </div>
-          </aside>
+        <section class={isRegister ? 'access-layout register-layout' : 'access-layout'}>
+          {!isRegister && (
+            <aside class="access-aside">
+              <a class="wordmark" href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>BURGER<span>.SH</span></a>
+              <div class="access-aside-copy">
+                <p class="eyebrow">{LOGIN_ASIDE.eyebrow}</p>
+                <h1 dangerouslySetInnerHTML={{ __html: LOGIN_ASIDE.title }}></h1>
+                <p>{LOGIN_ASIDE.copy}</p>
+              </div>
+              <div class="access-aside-footer">
+                <span>session / guest</span>
+                <span>encryption / mock</span>
+                <span>status / ready</span>
+              </div>
+            </aside>
+          )}
 
           <AuthPanel
             mode={mode}
@@ -51,7 +51,6 @@ export function AuthLayout({
             onSwitchMode={onSwitchMode}
             error={error}
             loading={loading}
-            onStepChange={(step) => setRegistrationStep(step)}
           />
         </section>
 
