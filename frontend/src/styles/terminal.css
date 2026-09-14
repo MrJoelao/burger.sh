@@ -17,14 +17,14 @@
 /* Main Console Window */
 .console {
   overflow-x: hidden;
-  width: min(1780px, calc(100vw - 96px));
-  min-height: calc(100vh - 40px);
-  margin: 20px auto;
-  border: 1px solid var(--line);
+  width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  border: none;
   background-color: var(--ink);
   background-image: var(--grid-pattern);
   background-size: var(--grid-size);
-  box-shadow: var(--console);
+  box-shadow: none;
 }
 
 .route-root {
