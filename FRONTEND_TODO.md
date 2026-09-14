@@ -6,18 +6,18 @@ Documento di lavoro per sistemare il front-end. Nasce da un'analisi di `frontend
 
 Chi ci lavora (umano o AI) parte dalla sezione 1 per capire la struttura reale, poi sceglie un task dalla sezione 6. Ogni task ha file, righe, azione e criterio di accettazione. I task sono in ordine di rapporto tra danno e sforzo: i primi sbloccano pagine rotate, gli ultimi sono pulizia.
 
-## Stato (aggiornato dopo la sessione di pulizia)
+## Stato (aggiornato dopo la sessione UX/UI)
 
-Fatti e verificati (build + test verdi): T1, T2, T3, T4, T5, T8, T9, T10, T11, T7 e una parte di T6. Dettagli sulla fine di ogni task. La scelta T5 è stata: cancellazione di `validation/*` e rimozione della dipendenza `zod`, gli schemi usavano opzioni Zod 3 e nessuno li importava.
+Fatti e verificati (build + test verdi): T1, T2, T3, T4, T5, T7, T8, T9, T10, T11 e una parte di T6, piu tutti i task UX/UI della sezione 11 (T14-T22). Dettagli sulla fine di ogni task. La scelta T5 e stata: cancellazione di `validation/*` e rimozione della dipendenza `zod`, gli schemi usavano opzioni Zod 3 e nessuno li importava. Il wizard di registrazione (T15) e chiuso: la resa attuale e quella voluta, non servono altre iterazioni.
 
 Le decisioni prese:
 
-- flusso carrello: la conferma passa da `POST /cart/confirm` (T12, ultima voce). `createOrder` resta nel servizio ma nessuna pagina lo chiama più: se non serve, si cancella
-- mappe di stato: un solo modulo in `src/domain/orderStatus.js`, con `on_delivery` aggiunto perché l'enum dello swagger lo prevede e le pagine no
-- scanner: montato `BurgerScanner` dentro `AssemblyLayout`, il markup hardcoded è una copia di cosa faceva già il componente
+- flusso carrello: la conferma passa da `POST /cart/confirm` (T12, ultima voce). `createOrder` resta nel servizio ma nessuna pagina lo chiama piu: se non serve, si cancella
+- mappe di stato: un solo modulo in `src/domain/orderStatus.js`, con `on_delivery` aggiunto perche l'enum dello swagger lo prevede e le pagine no
+- scanner: montato `BurgerScanner` dentro `AssemblyLayout`, il markup hardcoded e una copia di cosa faceva gia il componente
 - tutti gli accessi ai dati passano dai servizi: `grep -rn 'fetch(' frontend/src` restituisce solo `services/api.js`
 
-Restano aperti: T6 (verifica campi con risposte reali), T12 (UI mancanti), T13 (architettura, in particolare `restaurantStore` non collegato). Blocco da risolvere col backend: `user.restaurantId` non è definito su `AuthUser`, senza quel campo la dashboard del manager non ha la filiale. La sezione 11 raccoglie un secondo blocco di lavoro solo UX/UI (T14-T22), nato dalla revisione del sito: larghezza desktop, wizard di registrazione, navigazione centrata, shell separate per manager e admin, home estesa, pagina profilo, setup al primo avvio, menu senza hardcode, polish.
+Restano aperti: T6 (verifica campi con risposte reali), T12 (UI mancanti), T13 (architettura, in particolare `restaurantStore` non collegato). Blocco da risolvere col backend: `user.restaurantId` non e definito su `AuthUser`, senza quel campo la dashboard del manager non ha la filiale. La sezione 11 (task UX/UI, T14-T22) e chiusa: era nata dalla revisione del sito (larghezza desktop, wizard di registrazione, navigazione centrata, shell separate per manager e admin, home estesa, pagina profilo, setup al primo avvio, menu senza hardcode, polish) ed e tutta implementata.
 
 Regole fisse:
 
@@ -94,26 +94,26 @@ Dettaglio: ognuna di queste pagine importa il servizio e non lo usa. Import inut
 
 ## 4. Codice morto
 
-(Storico: cancellazioni eseguite in T4/T5/T11, la sezione resta come registro di cosa esisteva e perché è andata via.)
+(Storico: cancellazioni eseguite in T4/T5/T11. La sezione resta come registro di cosa esisteva e perche e andato via, non descrive lo stato attuale: i file elencati sotto sono stati rimossi.)
 
-Verificato con grep su tutto `frontend/src`: i file sotto non vengono importati da nessun modulo vivo.
+Alla ricognizione originale (grep su tutto `frontend/src`) quei file non erano importati da nessun modulo vivo. Oggi `frontend/src/components/UI/` contiene solo `FormMessage.jsx`, `Loading.jsx` e `SectionHeading.jsx`.
 
 ### Criterio: usarlo dove era inteso o cancellarlo
 
 Il dead code non si giudica allo stesso modo ovunque. La domanda da porsi: il posto "inteso" esiste ancora nell'app, o e stato superato da un'altra soluzione? Se la versione morta e migliore di quella che il codice vivo fa peggio, si collega. Se duplica qualcosa che funziona gia, o serve a una feature che nell'app non esiste proprio, si cancella.
 
-Tre categorie con verdetto per file.
+Tre categorie con il verdetto che e stato applicato.
 
-**Da usare dove era inteso** (il vivo e peggiore o assente):
+**Usati dove erano intesi:**
 
-- `state/restaurantStore.js`: le pagine reimplementano a mano fetch e filtri che lo store ha gia. Da collegare (vedi T13)
-- `managerAdminService`: le dashboard lo importano e poi fanno fetch inline. "Usarlo" e esattamente il task T3
-- `components/Menu/BurgerScanner.jsx`: `AssemblyLayout` ha una copia hardcoded dello scanner, il componente e parametrizzato. Monta il componente
-- `validation/*`: `AuthForm` valida con regex inline, gli schemi Zod erano scritti per quello. Se vuoi la validazione seria, li colleghi (task T5). creativa:qui la scelta e vera, la meza strada non esiste
+- `state/restaurantStore.js`: le pagine reimplementano a mano fetch e filtri che lo store ha gia. Resta da collegare (T13, ancora aperto)
+- `managerAdminService`: le dashboard lo importavano e facevano fetch inline. Collegato in T3, ora e il canale usato dalle dashboard
+- `components/Menu/BurgerScanner.jsx`: `AssemblyLayout` aveva una copia hardcoded dello scanner, il componente e parametrizzato. Montato nel redesign (T20)
+- `validation/*`: `AuthForm` valida con regex inline, gli schemi Zod erano scritti per quello. T5 ha scelto la cancellazione: `validation/*` e la dipendenza `zod` sono state rimosse
 
-**Da eliminare:**
+**Eliminati:**
 
-- `IdentityStrip`, `NavCommands`, `NavFooter`, `BufferList`, `BufferTotal`: versioni componentizzate di markup che vive gia inline e funziona. Collegarle e puro churn, zero valore per l'utente
+- `IdentityStrip`, `NavCommands`, `NavFooter`, `BufferList`, `BufferTotal`: versioni componentizzate di markup che vive gia inline e funziona. Collegarle era puro churn, zero valore per l'utente
 - `UI/TerminalButton`: copia peggiore con API incompatibile
 - `UI/Toast.jsx`: doppio meccanismo di toast, quello vivo (`uiStore`) funziona
 - `LoginPage`, `RegisterPage`, `StaticScreens`: superati dal router attuale
@@ -121,9 +121,9 @@ Tre categorie con verdetto per file.
 
 **Decisione di prodotto, non di pulizia:**
 
-- `paymentService`: non esiste nessuna pagina dei metodi di pagamento. Non e codice da ripulire, e una feature mancante (prevista dai requisiti). Cancellare ora e indolore, si riscrive dallo swagger quando serve. Vedi T12
-- `restaurantService.create/update/delete` e i metodi dish: manca tutta l'UI del manager per gestire filiale e menu. Stesso discorso. Vedi T12
-- `Alert`, `Badge`, `Card`, `Navbar`: libreria UI generica mai usata. Se non hai in programma un redesign che li consuma, cancella, ricrearli e banale
+- `paymentService`: non esisteva nessuna pagina dei metodi di pagamento. Non era codice da ripulire, era una feature mancante (prevista dai requisiti). Il file e stato rimosso, si riscrive dallo swagger quando serve. Vedi T12
+- `restaurantService.create/update/delete` e i metodi dish: manca tuttora l'UI del manager per gestire filiale e menu. Vedi T12
+- `Alert`, `Badge`, `Card`, `Navbar`: libreria UI generica mai usata. Cancellata in T4, ricrearla e banale
 
 Un avvertimento sul rischio che ha portato il progetto qui: il codice "in attesa di essere usato" resta li per mesi, va fuori rotta (gli schemi Zod con opzioni Zod 3 ne sono la prova) e confonde chi legge. Nel dubbio cancella, git ti copre.
 
@@ -146,7 +146,7 @@ Un avvertimento sul rischio che ha portato il progetto qui: il codice "in attesa
 | `components/UI/Toast.jsx` | `showToast` in `state/uiStore.js` (l'unico vivo) |
 | `components/UI/index.js` | barrel che nessuno importa |
 
-`UI/Alert.jsx`, `UI/Badge.jsx`, `UI/Card.jsx`, `UI/Navbar.jsx`, `UI/InputPrompt.jsx`, `UI/TerminalButton.jsx` hanno un file di test dedicato che li importa. Cancellando il componente va cancellato anche il test (sezione 6, task T4).
+`UI/Alert.jsx`, `UI/Badge.jsx`, `UI/Card.jsx`, `UI/Navbar.jsx`, `UI/InputPrompt.jsx`, `UI/TerminalButton.jsx` avevano un file di test dedicato che li importava: componenti e test sono stati cancellati insieme in T4.
 
 ### Pagine
 
@@ -160,20 +160,20 @@ Un avvertimento sul rischio che ha portato il progetto qui: il codice "in attesa
 
 | File / metodo | Nota |
 |---|---|
-| `services/paymentService.js` | mai importato |
-| `services/managerAdminService.js` (tutti i metodi) | importato ma mai chiamato: le dashboard usano fetch inline |
-| `restaurantService.createRestaurant/updateRestaurant/deleteRestaurant` | mai chiamati |
-| `authService.deleteAccount` | mai chiamato |
+| `services/paymentService.js` | mai importato: rimosso. Da riscrivere se serve la UI pagamenti (T12) |
+| `services/managerAdminService.js` | importato ma non chiamato nella ricognizione: risolto in T3, ora le dashboard lo usano |
+| `restaurantService.createRestaurant/updateRestaurant/deleteRestaurant` | mai chiamati: manca l'UI manager (T12) |
+| `authService.deleteAccount` | mai chiamato: manca la UI profilo (T12/T19) |
 
 ### Validazione
 
-`validation/authSchemas.js`, `orderSchemas.js`, `restaurantSchemas.js`, `dishSchemas.js`: non importati da nessun file. Il front-end non valida nulla con Zod. `AuthForm.jsx:38-60` ha regex inline e `components/UI/InputPrompt.jsx:10` ha un quinto schema Zod locale. Quindi convivono quattro approcci di validazione e tre sono morti.
+`validation/authSchemas.js`, `orderSchemas.js`, `restaurantSchemas.js`, `dishSchemas.js` non erano importati da nessun file. T5 ha rimosso l'intera cartella e la dipendenza `zod`: la validazione ora e solo quella inline in `AuthForm` (regex) e nel wizard.
 
-Nota tecnica: gli schemi usano opzioni di Zod 3 (`errorMap` in `authSchemas.js:20-22` e `orderSchemas.js:18-20`, `invalid_type_error` in `dishSchemas.js:15`) che Zod 4.6.2 ignora in silenzio, quindi anche collegandoli i messaggi custom non apparirebbero.
+Nota storica: gli schemi usavano opzioni di Zod 3 (`errorMap` in `authSchemas.js:20-22` e `orderSchemas.js:18-20`, `invalid_type_error` in `dishSchemas.js:15`) che Zod 4.6.2 ignora in silenzio, quindi anche collegandoli i messaggi custom non sarebbero apparsi.
 
 ### Store
 
-`state/restaurantStore.js` non e importato da nessuna pagina. E il posto naturale da cui `MenuPage` e `RestaurantListPage` dovrebbero prendere i dati, invece reimplementano la logica a mano.
+`state/restaurantStore.js` non e importato da nessuna pagina. E il posto naturale da cui `MenuPage` e `RestaurantListPage` dovrebbero prendere i dati, invece reimplementano la logica a mano. Ancora aperto (T13).
 
 ## 5. Concetti scritti piu volte
 
@@ -195,7 +195,7 @@ Caso a parte, `AssemblyLayout.jsx`: importa `BurgerScanner` e `SelectionPanel` m
 
 ## 6. Task
 
-### T1 - RIPRISTINATO - Ripristinare gli import mancanti (priorita massima, sblocca 3 pagine)
+### T1 - FATTO - Ripristinare gli import mancanti (sblocca 3 pagine)
 
 Tre pagine usano un componente senza importarlo, quindi crashano al render.
 
@@ -273,7 +273,7 @@ Fatto: `order.id || order._id` e `order.orderItems` nelle pagine ordine, `item.d
 Da fare: verificare con un backend attivo che le risposte reali combacino, in particolare:
 
 - `order.restaurantName`: lo swagger non lo definisce, il dettaglio ordine ora legge il `restaurantId` popolato (oggetto con `name`). Se il backend non popola la ref, il nome filiale resta "Filiale sconosciuta"
-- `orderStore.js` (fetchCart e cart operations) legge ancora `response.data.items`: il nome `orderItems` vale per l'Order, verificare qual è il campo reale della risposta del carrello e allinearne i punti (righe originali 70, 90, 103, 116)
+- `orderStore.js` (fetchCart e cart operations) legge ancora `response.data.items`: il nome `orderItems` vale per l'Order, verificare qual e il campo reale della risposta del carrello e allinearne i punti (righe originali 70, 90, 103, 116)
 
 Il front-end legge nomi che lo swagger non definisce. O si allinea il front-end, o il backend denormalizza. Chiedi prima quale, poi:
 
@@ -292,7 +292,7 @@ Accettazione: carrello e liste ordini mostrano i dati veri con il backend reale,
 
 ### T7 - FATTO - Sistemare `OrderConfirmPage.jsx`
 
-Esito: la conferma passa da `POST /cart/confirm` via `orderStore.confirmCart(mode, delivery)` (nuovo metodo in `orderService`). Fuori il `restaurantId` hardcoded e il payload con `unitPrice` dal client, che il server ricalcola comunque. Navigazione interna: conferma → `/orders/{id}`, indietro → `/menu`. Le prop `onConfirm`/`onBack` non esistono più.
+Esito: la conferma passa da `POST /cart/confirm` via `orderStore.confirmCart(mode, delivery)` (nuovo metodo in `orderService`). Fuori il `restaurantId` hardcoded e il payload con `unitPrice` dal client, che il server ricalcola comunque. Navigazione interna: conferma → `/orders/{id}`, indietro → `/menu`. Le prop `onConfirm`/`onBack` non esistono piu.
 
 Problemi:
 
@@ -304,7 +304,7 @@ Accettazione: da `/menu` scegli piatti, vai a `/orders/confirm`, confermi e vien
 
 ### T8 - FATTO - Sistemare `OrderHistoryPage.jsx`
 
-Esito: tab `all` / `current` / `past`, filtro solo lato server, tolto il doppio livello e `filteredOrders`. Il tab "annullati" è stato rimosso insieme al filtro client: lo swagger non prevede più la sovrascrittura `cancelled/active/completed` sul server, e il filtro lato client su un risultato già filtrato portava liste vuote.
+Esito: tab `all` / `current` / `past`, filtro solo lato server, tolto il doppio livello e `filteredOrders`. Il tab "annullati" e stato rimosso insieme al filtro client: lo swagger non prevede piu la sovrascrittura `cancelled/active/completed` sul server, e il filtro lato client su un risultato gia filtrato portava liste vuote.
 
 - riga 48: manda `status=active` / `status=completed` / `status=cancelled`. Lo swagger (`openapi.yaml:756`) accetta solo `enum: [past, current]`. Correggi i valori dei tab in `filterTabs` (righe 93-95) o smetti di mandarli
 - righe 98-104: filtra di nuovo lato client su un risultato che il server ha gia filtrato. Scegli un solo livello: filtro server (e niente `filteredOrders`) o filtro client (e nessun `?status`)
@@ -313,7 +313,7 @@ Accettazione: i tab past/current restituiscono gli ordini giusti, nessuna lista 
 
 ### T9 - FATTO - Sistemare `AdminDashboard.jsx`
 
-Esito: `role: 'manager'` aggiunto al filtro. La sezione statistiche vuota è stato tolta, soltanto rimozione: `getStats()` non aveva ancora una UI che lo consumasse ed è restato nel servizio per T12.
+Esito: `role: 'manager'` aggiunto al filtro. La sezione statistiche vuota e stato tolta, soltanto rimozione: `getStats()` non aveva ancora una UI che lo consumasse ed e restato nel servizio per T12.
 
 - riga 26: chiede `managerStatus=pending` senza `role=manager`, ma lo swagger (`openapi.yaml:1118`) dice che `managerStatus` vale solo insieme a `role=manager`. Aggiungi il filtro
 - riga 125: la sezione statistiche e uno stub ("Additional admin stats can be added here"). O la colleghi a `managerAdminService.getStats()` o la togli
@@ -385,13 +385,14 @@ Pattern ricorrente: ogni file sembra scritto senza vedere i fratelli. Moduli lar
 
 ## 8. Test
 
-Esistono 10 file di test:
+Esistono 7 file di test:
 
+- `pages/Auth/AuthLayout.test.jsx`, `pages/Auth/RegisterWizard.test.jsx`, `components/Auth/AuthPanel.test.jsx`
 - `components/Layout/TitleBar.test.jsx`, `TitleBarConsistency.test.jsx`
-- `components/UI/Alert.test.jsx`, `Badge.test.jsx`, `Card.test.jsx`, `InputPrompt.test.jsx`, `Loading.test.jsx`, `Navbar.test.jsx`, `TerminalButton.test.jsx`
+- `components/UI/Loading.test.jsx`
 - `router/navigate.test.js`
 
-Coprono componenti UI isolati, quasi tutti morti. I flussi veri (ordine, auth) non sono coperti. Se aggiungi test, parti da `state/orderStore.js` e dal flusso carrello: e li che i disallineamenti di campo con lo swagger emergono subito.
+I tre file in `Auth` coprono il layout di accesso e il wizard: l'aside solo in login, il layout a tutta larghezza in register, la griglia a due colonne dei campi e l'header che segue i passi. Il resto copre componenti UI isolati. I flussi ordine e carrello restano scoperti: se aggiungi test, parti da `state/orderStore.js`, e li che i disallineamenti di campo con lo swagger emergono subito.
 
 Comandi:
 
@@ -435,16 +436,16 @@ Fatto T1-T11 (T6 parziale). Lavoro rimasto, in ordine:
 1. verificare T6 con backend attivo: campi del carrello, `restaurantName` popolato, flusso del checkout reale
 2. decidere col backend il problema `user.restaurantId` su `AuthUser` (blocca la dashboard del manager)
 3. T12: UI manager per menu/filiale, avanzamento stato ordine (`updateOrderStatus` esiste nel servizio, nessuno lo chiama), conferma consegna cliente nel dettaglio ordine, metodi di pagamento
-4. T13: collegare `restaurantStore` a `MenuPage`/`RestaurantListPage`, flusso ordine in `orderStore`, `TerminalWindow` a responsabilità unica
-5. decidere il destino di `orderService.createOrder` (nessuna pagina lo chiama più dopo il passaggio a `confirmCart`)
+4. T13: collegare `restaurantStore` a `MenuPage`/`RestaurantListPage`, flusso ordine in `orderStore`, `TerminalWindow` a responsabilita unica
+5. decidere il destino di `orderService.createOrder` (nessuna pagina lo chiama piu dopo il passaggio a `confirmCart`)
 
 I primi due sono a basso rischio e liberano molto rumore. Fatto quello, il resto si legge molto piu chiaro.
 
 ## 11. Task UX e UI (analisi nuova sessione)
 
-Stato sessione: T14, T15, T16, T17, T18, T19, T20, T21 e T22 implementati. T6 resta dipendente dalle risposte reali del backend, in particolare per la filiale del manager.
+Stato sessione: T14, T15, T16, T17, T18, T19, T20, T21 e T22 implementati. La sezione e chiusa e resta come registro; T6 resta dipendente dalle risposte reali del backend, in particolare per la filiale del manager.
 
-Ogni task contiene lo stato attuale, le cause e come implementarlo. Non sono bugfix ma redesign: toccano gli stessi file di T12/T13, quindi vanno fatti dopo la pulizia ma prima di qualunque feature nuova.
+Ogni task conteneva lo stato, le cause e come implementarlo. Erano redesign, non bugfix: toccavano gli stessi file di T12/T13, per questo vennero messi dopo la pulizia e prima di qualunque feature nuova.
 
 Piano rapido, dai problemi segnalati ai task:
 
@@ -475,7 +476,7 @@ Verifica: a 1920 e 2560 il contenuto usa lo schermo senza superare circa 90 cara
 
 ### T15 - Registrazione guidata (wizard animato)
 
-Stato: fatto. Esito: registrazione divisa in cinque passi con ruolo iniziale, validazione locale, animazione e payload compatibile con RegisterRequest.
+Stato: fatto. Esito: registrazione divisa in cinque passi con ruolo iniziale, validazione locale, animazione e payload compatibile con RegisterRequest. In register l'aside laterale non viene renderizzato e il wizard occupa tutta la larghezza del console con i campi su due colonne; il login resta invariato.
 
 Stato attuale: `AuthForm.jsx` in modalita register impila in una colonna nome, cognome, email, password, conferma, ruolo (select in fondo), via, citta, cap e sette checkbox preferenze. Dieci blocchi richiesti tutti insieme e il tipo di account si scopre solo arrivati in fondo.
 
@@ -490,12 +491,13 @@ Implementazione:
 - per il manager il passo indirizzo puo diventare selezione filiale, e si mostra il box che l account andra in approvazione admin
 - validazione per passo, stessa logica di `AuthForm.validate` ma spezzata: ogni stato con le sue regole
 - il wizard sostituisce `AuthForm` solo in modalita register: il login resta unica schermata
-- `AuthPanel.jsx` (righe 15-32) tiene la copy per mode (`REGISTRAZIONE.`, sottotitolo, label di switch): il wizard deve aggiornare eyebrow, titolo e sottotitolo a ogni passo, non solo all'inizio
-- `AuthLayout.jsx` (righe 24-36) ha un aside identico per login e register (wordmark, `IL TUO POSTO NELLA CODA.`, tre meta in basso): per un wizard guidato l'aside dovrebbe reagire al passo, altrimenti meta schermo resta fermo
+- `AuthPanel.jsx` tiene la copy per mode, con `config.register` come array allineato ai cinque passi: l'header mostra eyebrow, titolo e sottotitolo del passo corrente. Lo stato del passo resta interno al pannello, aggiornato dal wizard via `onStepChange`; la callback non risale piu ad `AuthLayout`, che non la usa
+- `AuthLayout.jsx` monta l'aside (wordmark, `IL TUO POSTO NELLA CODA.`, tre meta in basso) solo per il login. In register l'aside non viene renderizzato e la sezione prende la classe `register-layout`: `.access-layout` collassa a una colonna e `.auth-panel` si allarga a `min(820px, calc(100% - 48px))`, cosi il wizard usa tutta la larghezza invece di restare in meta schermo
+- nel pannello largo i campi vanno su due colonne (`.wizard-fields.two-up`), con `email` e `via` a piena larghezza via `.wizard-field.wide` (`grid-column: 1 / -1`); le sette preferenze usano `repeat(auto-fit, minmax(190px, 1fr))` e si dispongono da sole senza media query
 - i campi del register devono combaciare con `RegisterRequest` (swagger:1535): obbligatori `name, surname, email, password, role`, opzionali `address{street,city,zip}` e `preferences`. Le 7 preferenze sono un enum chiuso (`Preference`, swagger:1281), restano quelle
 - il ruolo va mappato su `role: customer | manager` (unico enum ammesso da register); per il manager mostrare che l'account nasce `managerStatus: pending`
 
-`AuthLayout.jsx` resta il wrapper visivo; cambia solo la copy del pannello e dell'aside.
+`AuthLayout.jsx` resta il wrapper visivo: in login aside piu pannello a due colonne, in register una sola colonna a tutta larghezza con l'aside nascosto. La copy del pannello segue i passi del wizard.
 
 ### T16 - Navigazione in alto centrata e stabile
 
@@ -582,7 +584,7 @@ Accettazione: installazione da zero in localhost completa senza PIN; da IP ester
 
 ### T21 - Menu: rimozione hardcode e scelta del ristorante
 
-Stato: fatto. Esito: rimossi i piatti fittizi, la filiale viene scelta prima del menu e il cambio filiale è bloccato con carrello pieno.
+Stato: fatto. Esito: rimossi i piatti fittizi, la filiale viene scelta prima del menu e il cambio filiale e bloccato con carrello pieno.
 
 Stato attuale, due problemi:
 
@@ -622,11 +624,10 @@ Implementazione:
 
 Accettazione: navigazione con transizioni, nessun salto di layout al caricamento, inline styles residui solo dove servono davvero.
 
-## 12. Nuovo ordine consigliato
+## 12. Ordine consigliato (aggiornato)
 
-1. T21 primo passo (fuori gli hardcode dal menu) e T6 (verifica feed con backend attivo), insieme
-2. T20 setup, indipendente va in parallelo
-3. T16 titlebar e T14 larghezza, prima di T17
-4. T17 Shell manager/admin, poi T15 wizard registrazione
-5. T19 profilo, dopo la verifica T6 dei campi utente
-6. T18 home estesa e T22 polish per ultimi, quando tutto e stabile
+La vecchia lista era incentrata sui task UX/UI (T14-T22), ora tutti fatti: resta valida solo come storico. Il lavoro che resta, in ordine:
+
+1. T6 (verifica dei campi con risposte reali) e lo sblocco `user.restaurantId`: richiede il backend attivo, senza quello non si chiude
+2. T12 (UI mancanti: gestione filiale e menu del manager, metodi di pagamento, azioni profilo come `deleteAccount`) - dipende da T6 per i campi utente
+3. T13 (architettura: collegare `restaurantStore`, decidere il destino di `orderService.createOrder`)

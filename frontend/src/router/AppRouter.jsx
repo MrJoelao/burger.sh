@@ -17,6 +17,7 @@ import { ManagerDashboard } from '../pages/Dashboard/ManagerDashboard.jsx';
 import { AdminDashboard } from '../pages/Dashboard/AdminDashboard.jsx';
 import { ProfilePage } from '../pages/Profile/ProfilePage.jsx';
 import { SetupPage } from '../pages/Setup/SetupPage.jsx';
+import { ChangePasswordPage } from '../pages/Setup/ChangePasswordPage.jsx';
 import { TerminalWindow } from '../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../components/Auth/TerminalButton.jsx';
 import { useAuthStore } from '../state/authStore.js';
@@ -45,7 +46,7 @@ const ROUTES = [
   ,{ path: '/admin/users', component: AdminDashboard, roles: ['admin'] }
   ,{ path: '/admin/stats', component: AdminDashboard, roles: ['admin'] }
   ,{ path: '/setup', component: SetupPage }
-  ,{ path: '/change-password', component: SetupPage, props: { changePassword: true }, roles: ['admin'] }
+  ,{ path: '/change-password', component: ChangePasswordPage, roles: ['admin'] }
 ];
 
 /**
