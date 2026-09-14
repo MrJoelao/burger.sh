@@ -3,13 +3,14 @@
  * Catches render errors and shows a styled fallback screen
  */
 
-import { Component } from 'preact';
+import { Component, Fragment } from 'preact';
 import { html } from '../utils/htm.js';
 
 export class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { error: null };
+    // resetCount cambia la key del Fragment e forza il remount del sottoalbero
+    this.state = { error: null, resetCount: 0 };
   }
 
   static getDerivedStateFromError(error) {
@@ -27,7 +28,7 @@ export class ErrorBoundary extends Component {
   }
 
   handleReset = () => {
-    this.setState({ error: null });
+    this.setState(prev => ({ error: null, resetCount: prev.resetCount + 1 }));
   };
 
   render() {
@@ -81,7 +82,11 @@ export class ErrorBoundary extends Component {
       `;
     }
 
-    return this.props.children;
+    return html`
+      <${Fragment} key=${this.state.resetCount}>
+        ${this.props.children}
+      <//>
+    `;
   }
 }
 

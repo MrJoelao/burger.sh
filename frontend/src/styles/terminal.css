@@ -75,6 +75,21 @@
   color: var(--amber);
 }
 
+.titlebar-brand {
+  color: inherit;
+  text-decoration: none;
+}
+
+.titlebar-brand:hover b,
+.titlebar-brand:focus-visible b {
+  text-decoration: underline;
+}
+
+.titlebar-brand:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+}
+
 .titlebar p span {
   padding: 0 6px;
   color: var(--line);

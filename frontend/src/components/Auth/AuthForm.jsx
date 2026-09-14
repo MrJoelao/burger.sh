@@ -102,7 +102,7 @@ export function AuthForm({
         email
         <input
           type="email"
-          autocomplete=${isRegister ? 'email' : 'email'}
+          autocomplete="email"
           placeholder="you@example.com"
           value=${formData.email}
           onInput=${(e) => handleChange('email', e.target.value)}

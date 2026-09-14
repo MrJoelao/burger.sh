@@ -6,6 +6,7 @@
 import { html } from '../../utils/htm.js';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { FormMessage } from '../../components/UI/FormMessage.jsx';
+import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 
 export function RestaurantSearch({
   filters = { name: '', city: '', dishName: '' },

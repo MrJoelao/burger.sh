@@ -41,11 +41,19 @@ export const orderService = {
   },
 
   /**
-   * Delete entire cart
-   * DELETE /cart
-   */
+  * Delete entire cart
+  * DELETE /cart
+  */
   async deleteCart() {
     return api.delete('/cart');
+  },
+
+  /**
+  * Confirm cart: turns the draft cart into a real order
+  * POST /cart/confirm
+  */
+  async confirmCart(mode, delivery) {
+    return api.post('/cart/confirm', { mode, ...(delivery && { delivery }) });
   },
 
   // --- Order operations ---

@@ -24,7 +24,7 @@ export function RecipeButton({
       data-price=${price}
       onClick=${onClick}
     >
-      <span><b>${code.split(' / ')[0].replace('B-', '')}</b> ${code.split(' / ')[1].toLowerCase()} unit</span>
+      <span><b>${code.split(' / ')[0].replace('B-', '')}</b> ${(code.split(' / ')[1] || code).toLowerCase()} unit</span>
       <strong>${name.toLowerCase()}</strong>
       <em>${formatPrice(price)}</em>
     </button>

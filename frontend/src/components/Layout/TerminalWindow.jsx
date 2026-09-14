@@ -3,8 +3,8 @@
  * Provides the shared console shell with titlebar, identity strip and responsive grid.
  */
 
-import { useState, useEffect } from 'preact/hooks';
 import { OrderBuffer } from './OrderBuffer.jsx';
+import { TitleBar } from './TitleBar.jsx';
 
 export function TerminalWindow({
   children,
@@ -14,38 +14,16 @@ export function TerminalWindow({
   orderItems = [],
   onClearBuffer = () => {}
 }) {
-  const [time, setTime] = useState('');
-
-  useEffect(() => {
-    const updateClock = () => {
-      setTime(new Intl.DateTimeFormat('it-IT', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }).format(new Date()));
-    };
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <>
       <div class="crt-noise" aria-hidden="true"></div>
       <main class="console" aria-label="Burger.sh kitchen console">
-        <header class="titlebar">
-          <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
-          <p><b>burger.sh</b><span>/</span> {title} <span>/</span> {subtitle}</p>
-          <nav class="top-links" aria-label="Navigazione principale">
-            <a href="/">ordina</a>
-            <a href="/auth">accedi</a>
-          </nav>
-          {showClock ? (
-            <div class="machine-state"><span class="pulse"></span> grill online<time id="clock">{time}</time></div>
-          ) : (
-            <div class="machine-state"><span class="pulse"></span> grill online</div>
-          )}
-        </header>
+        <TitleBar
+          section={title}
+          context={subtitle}
+          status="grill online"
+          showClock={showClock}
+        />
 
         <section class="identity-strip">
           <div class="brand-block">

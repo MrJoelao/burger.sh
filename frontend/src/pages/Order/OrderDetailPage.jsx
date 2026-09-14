@@ -8,50 +8,20 @@ import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { Loading } from '../../components/UI/Loading.jsx';
-import { useAuthStore } from '../../state/authStore.js';
 import { orderService } from '../../services/orderService.js';
-
-const statusLabels = {
-  ordered: 'ORDINATO',
-  confirmed: 'CONFERMATO',
-  preparing: 'IN PREPARAZIONE',
-  ready: 'PRONTO',
-  delivered: 'CONSEGNATO',
-  cancelled: 'ANNULLATO'
-};
-
-const statusColors = {
-  ordered: 'var(--amber)',
-  confirmed: 'var(--amber)',
-  preparing: 'var(--amber)',
-  ready: 'var(--acid)',
-  delivered: 'var(--paper)',
-  cancelled: 'var(--alert)'
-};
-
-const statusOrder = ['ordered', 'confirmed', 'preparing', 'ready', 'delivered'];
+import { statusLabels, statusColors, statusOrder } from '../../domain/orderStatus.js';
 
 export function OrderDetailPage({ orderId }) {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { token } = useAuthStore();
 
   const fetchOrder = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch(`/api/orders/${orderId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to fetch order');
-      }
-
-      const data = await response.json();
+      const data = await orderService.getOrder(orderId);
 
       if (data.success) {
         setOrder(data.data);
@@ -67,7 +37,7 @@ export function OrderDetailPage({ orderId }) {
 
   useEffect(() => {
     fetchOrder();
-  }, [orderId, token]);
+  }, [orderId]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -112,14 +82,16 @@ export function OrderDetailPage({ orderId }) {
   }
 
   const currentStatusIndex = getCurrentStatusIndex();
+  // restaurantId arriva come ObjectId oppure come ref popolato (_id, name, city): da qui il nome filiale
+  const restaurant = typeof order.restaurantId === 'object' && order.restaurantId !== null ? order.restaurantId : null;
 
   return html`
     <${TerminalWindow} title="order-detail" subtitle="tracking">
       <section class="terminal-screen">
         <${SectionHeading}
           eyebrow="tracking"
-          title="ORDINE_<span>#${order.id?.slice(-8) || 'N/A'}</span>"
-          subtitle=${`${order.restaurantName || 'Filiale sconosciuta'} · ${formatDate(order.createdAt)}`}
+          title="ORDINE_<span>#${(order.id || order._id)?.slice(-8) || 'N/A'}</span>"
+          subtitle=${`${restaurant.name || 'Filiale sconosciuta'} · ${formatDate(order.createdAt)}`}
         />
 
         <div class="status-timeline" style=${{ marginBottom: '24px', padding: '16px', border: '1px solid var(--line)', background: 'var(--panel)' }}>
@@ -179,7 +151,7 @@ export function OrderDetailPage({ orderId }) {
               </div>
               <div>
                 <span class="eyebrow">articoli</span>
-                <p style=${{ color: 'var(--white)' }}>${order.items?.length || 0}</p>
+                <p style=${{ color: 'var(--white)' }}>${order.orderItems?.length || 0}</p>
               </div>
             </div>
           </div>
@@ -189,7 +161,7 @@ export function OrderDetailPage({ orderId }) {
             <div style=${{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div>
                 <span class="eyebrow">nome</span>
-                <p style=${{ color: 'var(--white)' }}>${order.restaurantName || 'N/A'}</p>
+                <p style=${{ color: 'var(--white)' }}>${restaurant.name || 'N/A'}</p>
               </div>
               ${order.restaurantAddress && html`
                 <div>
@@ -210,21 +182,21 @@ export function OrderDetailPage({ orderId }) {
         <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
           <${SectionHeading} eyebrow="items" title="ARTICOLI" subtitle="dettaglio ordine" />
           <div style=${{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            ${order.items?.map((item, index) => html`
-              <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: index < (order.items?.length || 0) - 1 ? '1px dashed var(--line)' : 'none' }}>
+            ${order.orderItems?.map((item, index) => html`
+              <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: index < (order.orderItems?.length || 0) - 1 ? '1px dashed var(--line)' : 'none' }}>
                 <div style=${{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span class="eyebrow" style=${{ minWidth: '30px', color: 'var(--acid)' }}>
                     ${String(index + 1).padStart(2, '0')}
                   </span>
                   <div>
-                    <b>${item.name || item.dishName || 'Articolo'}</b>
+                    <b>${item.dishId?.name || 'Articolo'}</b>
                     <small style=${{ display: 'block', color: 'var(--dirty)', fontSize: '10px' }}>
-                      qty ${item.quantity} · ${formatEuro(item.unitPrice || item.price || 0)} cad.
+                      qty ${item.quantity} · ${formatEuro(item.unitPrice || 0)} cad.
                     </small>
                   </div>
                 </div>
                 <strong style=${{ color: 'var(--acid)', fontSize: '16px' }}>
-                  ${formatEuro((item.unitPrice || item.price || 0) * (item.quantity || 1))}
+                  ${formatEuro((item.unitPrice || 0) * (item.quantity || 1))}
                 </strong>
               </div>
             `)}
@@ -240,7 +212,7 @@ export function OrderDetailPage({ orderId }) {
             [ esc ] indietro
           <//>
           ${order.status !== 'delivered' && order.status !== 'cancelled' && html`
-            <${TerminalButton} primary disabled>
+            <${TerminalButton} primary onClick=${fetchOrder}>
               [ F5 ] aggiorna stato
             <//>
           `}

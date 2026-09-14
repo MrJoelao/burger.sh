@@ -3,6 +3,8 @@
  * fetchWithAuth wrapper with token management, error handling, retry logic
  */
 
+import { navigate } from '../router/navigate.js';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 let authToken = null;
@@ -55,7 +57,7 @@ export async function fetchWithAuth(endpoint, options = {}) {
     // Handle 401 - unauthorized (expired token)
     if (response.status === 401) {
       clearAuthToken();
-      window.location.href = '/auth';
+      navigate('/auth');
       throw new ApiError('Session expired. Please login again.', 401);
     }
 

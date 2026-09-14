@@ -19,6 +19,7 @@ import { TerminalWindow } from '../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../components/Auth/TerminalButton.jsx';
 import { useAuthStore } from '../state/authStore.js';
 import { useUIStore } from '../state/uiStore.js';
+import { navigate } from './navigate.js';
 
 /**
  * Route table: ordered patterns with optional role restrictions.
@@ -63,13 +64,6 @@ function matchRoute(pathname) {
   }
 
   return null;
-}
-
-export function useNavigate() {
-  return (to) => {
-    window.history.pushState({}, '', to);
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  };
 }
 
 export function AppRouter() {
@@ -117,7 +111,6 @@ function RouteGuard({ component: Component, roles, routeProps = {} }) {
   }
 
   function AuthRoute({ mode = 'login' }) {
-    const navigate = useNavigate();
     const { login, register } = useAuthStore();
     const [currentMode, setCurrentMode] = useState(mode);
     const [error, setError] = useState('');
@@ -159,7 +152,6 @@ function RouteGuard({ component: Component, roles, routeProps = {} }) {
         onSwitchMode=${switchMode}
         error=${error}
         loading=${submitting}
-        onNavigate=${navigate}
       />
     `;
   }
@@ -203,10 +195,10 @@ function AuthRequired() {
         </h2>
         <p style=${{ color: 'var(--paper)', marginBottom: '24px' }}>Questa sezione richiede un'identità verificata.</p>
         <div style=${{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <${TerminalButton} primary onClick=${() => (window.location.href = '/auth')}>
+          <${TerminalButton} primary onClick=${() => navigate('/auth')}>
             [ enter ] accedi <b>→</b>
           <//>
-          <${TerminalButton} onClick=${() => (window.location.href = '/')}>
+          <${TerminalButton} onClick=${() => navigate('/')}>
             [ esc ] home
           <//>
         </div>
@@ -226,7 +218,7 @@ function NotFoundPage() {
         <p style=${{ color: 'var(--paper)', marginBottom: '24px' }}>
           Questo percorso non esiste nella directory del sistema.
         </p>
-        <${TerminalButton} primary onClick=${() => (window.location.href = '/')}>
+        <${TerminalButton} primary onClick=${() => navigate('/')}>
           [ enter ] torna alla home <b>→</b>
         <//>
       </section>

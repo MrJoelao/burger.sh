@@ -6,8 +6,6 @@
 import { html } from '../../utils/htm.js';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { AssemblyLayout } from '../../components/Layout/AssemblyLayout.jsx';
-import { BurgerScanner } from '../../components/Menu/BurgerScanner.jsx';
-import { SelectionPanel } from '../../components/Order/SelectionPanel.jsx';
 import { RecipeMatrix } from '../../components/Menu/RecipeMatrix.jsx';
 import { useOrderStore } from '../../state/orderStore.js';
 import { restaurantService } from '../../services/restaurantService.js';

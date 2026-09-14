@@ -4,32 +4,25 @@
  */
 
 import { AuthPanel } from '../../components/Auth/AuthPanel.jsx';
+import { TitleBar } from '../../components/Layout/TitleBar.jsx';
+import { navigate } from '../../router/navigate.js';
 
 export function AuthLayout({
   mode = 'login',
   onSubmit,
   onSwitchMode,
   error,
-  loading,
-  onNavigate
+  loading
 }) {
   return (
     <>
       <div class="crt-noise" aria-hidden="true"></div>
       <main class="console access-console" aria-label="Accesso burger.sh">
-        <header class="titlebar">
-          <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
-          <p><b>burger.sh</b><span>/</span> identity gate <span>/</span> production</p>
-          <nav class="top-links" aria-label="Navigazione principale">
-            <a href="/" onClick={(event) => { event.preventDefault(); onNavigate('/'); }}>presentazione</a>
-            <a class="current" href="/auth">accedi</a>
-          </nav>
-          <div class="machine-state"><span class="pulse"></span> secure local</div>
-        </header>
+        <TitleBar section="identity gate" context="production" status="secure local" current="/auth" />
 
         <section class="access-layout">
           <aside class="access-aside">
-            <a class="wordmark" href="/" onClick={(event) => { event.preventDefault(); onNavigate('/'); }}>BURGER<span>.SH</span></a>
+            <a class="wordmark" href="/" onClick={(event) => { event.preventDefault(); navigate('/'); }}>BURGER<span>.SH</span></a>
             <div class="access-aside-copy">
               <p class="eyebrow">identity subsystem</p>
               <h1>IL TUO<br />POSTO<br />NELLA<br /><span>CODA.</span></h1>

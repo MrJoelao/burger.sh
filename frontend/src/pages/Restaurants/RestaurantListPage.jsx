@@ -11,6 +11,13 @@ import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { Loading } from '../../components/UI/Loading.jsx';
 import { restaurantService } from '../../services/restaurantService.js';
+import { TitleBar } from '../../components/Layout/TitleBar.jsx';
+
+const NAV_LINKS = [
+  { label: 'ordina', path: '/menu' },
+  { label: 'accedi', path: '/auth' },
+  { label: 'filiali', path: '/restaurants' }
+];
 
 export function RestaurantListPage({ onRestaurantSelect = () => {} }) {
   const [restaurants, setRestaurants] = useState([]);
@@ -94,16 +101,13 @@ export function RestaurantListPage({ onRestaurantSelect = () => {} }) {
   return html`
     <div class="crt-noise" aria-hidden="true"></div>
     <main class="console" aria-label="Burger.sh Restaurants">
-      <header class="titlebar">
-        <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
-        <p><b>burger.sh</b><span>/</span> restaurants <span>/</span> directory</p>
-        <nav class="top-links" aria-label="Navigazione principale">
-          <a href="/">presentazione</a>
-          <a href="/auth">accedi</a>
-          <a class="current" href="/restaurants">filiali</a>
-        </nav>
-        <div class="machine-state"><span class="pulse"></span> directory online</div>
-      </header>
+      <${TitleBar}
+        section="restaurants"
+        context="directory"
+        status="directory online"
+        links=${NAV_LINKS}
+        current="/restaurants"
+      />
 
       <section class="identity-strip">
         <div class="brand-block">
@@ -143,7 +147,7 @@ export function RestaurantListPage({ onRestaurantSelect = () => {} }) {
           <div class="restaurant-grid" style=${{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
             ${restaurants.map(restaurant => html`
               <${RestaurantCard}
-                key=${restaurant.id}
+                key=${restaurant.id || restaurant._id}
                 restaurant=${restaurant}
                 onSelect=${onRestaurantSelect}
               />

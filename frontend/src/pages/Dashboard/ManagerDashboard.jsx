@@ -9,11 +9,10 @@ import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { useAuthStore } from '../../state/authStore.js';
 import { managerAdminService } from '../../services/managerAdminService.js';
-const statusLabels = {
-  ordered: 'ORDINATO', confirmed: 'CONFERMATO', preparing: 'IN PREPARAZIONE',
-  ready: 'PRONTO', delivered: 'CONSEGNATO', cancelled: 'ANNULLATO'
-};
+import { navigate } from '../../router/navigate.js';
+import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { Loading } from '../../components/UI/Loading.jsx';
+import { statusLabels } from '../../domain/orderStatus.js';
 
 export function ManagerDashboard() {
   const [dashboardData, setDashboardData] = useState({
@@ -23,23 +22,14 @@ export function ManagerDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
 
   const fetchDashboard = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch(`/api/orders/restaurant/${user.restaurantId}/dashboard`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to fetch dashboard');
-      }
-
-      const data = await response.json();
+      const data = await managerAdminService.getDashboard(user.restaurantId);
 
       if (data.success) {
         setDashboardData(data.data);
@@ -55,7 +45,7 @@ export function ManagerDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, [user?.restaurantId, token]);
+  }, [user?.restaurantId]);
 
   const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
 
@@ -101,14 +91,14 @@ export function ManagerDashboard() {
                     <span style=${{ color: 'var(--acid)', fontSize: '16px', fontWeight: '600' }}>${index + 1}.</span>
                     <span style=${{ color: 'var(--white)' }}>${dish.name}</span>
                   </div>
-                  <span style=${{ color: 'var(--white)' }}>${dish.count} venduti</span>
+                  <span style=${{ color: 'var(--white)' }}>${dish.quantitySold || dish.count} venduti</span>
                 </div>
               `)}
             </div>
           </div>
         </div>
 
-        <${TerminalButton} onClick={() => window.location.href = '/orders'}>
+        <${TerminalButton} onClick=${() => navigate('/orders')}>
           [ enter ] gestisci ordini
         <//>
       </section>

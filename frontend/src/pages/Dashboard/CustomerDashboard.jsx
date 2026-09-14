@@ -7,39 +7,24 @@ import { html } from '../../utils/htm.js';
 import { useState, useEffect } from 'preact/hooks';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
+import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { useAuthStore } from '../../state/authStore.js';
 import { orderService } from '../../services/orderService.js';
-
-const statusLabels = {
-  ordered: 'ORDINATO', confirmed: 'CONFERMATO', preparing: 'IN PREPARAZIONE',
-  ready: 'PRONTO', delivered: 'CONSEGNATO', cancelled: 'ANNULLATO'
-};
-const statusColors = {
-  ordered: 'var(--amber)', confirmed: 'var(--amber)', preparing: 'var(--amber)',
-  ready: 'var(--acid)', delivered: 'var(--paper)', cancelled: 'var(--alert)'
-};
+import { navigate } from '../../router/navigate.js';
+import { statusLabels, statusColors } from '../../domain/orderStatus.js';
 
 export function CustomerDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
 
   const fetchOrders = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/orders/user', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to fetch orders');
-      }
-
-      const data = await response.json();
+      const data = await orderService.getUserOrders();
 
       if (data.success) {
         setOrders(data.data || []);
@@ -55,7 +40,7 @@ export function CustomerDashboard() {
 
   useEffect(() => {
     fetchOrders();
-  }, [token]);
+  }, []);
 
   const formatDate = (dateString) => {
     return new Intl.DateTimeFormat('it-IT', {
@@ -118,7 +103,7 @@ export function CustomerDashboard() {
           </div>
         </div>
 
-        <${TerminalButton} onClick={() => window.location.href = '/orders'}>
+        <${TerminalButton} onClick=${() => navigate('/orders')}>
           [ enter ] vedi tutti gli ordini
         <//>
       </section>

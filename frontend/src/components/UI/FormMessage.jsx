@@ -14,7 +14,7 @@ export function FormMessage({
   if (!message) return null;
 
   const colors = {
-    error: 'var(--acid)',
+    error: 'var(--alert)',
     success: 'var(--acid)',
     info: 'var(--amber)'
   };

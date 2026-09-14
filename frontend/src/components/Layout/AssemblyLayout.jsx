@@ -5,10 +5,10 @@
 
 import { html } from '../../utils/htm.js';
 import { Fragment } from 'preact';
+import { BurgerScanner } from '../Menu/BurgerScanner.jsx';
 import { SelectionPanel } from '../Order/SelectionPanel.jsx';
 
 export function AssemblyLayout({
-  scannerProps = {},
   recipe,
   quantity,
   onQuantityChange,
@@ -24,22 +24,7 @@ export function AssemblyLayout({
       </header>
 
       <div class="assembly-layout">
-        <div class="burger-scanner" aria-label="Diagramma del burger selezionato" ...${scannerProps}>
-          <p class="diagram-label">[ live construction diagram ]</p>
-          <div class="crosshair" aria-hidden="true"></div>
-          <div class="burger-art" aria-hidden="true">
-            <div class="bun top-bun"></div>
-            <div class="ingredient cheese"></div>
-            <div class="ingredient onion"></div>
-            <div class="ingredient patty"></div>
-            <div class="ingredient lettuce"></div>
-            <div class="bun bottom-bun"></div>
-          </div>
-          <div class="callout callout-a"><span>01</span> toasted bun</div>
-          <div class="callout callout-b"><span>02</span> selected build</div>
-          <div class="callout callout-c"><span>03</span> 160g patty</div>
-          <div class="scanner-scale"><span>0</span><i></i><i></i><i></i><i></i><span>100</span></div>
-        </div>
+        <${BurgerScanner} />
 
         <${SelectionPanel}
           recipe=${recipe}

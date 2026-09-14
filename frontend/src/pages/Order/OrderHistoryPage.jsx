@@ -9,54 +9,22 @@ import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { Loading } from '../../components/UI/Loading.jsx';
-import { useAuthStore } from '../../state/authStore.js';
 import { orderService } from '../../services/orderService.js';
-
-const statusLabels = {
-  ordered: 'ORDINATO',
-  confirmed: 'CONFERMATO',
-  preparing: 'IN PREPARAZIONE',
-  ready: 'PRONTO',
-  delivered: 'CONSEGNATO',
-  cancelled: 'ANNULLATO'
-};
-
-const statusColors = {
-  ordered: 'var(--amber)',
-  confirmed: 'var(--amber)',
-  preparing: 'var(--amber)',
-  ready: 'var(--acid)',
-  delivered: 'var(--paper)',
-  cancelled: 'var(--alert)'
-};
+import { navigate } from '../../router/navigate.js';
+import { statusLabels, statusColors } from '../../domain/orderStatus.js';
 
 export function OrderHistoryPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const { token } = useAuthStore();
 
   const fetchOrders = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const params = new URLSearchParams();
-      if (activeFilter !== 'all') {
-        params.append('status', activeFilter);
-      }
-
-      const response = await fetch(`/api/orders/user?${params.toString()}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to fetch orders');
-      }
-
-      const data = await response.json();
+      const data = await orderService.getUserOrders(activeFilter === 'all' ? undefined : activeFilter);
 
       if (data.success) {
         setOrders(data.data || []);
@@ -73,7 +41,7 @@ export function OrderHistoryPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [activeFilter, token]);
+  }, [activeFilter]);
 
   const formatDate = (dateString) => {
     return new Intl.DateTimeFormat('it-IT', {
@@ -89,18 +57,9 @@ export function OrderHistoryPage() {
 
   const filterTabs = [
     { id: 'all', label: 'TUTTI' },
-    { id: 'active', label: 'ATTIVI', status: ['ordered', 'confirmed', 'preparing', 'ready'] },
-    { id: 'completed', label: 'COMPLETATI', status: ['delivered'] },
-    { id: 'cancelled', label: 'ANNULLATI', status: ['cancelled'] }
+    { id: 'current', label: 'IN CORSO' },
+    { id: 'past', label: 'CONSEGNATI' }
   ];
-
-  const filteredOrders = orders.filter(order => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'active') return ['ordered', 'confirmed', 'preparing', 'ready'].includes(order.status);
-    if (activeFilter === 'completed') return order.status === 'delivered';
-    if (activeFilter === 'cancelled') return order.status === 'cancelled';
-    return true;
-  });
 
   return html`
     <${TerminalWindow} title="order-history" subtitle="customer dashboard">
@@ -127,7 +86,7 @@ export function OrderHistoryPage() {
           </div>
         `}
 
-        ${!loading && !error && filteredOrders.length === 0 && html`
+        ${!loading && !error && orders.length === 0 && html`
           <div style=${{ textAlign: 'center', padding: '48px', color: 'var(--dirty)' }}>
             <p><b>_</b> nessun ordine ${activeFilter !== 'all' ? `con filtro "${filterTabs.find(t => t.id === activeFilter)?.label}"` : ''}</p>
             <p class="eyebrow">${activeFilter !== 'all' ? 'prova a cambiare filtro' : 'effettua il tuo primo ordine dal menu'}</p>
@@ -135,11 +94,11 @@ export function OrderHistoryPage() {
         `}
 
         <div class="order-list" style=${{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          ${filteredOrders.map(order => html`
+          ${orders.map(order => html`
             <article class="order-card" style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
               <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <span class="eyebrow">ordine #${order.id?.slice(-8) || 'N/A'}</span>
+                  <span class="eyebrow">ordine #${(order.id || order._id)?.slice(-8) || 'N/A'}</span>
                   <div style=${{ fontSize: '14px', color: 'var(--white)' }}>
                     ${order.restaurantName || 'Filiale sconosciuta'}
                   </div>
@@ -150,7 +109,7 @@ export function OrderHistoryPage() {
                     class="badge badge-status"
                     style=${{
                       background: statusColors[order.status] || 'var(--dirty)',
-                      color: ['ordered', 'confirmed', 'preparing'].includes(order.status) ? 'var(--ink)' : 'var(--ink)',
+                      color: 'var(--ink)',
                       border: 'none',
                       padding: '6px 12px',
                       fontSize: '10px',
@@ -168,9 +127,9 @@ export function OrderHistoryPage() {
               <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px dashed var(--line)' }}>
                 <div style=${{ display: 'flex', gap: '16px', color: 'var(--dirty)', fontSize: '10px', textTransform: 'uppercase' }}>
                   <span>${order.mode === 'delivery' ? '🚚 CONSEGNA' : '🏪 RITIRO'}</span>
-                  <span>${order.items?.length || 0} articoli</span>
+                  <span>${order.orderItems?.length || 0} articoli</span>
                 </div>
-                <${TerminalButton} onClick=${() => (window.location.href = '/orders/' + order.id)}>
+                <${TerminalButton} onClick=${() => navigate('/orders/' + (order.id || order._id))}>
                   [ enter ] dettagli
                 <//>
               </div>

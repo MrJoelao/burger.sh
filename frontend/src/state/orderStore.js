@@ -134,6 +134,24 @@ export function OrderStoreProvider({ children }) {
     }
   }, []);
 
+  /**
+  * Confirm the draft cart: the server computes totals and creates the order.
+  * mode: 'pickup' | 'delivery'; delivery: { address } quando mode e' delivery.
+  */
+  const confirmCart = useCallback(async (mode, delivery) => {
+    setLoading(true);
+    try {
+      const response = await orderService.confirmCart(mode, delivery);
+      if (response.success) {
+        setCurrentOrder(response.data);
+        setItems([]);
+      }
+      return response;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // --- Orders ---
 
   const fetchOrderHistory = useCallback(async (status) => {
@@ -208,6 +226,7 @@ export function OrderStoreProvider({ children }) {
     updateCartItem,
     removeCartItem,
     clearCart,
+    confirmCart,
     // orders
     fetchOrderHistory,
     fetchOrder,

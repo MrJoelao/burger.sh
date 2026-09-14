@@ -8,7 +8,6 @@ import { useState, useEffect } from 'preact/hooks';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
-import { useAuthStore } from '../../state/authStore.js';
 import { managerAdminService } from '../../services/managerAdminService.js';
 import { Loading } from '../../components/UI/Loading.jsx';
 
@@ -16,23 +15,13 @@ export function AdminDashboard() {
   const [pendingManagers, setPendingManagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { token } = useAuthStore();
 
   const fetchPendingManagers = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch('/api/admin/users?managerStatus=pending', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to fetch pending managers');
-      }
-
-      const data = await response.json();
+      const data = await managerAdminService.getAllUsers({ role: 'manager', managerStatus: 'pending' });
 
       if (data.success) {
         setPendingManagers(data.data || []);
@@ -48,34 +37,15 @@ export function AdminDashboard() {
 
   useEffect(() => {
     fetchPendingManagers();
-  }, [token]);
+  }, []);
 
   const handleApprove = async (userId) => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ managerStatus: 'approved' })
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to approve manager');
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setPendingManagers(prev => prev.filter(user => user.id !== userId));
-      } else {
-        throw new Error(data.message || 'Failed to approve manager');
-      }
+      await managerAdminService.updateUser(userId, { managerStatus: 'approved' });
+      setPendingManagers(prev => prev.filter(user => (user.id || user._id) !== userId));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -107,7 +77,7 @@ export function AdminDashboard() {
                     <small style=${{ display: 'block', color: 'var(--dirty)', fontSize: '10px' }}>${user.email}</small>
                   </div>
                   <div>
-                    <${TerminalButton} onClick=${() => handleApprove(user.id)}>
+                    <${TerminalButton} onClick=${() => handleApprove(user.id || user._id)}>
                       [ enter ] approva
                     <//>
                   </div>

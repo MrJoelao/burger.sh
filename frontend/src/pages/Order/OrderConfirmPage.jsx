@@ -10,9 +10,9 @@ import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { FormMessage } from '../../components/UI/FormMessage.jsx';
 import { useOrderStore } from '../../state/orderStore.js';
-import { orderService } from '../../services/orderService.js';
+import { navigate } from '../../router/navigate.js';
 
-export function OrderConfirmPage({ onConfirm, onBack }) {
+export function OrderConfirmPage() {
   const [mode, setMode] = useState('pickup');
   const [address, setAddress] = useState({
     street: '',
@@ -27,6 +27,7 @@ export function OrderConfirmPage({ onConfirm, onBack }) {
   const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
 
   const subtotal = order.items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+  // tariffa puramente indicativa: il totale definitivo e' calcolato dal server alla conferma del carrello
   const deliveryFee = mode === 'delivery' ? 3.50 : 0;
   const total = subtotal + deliveryFee;
 
@@ -42,27 +43,17 @@ export function OrderConfirmPage({ onConfirm, onBack }) {
     }
 
     try {
-      // Prepare order data for API
-      const orderData = {
-        restaurantId: '64b7a0f9a1234567890abcd0', // Would come from selected restaurant
-        mode,
-        orderItems: order.items.map(item => ({
-          dishId: item.id || 'placeholder',
-          quantity: item.quantity,
-          unitPrice: item.price
-        })),
-        ...(mode === 'delivery' && { delivery: { address: `${address.street}, ${address.city} ${address.zip}` } })
-      };
+      const delivery = mode === 'delivery' ? { address: `${address.street}, ${address.city} ${address.zip}` } : undefined;
 
-      const data = await orderService.createOrder(orderData);
-      if (data.success) {
-        order.clearBuffer();
-        onConfirm?.(data.data);
+      const data = await order.confirmCart(mode, delivery);
+      if (data.success && data.data) {
+        const orderId = data.data.id || data.data._id;
+        navigate(orderId ? `/orders/${orderId}` : '/orders');
       } else {
         setError(data.message || 'Errore nella conferma dell\'ordine');
       }
     } catch (err) {
-      setError('Errore di connessione. Riprova.');
+      setError(err.message || 'Errore di connessione. Riprova.');
     } finally {
       setLoading(false);
     }
@@ -185,7 +176,7 @@ export function OrderConfirmPage({ onConfirm, onBack }) {
           <${TerminalButton} primary type="submit" onClick=${handleSubmit} disabled=${loading || order.items.length === 0}>
             [ enter ] conferma ordine <b>→</b>
           <//>
-          <${TerminalButton} onClick=${onBack}>
+          <${TerminalButton} onClick=${() => navigate('/menu')}>
             [ esc ] indietro
           <//>
         </div>

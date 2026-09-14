@@ -5,21 +5,14 @@
  */
 
 import { html } from '../../utils/htm.js';
+import { navigate } from '../../router/navigate.js';
+import { TitleBar } from '../../components/Layout/TitleBar.jsx';
 
-export function HomePage({ onNavigate = () => {} }) {
+export function HomePage() {
   return html`
     <div class="crt-noise" aria-hidden="true"></div>
     <main class="console intro-console" aria-label="Burger.sh Welcome">
-      <header class="titlebar">
-        <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
-        <p><b>burger.sh</b><span>/</span> welcome <span>/</span> production</p>
-        <nav class="top-links" aria-label="Navigazione principale">
-          <a class="current" href="/">presentazione</a>
-          <a href="/auth">accedi</a>
-          <a href="/menu">ordina</a>
-        </nav>
-        <div class="machine-state"><span class="pulse"></span> system ready</div>
-      </header>
+      <${TitleBar} section="welcome" context="production" status="system ready" current="/" />
 
       <section class="intro-hero">
         <div class="intro-copy">
@@ -29,10 +22,10 @@ export function HomePage({ onNavigate = () => {} }) {
             Terminal-first interface. Zero fluff. Pure flavor.
           </p>
           <div class="intro-actions">
-            <button class="terminal-button primary" onClick=${() => onNavigate('/auth')}>
+            <button class="terminal-button primary" onClick=${() => navigate('/auth')}>
               [ enter ] inizia ora <b>→</b>
             </button>
-            <button class="terminal-button" onClick=${() => onNavigate('/menu')}>
+            <button class="terminal-button" onClick=${() => navigate('/menu')}>
               [ browser ] esplora menu
             </button>
           </div>
