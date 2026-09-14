@@ -11,12 +11,22 @@ import { orderService } from '../services/orderService.js';
 
 export const OrderContext = createContext(null);
 
+const RECIPES = [
+  { code: 'B-01 / CORE', name: 'SMASH CLASSIC', description: 'Doppio smash di manzo, cheddar fuso, cipolla, cetriolini e salsa della casa.', price: 10.50 },
+  { code: 'B-02 / HEAT', name: 'HOT SIGNAL', description: 'Manzo alla piastra, jalapeño, cheddar, cipolla croccante e salsa habanero.', price: 11.50 },
+  { code: 'B-03 / GREEN', name: 'GREEN MACHINE', description: 'Patty vegetale, lattuga, cipolla, pomodoro e maionese al lime.', price: 9.50 },
+  { code: 'B-04 / BIRD', name: 'CRISPY BIRD', description: 'Pollo fritto, cavolo marinato, lattuga e maionese affumicata.', price: 10.00 }
+];
+
 export function OrderStoreProvider({ children }) {
   // Local buffer (prototype behaviour). Synced with backend cart when authenticated.
   const [items, setItems] = useState([]);
   const [orderHistory, setOrderHistory] = useState([]);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState(RECIPES[0]);
+  const [quantity, setQuantity] = useState(1);
+  const [activeRecipeIndex, setActiveRecipeIndex] = useState(0);
 
   const addItem = useCallback((item) => {
     setItems((prev) => [
@@ -32,6 +42,16 @@ export function OrderStoreProvider({ children }) {
   const clearItems = useCallback(() => {
     setItems([]);
   }, []);
+
+  const selectRecipe = useCallback((index, recipe) => {
+    setActiveRecipeIndex(index);
+    setSelectedRecipe(recipe);
+    setQuantity(1);
+  }, []);
+
+  const addToBuffer = useCallback(() => {
+    addItem({ ...selectedRecipe, quantity });
+  }, [addItem, quantity, selectedRecipe]);
 
   // --- Backend cart operations ---
 
@@ -153,13 +173,21 @@ export function OrderStoreProvider({ children }) {
 
   const value = {
     items,
+    selectedRecipe,
+    quantity,
+    setQuantity,
+    activeRecipeIndex,
+    recipes: RECIPES,
     orderHistory,
     currentOrder,
     loading,
     // local buffer
     addItem,
+    selectRecipe,
+    addToBuffer,
     removeItem,
     clearItems,
+    clearBuffer: clearItems,
     // backend cart
     fetchCart,
     addCartItem,

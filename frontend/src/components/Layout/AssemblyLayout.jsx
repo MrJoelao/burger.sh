@@ -4,6 +4,7 @@
  */
 
 import { html } from '../../utils/htm.js';
+import { Fragment } from 'preact';
 
 export function AssemblyLayout({
   scannerProps = {},
@@ -12,6 +13,7 @@ export function AssemblyLayout({
   staticScreenContent = null
 }) {
   return html`
+    <${Fragment}>
     <section class="terminal-screen" id="screen-order" aria-label="Assembly station">
       <header class="section-heading">
         <p class="eyebrow">select a unit</p>
@@ -82,6 +84,7 @@ export function AssemblyLayout({
         </div>
       </section>
     `}
+    <//>
   `;
 }
 

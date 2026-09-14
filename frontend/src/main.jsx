@@ -12,12 +12,11 @@ import { OrderStoreProvider } from './state/orderStore.js';
 import { RestaurantStoreProvider } from './state/restaurantStore.js';
 import { UIStoreProvider } from './state/uiStore.js';
 import { AppRouter } from './router/AppRouter.jsx';
+import { installRenderDebug } from './debug/renderDebug.js';
 
 const html = htm.bind(h);
 
-// Vite provides import.meta.env for environment detection
-// No need for process polyfill - use import.meta.env directly
-const isDev = import.meta.env.DEV;
+installRenderDebug();
 
 render(
   html`

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
-import path from 'path';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig(async () => {
   const { default: tailwindcss } = await import('@tailwindcss/vite');
@@ -12,7 +12,7 @@ export default defineConfig(async () => {
     ],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, './src'),
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
     define: {

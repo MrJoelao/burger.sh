@@ -17,9 +17,12 @@ export class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Error logging (keep out of console in production)
     if (import.meta.env.DEV) {
-      console.error('[ErrorBoundary]', error, errorInfo);
+      console.error('error:', error);
+      console.log('message:', error?.message);
+      console.log('component stack:', errorInfo?.componentStack);
+      console.log('route:', window.location.pathname);
+      console.log('children at boundary:', this.props.children);
     }
   }
 

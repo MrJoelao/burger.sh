@@ -107,9 +107,61 @@ function RouteGuard({ component: Component, roles, routeProps = {} }) {
     `;
   }
 
+  if (Component === AuthLayout) {
+    return html`<${AuthRoute} ...${routeProps} />`;
+  }
+
   // Public route - render directly
   if (!roles) {
     return html`<${Component} ...${routeProps} />`;
+  }
+
+  function AuthRoute({ mode = 'login' }) {
+    const navigate = useNavigate();
+    const { login, register } = useAuthStore();
+    const [currentMode, setCurrentMode] = useState(mode);
+    const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (formData) => {
+      setSubmitting(true);
+      setError('');
+
+      try {
+        const result = currentMode === 'login'
+          ? await login(formData.email, formData.password)
+          : await register(formData);
+
+        if (!result.success) {
+          setError(result.message || 'Operazione non riuscita');
+          return;
+        }
+
+        navigate('/');
+      } catch (submissionError) {
+        setError(submissionError.message || 'Operazione non riuscita');
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+    const switchMode = () => {
+      setCurrentMode((previousMode) => (
+        previousMode === 'login' ? 'register' : 'login'
+      ));
+      setError('');
+    };
+
+    return html`
+      <${AuthLayout}
+        mode=${currentMode}
+        onSubmit=${handleSubmit}
+        onSwitchMode=${switchMode}
+        error=${error}
+        loading=${submitting}
+        onNavigate=${navigate}
+      />
+    `;
   }
 
   // Protected route without session → auth required screen

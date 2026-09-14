@@ -4,17 +4,16 @@
  */
 
 import { html } from '../../utils/htm.js';
-import { useContext } from 'preact/hooks';
 import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
 import { AssemblyLayout } from '../../components/Layout/AssemblyLayout.jsx';
 import { BurgerScanner } from '../../components/Menu/BurgerScanner.jsx';
 import { SelectionPanel } from '../../components/Order/SelectionPanel.jsx';
 import { RecipeMatrix } from '../../components/Menu/RecipeMatrix.jsx';
 import { OrderBuffer } from '../../components/Layout/OrderBuffer.jsx';
-import { OrderContext } from '../../App.jsx';
+import { useOrderStore } from '../../state/orderStore.js';
 
 export function MenuPage() {
-  const order = useContext(OrderContext);
+  const order = useOrderStore();
 
   const handleRecipeSelect = (index, recipe) => {
     order.selectRecipe(index, recipe);
