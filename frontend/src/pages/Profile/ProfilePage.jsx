@@ -1,16 +1,14 @@
 /**
- * ProfilePage - sezione profilo, organizzata in pannelli con un indice
- * laterale. Le sezioni dipendono dal ruolo: il cliente ha in più le
- * preferenze, manager e admin vedono i propri dati e la sicurezza.
- * Ogni pannello salva solo i campi che gli competono.
+ * ProfilePage - schermata del profilo, a sé rispetto alle console di lavoro.
+ * L'indice a sinistra fa da selettore: si vede una sola sezione alla volta e
+ * tutte restano montate, così passare da una sezione all'altra non butta via
+ * quello che l'utente ha scritto ma non ha ancora salvato.
+ * Le sezioni dipendono dal ruolo (il cliente ha in più le preferenze).
  */
 
 import { useState } from 'preact/hooks';
 import { html } from '../../utils/htm.js';
-import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
-import { ManagerShell } from '../../components/Layout/ManagerShell.jsx';
-import { AdminShell } from '../../components/Layout/AdminShell.jsx';
-import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
+import { ProfileShell } from '../../components/Layout/ProfileShell.jsx';
 import { useAuthStore } from '../../state/authStore.js';
 import { profileSections } from '../../domain/profile.js';
 import { ProfileIndex } from './components/ProfileIndex.jsx';
@@ -20,37 +18,40 @@ import { PreferencesPanel } from './components/PreferencesPanel.jsx';
 import { SecurityPanel } from './components/SecurityPanel.jsx';
 import { AccountPanel } from './components/AccountPanel.jsx';
 
+/* una sezione dell'indice corrisponde a un pannello: la mappa evita di
+   decidere in render quali sezioni mostrare per ruolo, lo fa profileSections */
+const PANELS = {
+  anagrafica: IdentityPanel,
+  indirizzo: AddressPanel,
+  preferenze: PreferencesPanel,
+  sicurezza: SecurityPanel,
+  account: AccountPanel
+};
+
 export function ProfilePage() {
   const { user } = useAuthStore();
   const sections = profileSections(user?.role);
-  const [activeId, setActiveId] = useState(sections[0]?.id || '');
+  const [selectedId, setSelectedId] = useState(sections[0]?.id || '');
 
-  const content = html`
-    <section class="terminal-screen">
-      <${SectionHeading}
-        eyebrow="identity"
-        title="PROFILO_"
-        titleSpan=${user?.name || 'UTENTE'}
-        subtitle="dati, preferenze e accesso al tuo account"
-      />
+  /* se il ruolo cambia e la sezione scelta non esiste più (o non esiste
+     ancora al primo render) ricado sulla prima disponibile */
+  const activeId = sections.some(section => section.id === selectedId)
+    ? selectedId
+    : sections[0]?.id || '';
 
-      <div class="profile-layout">
-        <${ProfileIndex} sections=${sections} activeId=${activeId} onSelect=${setActiveId} />
+  return html`
+    <${ProfileShell}>
+      <${ProfileIndex} sections=${sections} activeId=${activeId} onSelect=${setSelectedId} />
 
-        <div class="profile-panels">
-          <${IdentityPanel} />
-          <${AddressPanel} />
-          ${user?.role === 'customer' && html`<${PreferencesPanel} />`}
-          <${SecurityPanel} />
-          <${AccountPanel} />
-        </div>
+      <div class="profile-panels">
+        ${sections.map(section => {
+          const Panel = PANELS[section.id];
+          if (!Panel) return null;
+          return html`<${Panel} key=${section.id} active=${activeId === section.id} />`;
+        })}
       </div>
-    </section>
+    <//>
   `;
-
-  if (user?.role === 'manager') return html`<${ManagerShell} title="profile">${content}<//>`;
-  if (user?.role === 'admin') return html`<${AdminShell} title="profile">${content}<//>`;
-  return html`<${TerminalWindow} title="profile" subtitle="identity">${content}<//>`;
 }
 
 export default ProfilePage;

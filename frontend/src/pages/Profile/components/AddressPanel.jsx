@@ -20,7 +20,7 @@ function addressValues(user) {
   };
 }
 
-export function AddressPanel() {
+export function AddressPanel({ active = true }) {
   const { user, updateProfile } = useAuthStore();
   const [values, setValues] = useState(() => addressValues(user));
   const [busy, setBusy] = useState(false);
@@ -42,7 +42,7 @@ export function AddressPanel() {
   };
 
   return html`
-    <${Panel} id="indirizzo" eyebrow="recapito" title="INDIRIZZO_" titleSpan="DI CONSEGNA">
+    <${Panel} id="indirizzo" eyebrow="recapito" title="INDIRIZZO_" titleSpan="DI CONSEGNA" active=${active}>
       <form class="profile-form" onSubmit=${submit}>
         <div class="profile-grid">
           ${ADDRESS_FIELDS.map(field => html`

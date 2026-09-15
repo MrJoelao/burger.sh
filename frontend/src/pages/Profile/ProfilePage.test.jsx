@@ -1,3 +1,6 @@
+/* il profilo è una schermata a sé: indice come selettore, un pannello alla
+   volta. questi test descrivono prima il comportamento, poi l'implementazione */
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { ProfilePage } from './ProfilePage.jsx';
 import { useAuthStore } from '../../state/authStore.js';
@@ -28,33 +31,103 @@ const BRANCHES = [
   { _id: 'r2', name: 'Milano', managerId: { id: 'm9', name: 'Ada', surname: 'Lovelace' } }
 ];
 
+/* apre una sezione dall'indice: è il modo in cui l'utente ci arriva */
+function openSection(name) {
+  fireEvent.click(screen.getByRole('tab', { name: new RegExp(name, 'i') }));
+}
+
+function sectionPanel(id) {
+  return document.getElementById(`panel-${id}`);
+}
+
 describe('ProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     restaurantService.getRestaurants.mockResolvedValue({ success: true, data: [] });
   });
 
-  test('il cliente vede la sezione preferenze', async () => {
+  test('è una schermata a sé: niente directory operativa né barra access granted', () => {
+    useAuthStore.mockReturnValue(storeWith(MANAGER));
+    render(<ProfilePage />);
+
+    expect(screen.queryByText(/directory/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/granted/i)).not.toBeInTheDocument();
+    expect(document.querySelector('.command-list')).toBeNull();
+    /* la cornice del terminale resta */
+    expect(screen.getByRole('link', { name: 'burger.sh' })).toBeInTheDocument();
+  });
+
+  test('mostra una sezione alla volta, scelta dall’indice', () => {
     useAuthStore.mockReturnValue(storeWith(CUSTOMER));
     render(<ProfilePage />);
 
-    expect(await screen.findByRole('link', { name: /preferenze/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('tab')).toHaveLength(5);
+    expect(screen.getByRole('tab', { name: /anagrafica/i })).toHaveAttribute('aria-selected', 'true');
+    expect(sectionPanel('anagrafica')).not.toHaveAttribute('hidden');
+    expect(sectionPanel('indirizzo')).toHaveAttribute('hidden');
+  });
+
+  test('cambiare sezione non perde le modifiche non salvate', () => {
+    useAuthStore.mockReturnValue(storeWith(CUSTOMER));
+    render(<ProfilePage />);
+
+    fireEvent.input(screen.getByLabelText('nome'), { target: { value: 'Lucia' } });
+    openSection('indirizzo');
+    expect(sectionPanel('indirizzo')).not.toHaveAttribute('hidden');
+    expect(sectionPanel('anagrafica')).toHaveAttribute('hidden');
+
+    openSection('anagrafica');
+    expect(screen.getByLabelText('nome')).toHaveValue('Lucia');
+  });
+
+  test('si sposta tra le sezioni con le frecce e con fine', () => {
+    useAuthStore.mockReturnValue(storeWith(CUSTOMER));
+    render(<ProfilePage />);
+
+    const first = screen.getByRole('tab', { name: /anagrafica/i });
+    first.focus();
+    fireEvent.keyDown(first, { key: 'ArrowDown' });
+
+    const second = screen.getByRole('tab', { name: /indirizzo/i });
+    expect(second).toHaveAttribute('aria-selected', 'true');
+    expect(document.activeElement).toBe(second);
+
+    fireEvent.keyDown(second, { key: 'End' });
+    expect(screen.getByRole('tab', { name: /account/i })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('il pulsante di uscita resta nel pannello account', () => {
+    useAuthStore.mockReturnValue(storeWith(CUSTOMER));
+    render(<ProfilePage />);
+
+    expect(screen.queryByRole('button', { name: /esci/i })).not.toBeInTheDocument();
+
+    openSection('account');
+    expect(screen.getByRole('button', { name: /esci/i })).toBeInTheDocument();
+  });
+
+  test('il cliente vede la sezione preferenze', () => {
+    useAuthStore.mockReturnValue(storeWith(CUSTOMER));
+    render(<ProfilePage />);
+
+    expect(screen.getByRole('tab', { name: /preferenze/i })).toBeInTheDocument();
   });
 
   test('il manager non vede le preferenze ma vede lo stato di approvazione', async () => {
     useAuthStore.mockReturnValue(storeWith(MANAGER));
     render(<ProfilePage />);
 
-    await screen.findByRole('link', { name: /account/i });
-    expect(screen.queryByRole('link', { name: /preferenze/i })).not.toBeInTheDocument();
-    expect(screen.getByText('in attesa')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: /preferenze/i })).not.toBeInTheDocument();
+
+    openSection('account');
+    expect(await screen.findByText('in attesa')).toBeInTheDocument();
   });
 
-  test('il cliente non interroga le filiali', async () => {
+  test('il cliente non interroga le filiali', () => {
     useAuthStore.mockReturnValue(storeWith(CUSTOMER));
     render(<ProfilePage />);
 
-    await screen.findByRole('link', { name: /anagrafica/i });
+    expect(screen.getByRole('tab', { name: /anagrafica/i })).toBeInTheDocument();
     expect(restaurantService.getRestaurants).not.toHaveBeenCalled();
   });
 
@@ -63,7 +136,7 @@ describe('ProfilePage', () => {
     useAuthStore.mockReturnValue(store);
     render(<ProfilePage />);
 
-    fireEvent.input(await screen.findByLabelText('nome'), { target: { value: 'Lucia' } });
+    fireEvent.input(screen.getByLabelText('nome'), { target: { value: 'Lucia' } });
     fireEvent.click(screen.getByRole('button', { name: /salva anagrafica/i }));
 
     await waitFor(() => expect(store.updateProfile).toHaveBeenCalledWith({
@@ -78,7 +151,8 @@ describe('ProfilePage', () => {
     useAuthStore.mockReturnValue(store);
     render(<ProfilePage />);
 
-    fireEvent.input(await screen.findByLabelText('via'), { target: { value: 'Via Verdi 2' } });
+    openSection('indirizzo');
+    fireEvent.input(screen.getByLabelText('via'), { target: { value: 'Via Verdi 2' } });
     fireEvent.click(screen.getByRole('button', { name: /salva indirizzo/i }));
 
     await waitFor(() => expect(store.updateProfile).toHaveBeenCalledWith({
@@ -91,7 +165,8 @@ describe('ProfilePage', () => {
     useAuthStore.mockReturnValue(store);
     render(<ProfilePage />);
 
-    fireEvent.click(await screen.findByLabelText('vegetariano'));
+    openSection('preferenze');
+    fireEvent.click(screen.getByLabelText('vegetariano'));
     fireEvent.click(screen.getByRole('button', { name: /salva preferenze/i }));
 
     await waitFor(() => expect(store.updateProfile).toHaveBeenCalledWith({ preferences: ['vegetariano'] }));
@@ -102,7 +177,8 @@ describe('ProfilePage', () => {
     useAuthStore.mockReturnValue(store);
     render(<ProfilePage />);
 
-    fireEvent.input(await screen.findByLabelText('nuova password'), { target: { value: 'segreta' } });
+    openSection('sicurezza');
+    fireEvent.input(screen.getByLabelText('nuova password'), { target: { value: 'segreta' } });
     fireEvent.input(screen.getByLabelText('conferma nuova password'), { target: { value: 'diversa' } });
     fireEvent.click(screen.getByRole('button', { name: /aggiorna password/i }));
 
@@ -115,7 +191,8 @@ describe('ProfilePage', () => {
     useAuthStore.mockReturnValue(store);
     render(<ProfilePage />);
 
-    fireEvent.input(await screen.findByLabelText('nuova password'), { target: { value: 'segreta' } });
+    openSection('sicurezza');
+    fireEvent.input(screen.getByLabelText('nuova password'), { target: { value: 'segreta' } });
     fireEvent.input(screen.getByLabelText('conferma nuova password'), { target: { value: 'segreta' } });
     fireEvent.click(screen.getByRole('button', { name: /aggiorna password/i }));
 
@@ -127,7 +204,8 @@ describe('ProfilePage', () => {
     useAuthStore.mockReturnValue(store);
     render(<ProfilePage />);
 
-    fireEvent.click(await screen.findByRole('button', { name: /esci/i }));
+    openSection('account');
+    fireEvent.click(screen.getByRole('button', { name: /esci/i }));
 
     expect(store.logout).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith('/');
@@ -138,7 +216,8 @@ describe('ProfilePage', () => {
     useAuthStore.mockReturnValue(store);
     render(<ProfilePage />);
 
-    fireEvent.click(await screen.findByRole('button', { name: /elimina account/i }));
+    openSection('account');
+    fireEvent.click(screen.getByRole('button', { name: /elimina account/i }));
     expect(store.deleteAccount).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: /sì/i }));
@@ -152,6 +231,7 @@ describe('ProfilePage', () => {
     restaurantService.getRestaurants.mockResolvedValue({ success: true, data: BRANCHES });
     render(<ProfilePage />);
 
+    openSection('account');
     await screen.findByText('Bergamo');
     expect(screen.getByRole('button', { name: /elimina account/i })).toBeDisabled();
   });
@@ -162,6 +242,7 @@ describe('ProfilePage', () => {
     restaurantService.getRestaurants.mockResolvedValue({ success: true, data: BRANCHES });
     render(<ProfilePage />);
 
+    openSection('account');
     await screen.findByText('Bergamo');
     fireEvent.change(screen.getByLabelText(/manager subentrante/i), { target: { value: 'm9' } });
     fireEvent.click(screen.getByRole('button', { name: /elimina account/i }));
@@ -176,6 +257,7 @@ describe('ProfilePage', () => {
     restaurantService.getRestaurants.mockResolvedValue({ success: true, data: BRANCHES });
     render(<ProfilePage />);
 
+    openSection('account');
     await screen.findByText('Bergamo');
     fireEvent.change(screen.getByLabelText(/gestione filiali/i), { target: { value: 'chiudi' } });
     fireEvent.click(screen.getByRole('button', { name: /elimina account/i }));
@@ -191,7 +273,8 @@ describe('ProfilePage', () => {
     useAuthStore.mockReturnValue(store);
     render(<ProfilePage />);
 
-    fireEvent.click(await screen.findByRole('button', { name: /elimina account/i }));
+    openSection('account');
+    fireEvent.click(screen.getByRole('button', { name: /elimina account/i }));
     fireEvent.click(screen.getByRole('button', { name: /sì/i }));
 
     expect(await screen.findByText(/operazione non consentita/i)).toBeInTheDocument();

@@ -11,7 +11,7 @@ import { PREFERENCE_GROUPS, preferenceLabel } from '../../../domain/profile.js';
 import { Panel } from './Panel.jsx';
 import { Feedback, feedbackFrom } from './Feedback.jsx';
 
-export function PreferencesPanel() {
+export function PreferencesPanel({ active = true }) {
   const { user, updateProfile } = useAuthStore();
   const [selected, setSelected] = useState(() => user?.preferences || []);
   const [busy, setBusy] = useState(false);
@@ -35,7 +35,7 @@ export function PreferencesPanel() {
   };
 
   return html`
-    <${Panel} id="preferenze" eyebrow="gusti" title="PREFERENZE_" titleSpan="ALIMENTARI">
+    <${Panel} id="preferenze" eyebrow="gusti" title="PREFERENZE_" titleSpan="ALIMENTARI" active=${active}>
       <form class="profile-form" onSubmit=${submit}>
         <div class="profile-preferences">
           ${PREFERENCE_GROUPS.map(group => html`

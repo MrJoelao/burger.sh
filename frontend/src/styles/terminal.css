@@ -293,19 +293,20 @@
   color: var(--acid);
 }
 
-/* --- Profilo: indice laterale e pannelli --- */
+/* --- Profilo: schermata a sé, indice a schede --- */
 
-.profile-layout {
+/* riempie lo spazio libero tra titlebar e footer, che insieme occupano circa
+   155px: così l'indice resta alto quanto la schermata e non c'è buco in basso */
+.profile-screen {
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-  margin-top: 22px;
+  grid-template-columns: minmax(180px, 232px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: stretch;
+  min-height: calc(100vh - 155px);
+  padding: 24px;
 }
 
 .profile-index {
-  position: sticky;
-  top: 16px;
   display: grid;
   gap: 4px;
   align-content: start;
@@ -314,21 +315,34 @@
   background: var(--panel);
 }
 
-.profile-index .eyebrow {
-  margin: 0 0 6px;
+.profile-index-list {
+  display: grid;
+  gap: 4px;
 }
 
+.profile-index .eyebrow {
+  margin: 0 0 8px;
+}
+
+/* è un bottone, non un collegamento: la scheda cambia pannello senza muovere
+   la pagina, quindi niente href e niente salto di ancora */
 .profile-index-link {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
   border-left: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
   color: var(--dirty);
+  font: inherit;
   font-size: 10px;
   letter-spacing: 0.08em;
+  text-align: left;
   text-transform: uppercase;
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .profile-index-link:hover,
@@ -348,31 +362,58 @@
 }
 
 .profile-panels {
-  display: grid;
-  gap: 20px;
   min-width: 0;
 }
 
 /* sfondo opaco come le branch-card: nessuna riga di sfondo sotto le etichette */
 .profile-panel {
-  padding: 18px;
+  padding: 26px;
   border: 1px solid var(--line);
   background: var(--panel);
 }
 
+/* la sezione non attiva resta montata ma fuori dai conti e dal tab order */
+.profile-panel[hidden] {
+  display: none;
+}
+
+/* il filetto del titolo resta sotto il titolo: con poco margine cadeva a
+   ridosso delle etichette e sembrava attraversarle */
+.profile-panel .section-heading {
+  padding-bottom: 14px;
+}
+
 .profile-panel-body {
-  margin-top: 16px;
+  margin-top: 26px;
+}
+
+/* il pannello ha tutta la larghezza della schermata: il form non si ferma più
+   a 760px e i campi si dispongono da soli nelle colonne che ci stanno */
+.profile-panel .profile-form {
+  max-width: none;
+  gap: 24px;
+}
+
+.profile-panel .profile-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px 20px;
+}
+
+/* il salvataggio resta della sua larghezza: una barra ambra lunga quanto tutto
+   lo schermo sarebbe sproporzionata */
+.profile-panel .profile-form > .terminal-button {
+  justify-self: start;
 }
 
 .profile-field {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 /* un filo di respiro in più tra etichetta e campo: a 6px il bordo del campo
    sembra toccare il testo quando la fila è densa */
 .profile-field > label {
-  gap: 8px;
+  gap: 10px;
 }
 
 .profile-field-help {
@@ -399,7 +440,7 @@
 
 .profile-preferences {
   display: grid;
-  gap: 16px;
+  gap: 20px;
 }
 
 .profile-preference-group {
@@ -414,7 +455,7 @@
 .profile-preference-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 20px;
+  gap: 12px 24px;
 }
 
 /* doppia classe per battere .profile-form label, che impone grid e maiuscolo */
@@ -442,8 +483,8 @@
 
 .profile-status div {
   display: grid;
-  grid-template-columns: 130px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 14px;
 }
 
 .profile-status dt {
@@ -462,7 +503,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .profile-danger {
@@ -503,12 +544,10 @@
 }
 
 @media (max-width: 880px) {
-  .profile-layout {
+  .profile-screen {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .profile-index {
-    position: static;
+    min-height: 0;
+    padding: 16px;
   }
 }
 

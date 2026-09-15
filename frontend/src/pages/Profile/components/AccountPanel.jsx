@@ -18,7 +18,7 @@ import { roleLabels } from '../../../domain/roles.js';
 import { ownedBranches, successorManagers } from '../../../domain/profile.js';
 import { Panel } from './Panel.jsx';
 
-export function AccountPanel() {
+export function AccountPanel({ active = true }) {
   const { user, logout, deleteAccount } = useAuthStore();
   const managerId = userId(user);
   const isManager = user?.role === 'manager';
@@ -68,7 +68,7 @@ export function AccountPanel() {
   };
 
   return html`
-    <${Panel} id="account" eyebrow="sessione" title="GESTIONE_" titleSpan="ACCOUNT">
+    <${Panel} id="account" eyebrow="sessione" title="GESTIONE_" titleSpan="ACCOUNT" active=${active}>
       <dl class="profile-status">
         <div><dt>ruolo</dt><dd>${roleLabels[user?.role] || user?.role || '—'}</dd></div>
         ${user?.managerStatus && html`

@@ -15,7 +15,7 @@ import { Feedback, feedbackFrom } from './Feedback.jsx';
 
 const EMPTY = { password: '', confirmPassword: '' };
 
-export function SecurityPanel() {
+export function SecurityPanel({ active = true }) {
   const { updateProfile } = useAuthStore();
   const [values, setValues] = useState(EMPTY);
   const [errors, setErrors] = useState({});
@@ -57,7 +57,7 @@ export function SecurityPanel() {
   `;
 
   return html`
-    <${Panel} id="sicurezza" eyebrow="accesso" title="SICUREZZA_" titleSpan="ACCOUNT">
+    <${Panel} id="sicurezza" eyebrow="accesso" title="SICUREZZA_" titleSpan="ACCOUNT" active=${active}>
       <form class="profile-form" onSubmit=${submit} novalidate>
         <div class="profile-grid">
           ${field('password', 'nuova password')}

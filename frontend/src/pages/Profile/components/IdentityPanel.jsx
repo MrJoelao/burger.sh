@@ -20,7 +20,7 @@ function identityValues(user) {
   };
 }
 
-export function IdentityPanel() {
+export function IdentityPanel({ active = true }) {
   const { user, updateProfile } = useAuthStore();
   const [values, setValues] = useState(() => identityValues(user));
   const [busy, setBusy] = useState(false);
@@ -42,7 +42,7 @@ export function IdentityPanel() {
   };
 
   return html`
-    <${Panel} id="anagrafica" eyebrow="identità" title="DATI_" titleSpan="ANAGRAFICA">
+    <${Panel} id="anagrafica" eyebrow="identità" title="DATI_" titleSpan="ANAGRAFICA" active=${active}>
       <form class="profile-form" onSubmit=${submit}>
         <div class="profile-grid">
           ${IDENTITY_FIELDS.map(field => html`
