@@ -12,7 +12,8 @@ export function TerminalWindow({
   subtitle = 'production console',
   showClock = true,
   orderItems = [],
-  onClearBuffer = () => {}
+  onClearBuffer = () => {},
+  onCheckout = null
 }) {
   return (
     <>
@@ -55,7 +56,7 @@ export function TerminalWindow({
             <div>{children}</div>
           </section>
 
-          <OrderBuffer items={orderItems} onClear={onClearBuffer} />
+          <OrderBuffer items={orderItems} onClear={onClearBuffer} onCheckout={onCheckout} />
         </div>
 
         <footer class="footer-status">

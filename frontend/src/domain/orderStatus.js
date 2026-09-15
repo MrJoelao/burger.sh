@@ -27,6 +27,12 @@ export const statusColors = {
 
 export const statusOrder = ['ordered', 'confirmed', 'preparing', 'ready', 'on_delivery', 'delivered'];
 
+/* stati che il backend accetta nel filtro della coda ordini di una filiale
+   (validations/orderValidation.js): sono i valori reali della state machine,
+   senza quelli di sola UI come "confirmed" e "cancelled", che il backend non
+   produce mai e che quindi non selezionerebbero nessun ordine */
+export const filterableStatuses = ['ordered', 'preparing', 'ready', 'on_delivery', 'delivered'];
+
 /* sequenza di stati ammessi per ogni modalità di completamento: il ritiro
    salta "on_delivery" (non c'è consegna), la consegna a domicilio salta
    "ready" (il cliente non ritira di persona). è la stessa state machine del

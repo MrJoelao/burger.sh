@@ -1,10 +1,26 @@
-import { nextStatus, statusFlowFor } from './orderStatus.js';
+import { nextStatus, statusFlowFor, statusOrder, filterableStatuses } from './orderStatus.js';
 
 describe('statusFlowFor', () => {
   test('consegna e ritiro hanno flussi diversi', () => {
     expect(statusFlowFor('pickup')).toEqual(['ordered', 'preparing', 'ready', 'delivered']);
     expect(statusFlowFor('delivery')).toEqual(['ordered', 'preparing', 'on_delivery', 'delivered']);
     expect(statusFlowFor(undefined)).toEqual([]);
+  });
+});
+
+describe('filterableStatuses', () => {
+  test('contiene solo gli stati accettati dal filtro del backend, in ordine di flusso', () => {
+    expect(filterableStatuses).toEqual(['ordered', 'preparing', 'ready', 'on_delivery', 'delivered']);
+  });
+
+  test('esclude i valori di sola UI che il backend non produce mai', () => {
+    expect(filterableStatuses).not.toContain('confirmed');
+    expect(filterableStatuses).not.toContain('draft');
+    expect(filterableStatuses).not.toContain('cancelled');
+  });
+
+  test('ogni stato filtrabile è anche uno stato visualizzabile', () => {
+    expect(filterableStatuses.every(status => statusOrder.includes(status))).toBe(true);
   });
 });
 

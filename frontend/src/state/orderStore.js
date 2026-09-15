@@ -8,6 +8,7 @@ import { createContext } from 'preact';
 import { useContext, useState, useCallback } from 'preact/hooks';
 import { html } from '../utils/htm.js';
 import { orderService } from '../services/orderService.js';
+import { cartItemsFrom } from '../domain/orders.js';
 
 export const OrderContext = createContext(null);
 
@@ -72,7 +73,7 @@ export function OrderStoreProvider({ children }) {
     try {
       const response = await orderService.getCart();
       if (response.success) {
-        setItems(response.data.items || []);
+        setItems(cartItemsFrom(response.data));
         return response.data;
       }
       return null;
@@ -92,7 +93,7 @@ export function OrderStoreProvider({ children }) {
     try {
       const response = await orderService.addToCart(restaurantId, dishId, quantity);
       if (response.success) {
-        setItems(response.data.items || []);
+        setItems(cartItemsFrom(response.data));
       }
       return response;
     } finally {
@@ -105,7 +106,7 @@ export function OrderStoreProvider({ children }) {
     try {
       const response = await orderService.updateCartItem(dishId, quantity);
       if (response.success) {
-        setItems(response.data.items || []);
+        setItems(cartItemsFrom(response.data));
       }
       return response;
     } finally {
@@ -118,7 +119,7 @@ export function OrderStoreProvider({ children }) {
     try {
       const response = await orderService.removeFromCart(dishId);
       if (response.success) {
-        setItems(response.data.items || []);
+        setItems(cartItemsFrom(response.data));
       }
       return response;
     } finally {

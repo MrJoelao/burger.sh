@@ -49,11 +49,12 @@ async function getUserOrders(req, res, next) {
   }
 }
 
-// get ordini del ristorante (solo manager della filiale)
+// get ordini del ristorante (solo manager della filiale), paginati e opzionalmente filtrati per stato
 async function getRestaurantOrders(req, res, next) {
   try {
     const { restaurantId } = req.params;
     const { page, limit, skip } = req.pagination;
+    const { status } = req.validatedQuery;
 
     const restaurant = await findOrThrow(Restaurant.findById(restaurantId), 'Restaurant not found');
 
@@ -62,7 +63,7 @@ async function getRestaurantOrders(req, res, next) {
       return handleAuth(res, authCheck);
     }
 
-    const { total, orders } = await orderService.listRestaurantOrders(restaurantId, { skip, limit });
+    const { total, orders } = await orderService.listRestaurantOrders(restaurantId, { statusFilter: status, skip, limit });
 
     return jsonPaginated(res, 200, page, limit, total, orders);
   } catch (err) {

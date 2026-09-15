@@ -22,6 +22,7 @@ import { AdminUsers } from '../pages/Admin/AdminUsers.jsx';
 import { AdminBranches } from '../pages/Admin/AdminBranches.jsx';
 import { AdminStats } from '../pages/Admin/AdminStats.jsx';
 import { ProfilePage } from '../pages/Profile/ProfilePage.jsx';
+import { PaymentMethodsPage } from '../pages/PaymentMethods/PaymentMethodsPage.jsx';
 import { SetupPage } from '../pages/Setup/SetupPage.jsx';
 import { ChangePasswordPage } from '../pages/Setup/ChangePasswordPage.jsx';
 import { CreateFirstRestaurantPage } from '../pages/CreateFirstRestaurant/CreateFirstRestaurantPage.jsx';
@@ -45,8 +46,9 @@ const ROUTES = [
   { path: '/restaurants', component: RestaurantListPage },
   { path: '/orders/confirm', component: OrderConfirmPage, roles: ['customer'] },
   { path: '/orders', component: OrderHistoryPage, roles: ['customer'] },
-  { path: '/orders/:id', component: OrderDetailPage, roles: ['customer', 'manager', 'admin'] },
+  { path: '/orders/:orderId', component: OrderDetailPage, roles: ['customer', 'manager', 'admin'] },
   { path: '/dashboard', component: CustomerDashboard, roles: ['customer'] },
+  { path: '/payment-methods', component: PaymentMethodsPage, roles: ['customer'] },
   { path: '/dashboard/manager', component: ManagerOverview, roles: ['manager'] },
   { path: '/dashboard/admin', component: AdminOverview, roles: ['admin'] },
   { path: '/profile', component: ProfilePage, roles: ['customer', 'manager', 'admin'] },

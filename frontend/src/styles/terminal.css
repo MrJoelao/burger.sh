@@ -2796,6 +2796,87 @@
   font-size: 15px;
 }
 
+/* Timeline di stato (area cliente): ogni tappa porta il tono del suo stato,
+   il percorso è quello della modalità dell'ordine */
+.status-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  list-style: none;
+}
+
+.status-step {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 2px solid var(--line);
+  text-align: center;
+}
+
+.status-step .step-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--line);
+}
+
+.status-step .step-label {
+  color: var(--dirty);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.step-done,
+.step-current {
+  border-top-color: var(--tone, var(--amber));
+}
+
+.step-done .step-dot,
+.step-current .step-dot {
+  background: var(--tone, var(--amber));
+}
+
+.step-done .step-label,
+.step-current .step-label {
+  color: var(--tone, var(--paper));
+}
+
+.step-current .step-dot {
+  box-shadow: 0 0 8px var(--tone, var(--amber));
+}
+
+/* Totali del checkout */
+.checkout-totals {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.checkout-totals p {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 6px;
+  color: var(--dirty);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.checkout-totals .checkout-grand-total {
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  font-size: 15px;
+}
+
+.checkout-totals .checkout-grand-total strong {
+  color: var(--acid);
+}
+
 /* Classifica dei piatti più venduti */
 .top-dishes {
   display: grid;

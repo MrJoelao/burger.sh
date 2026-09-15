@@ -1,113 +1,85 @@
 /**
- * CustomerDashboard - Customer order history and profile
- * Shows recent orders, profile info, preferences
+ * CustomerDashboard - plancia del cliente. Riassume i propri ordini (totali, in
+ * corso, consegnati, spesa), mostra i più recenti con il codice da esibire al
+ * ritiro e apre le scorciatoie verso menu, storico e metodi di pagamento.
  */
 
+import { useCallback } from 'preact/hooks';
 import { html } from '../../utils/htm.js';
-import { useState, useEffect } from 'preact/hooks';
-import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
+import { CustomerShell } from '../../components/Layout/CustomerShell.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
-import { useAuthStore } from '../../state/authStore.js';
+import { StatTile } from '../../components/Console/StatTile.jsx';
+import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
 import { orderService } from '../../services/orderService.js';
+import { useAuthStore } from '../../state/authStore.js';
 import { navigate } from '../../router/navigate.js';
-import { statusLabels, statusColors } from '../../domain/orderStatus.js';
+import { euro } from '../../domain/format.js';
+import { orderStats } from '../../domain/orders.js';
+import { useResource } from '../../hooks/useResource.js';
+import { OrderListItem } from '../Order/components/OrderListItem.jsx';
+
+const RECENT_ORDERS_LIMIT = 5;
 
 export function CustomerDashboard() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const { user } = useAuthStore();
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    setError('');
+  const load = useCallback(() => orderService.getUserOrders(), []);
+  const orders = useResource(load);
 
-    try {
-      const data = await orderService.getUserOrders();
-
-      if (data.success) {
-        setOrders(data.data || []);
-      } else {
-        throw new Error(data.message || 'Failed to fetch orders');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const formatDate = (dateString) => {
-    return new Intl.DateTimeFormat('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(new Date(dateString));
-  };
-
-  const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
+  const list = orders.response?.data || [];
+  const stats = orderStats(list);
+  const recent = list.slice(0, RECENT_ORDERS_LIMIT);
 
   return html`
-    <${TerminalWindow} title="dashboard" subtitle="customer">
+    <${CustomerShell} title="dashboard" subtitle="account personale">
       <section class="terminal-screen">
-        <${SectionHeading} eyebrow="profile" title="BENVENUTO_" titleSpan=${user?.name || '...'} />
+        <${SectionHeading}
+          eyebrow="profilo"
+          title="BENVENUTO_"
+          titleSpan=${user?.name || 'cliente'}
+          subtitle="i tuoi ordini, in corso e passati"
+        />
 
-        <div class="dashboard-grid" style=${{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-            <${SectionHeading} eyebrow="info" title="PROFILO" />
-            <div style=${{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <span class="eyebrow">nome</span>
-                <p style=${{ color: 'var(--white)' }}>${user?.name || '...'}</p>
-              </div>
-              <div>
-                <span class="eyebrow">email</span>
-                <p style=${{ color: 'var(--white)' }}>${user?.email || '...'}</p>
-              </div>
-              <div>
-                <span class="eyebrow">ruolo</span>
-                <p style=${{ color: 'var(--white)', textTransform: 'capitalize' }}>${user?.role || 'customer'}</p>
-              </div>
-            </div>
+        <${AsyncBoundary} loading=${orders.loading} error=${orders.error} label="ordini">
+          <div class="telemetry-rail">
+            <${StatTile} eyebrow="ordini totali" value=${stats.total} />
+            <${StatTile} eyebrow="in corso" value=${stats.current} caption="ancora da ricevere" />
+            <${StatTile} eyebrow="consegnati" value=${stats.delivered} />
+            <${StatTile} eyebrow="spesa" value=${stats.spent} display=${euro(stats.spent)} caption="sui soli ordini consegnati" />
           </div>
 
-          <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-            <${SectionHeading} eyebrow="orders" title="ULTIMI_" titleSpan="ORDINI" />
-            <div style=${{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              ${orders.slice(0, 3).map(order => html`
-                <article style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px dashed var(--line)' }}>
-                  <div>
-                    <b>#${order.id?.slice(-8) || 'N/A'}</b>
-                    <small style=${{ display: 'block', color: 'var(--dirty)', fontSize: '10px' }}>${formatDate(order.createdAt)}</small>
-                  </div>
-                  <div style=${{ textAlign: 'right' }}>
-                    <div style=${{ fontSize: '16px', fontWeight: '600', color: 'var(--acid)' }}>${formatEuro(order.totalAmount || 0)}</div>
-                    <span class="badge badge-status" style=${{
-                      background: statusColors[order.status] || 'var(--dirty)',
-                      color: 'var(--ink)',
-                      padding: '4px 8px',
-                      fontSize: '10px',
-                      textTransform: 'uppercase'
-                    }}>
-                      ${statusLabels[order.status] || order.status.toUpperCase()}
-                    </span>
-                  </div>
-                </article>
-              `)}
+          <div class="panel-block">
+            <${SectionHeading} eyebrow="attività" title="ORDINI_" titleSpan="RECENTI" />
+            ${recent.length === 0
+              ? html`
+                <div class="queue-empty">
+                  <p><b>_</b> nessun ordine ancora.</p>
+                  <p class="muted">Componi il primo ordine dal menu della filiale che preferisci.</p>
+                </div>
+              `
+              : html`
+                <ul class="order-queue">
+                  ${recent.map(order => html`
+                    <${OrderListItem}
+                      key=${order.orderCode || order._id}
+                      order=${order}
+                      showAmount=${false}
+                      onOpen=${id => navigate(`/orders/${id}`)}
+                    />
+                  `)}
+                </ul>
+              `}
+          </div>
+
+          <div class="panel-block">
+            <${SectionHeading} eyebrow="strumenti" title="SCORCIATOIE" />
+            <div class="shortcut-row">
+              <${TerminalButton} primary onClick=${() => navigate('/menu')}>[ 1 ] ordina<//>
+              <${TerminalButton} onClick=${() => navigate('/orders')}>[ 2 ] storico ordini<//>
+              <${TerminalButton} onClick=${() => navigate('/payment-methods')}>[ 3 ] pagamenti<//>
             </div>
           </div>
-        </div>
-
-        <${TerminalButton} onClick=${() => navigate('/orders')}>
-          [ enter ] vedi tutti gli ordini
-        <//>
-        <${TerminalButton} onClick=${() => navigate('/profile')}>
-          [ p ] modifica profilo
         <//>
       </section>
     <//>

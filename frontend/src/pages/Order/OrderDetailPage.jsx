@@ -1,225 +1,137 @@
 /**
- * OrderDetailPage - Single order view with tracking and details
+ * OrderDetailPage - dettaglio e tracciamento di un ordine. Il percorso di stato
+ * è quello della modalità (ritiro o domicilio), gli importi sono quelli
+ * calcolati dal server e, quando l'ordine è a domicilio e in consegna, il
+ * cliente chiude il ciclo confermando la ricezione. La cornice segue il ruolo:
+ * il cliente resta nella sua area, manager e admin nelle rispettive console.
  */
 
+import { useCallback } from 'preact/hooks';
 import { html } from '../../utils/htm.js';
-import { useState, useEffect } from 'preact/hooks';
-import { TerminalWindow } from '../../components/Layout/TerminalWindow.jsx';
-import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
+import { CustomerShell } from '../../components/Layout/CustomerShell.jsx';
+import { ManagerShell } from '../../components/Layout/ManagerShell.jsx';
+import { AdminShell } from '../../components/Layout/AdminShell.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
-import { Loading } from '../../components/UI/Loading.jsx';
+import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
+import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
 import { orderService } from '../../services/orderService.js';
-import { statusLabels, statusColors, statusOrder } from '../../domain/orderStatus.js';
+import { useAuthStore } from '../../state/authStore.js';
+import { navigate } from '../../router/navigate.js';
+import { euro, dateTime } from '../../domain/format.js';
+import { canConfirmDelivery, deliveryOf, itemUnits, modeLabel, orderReference, restaurantOf } from '../../domain/orders.js';
+import { useResource, useAction } from '../../hooks/useResource.js';
+import { OrderStatusTimeline } from './components/OrderStatusTimeline.jsx';
+
+/* una cornice per ruolo: aggiungerne uno non tocca il rendering del dettaglio */
+const SHELLS = {
+  customer: CustomerShell,
+  manager: ManagerShell,
+  admin: AdminShell
+};
 
 export function OrderDetailPage({ orderId }) {
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { user } = useAuthStore();
+  const Shell = SHELLS[user?.role] || CustomerShell;
 
-  const fetchOrder = async () => {
-    setLoading(true);
-    setError('');
+  const load = useCallback(() => orderService.getOrder(orderId), [orderId]);
+  const order = useResource(load);
+  const action = useAction({ onSuccess: order.reload });
 
-    try {
-      const data = await orderService.getOrder(orderId);
-
-      if (data.success) {
-        setOrder(data.data);
-      } else {
-        throw new Error(data.message || 'Failed to fetch order');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrder();
-  }, [orderId]);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Intl.DateTimeFormat('it-IT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(new Date(dateString));
-  };
-
-  const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
-
-  const getCurrentStatusIndex = () => {
-    return statusOrder.indexOf(order?.status);
-  };
-
-  if (loading) {
-    return html`
-      <${TerminalWindow} title="order-detail" subtitle="tracking">
-        <section class="terminal-screen" style=${{ textAlign: 'center', padding: '48px' }}>
-          <${Loading} message="CARICAMENTO ORDINE..." />
-        </section>
-      <//>
-    `;
-  }
-
-  if (error || !order) {
-    return html`
-      <${TerminalWindow} title="order-detail" subtitle="error">
-        <section class="terminal-screen" style=${{ textAlign: 'center', padding: '48px' }}>
-          <div style=${{ color: 'var(--alert)' }}>
-            <p><b>Errore:</b> ${error || 'Ordine non trovato'}</p>
-            <${TerminalButton} onClick={() => window.history.back()} style=${{ marginTop: '16px' }}>
-              [ esc ] torna indietro
-            <//>
-          </div>
-        </section>
-      <//>
-    `;
-  }
-
-  const currentStatusIndex = getCurrentStatusIndex();
-  // restaurantId arriva come ObjectId oppure come ref popolato (_id, name, city): da qui il nome filiale
-  const restaurant = typeof order.restaurantId === 'object' && order.restaurantId !== null ? order.restaurantId : null;
+  const data = order.response?.data;
 
   return html`
-    <${TerminalWindow} title="order-detail" subtitle="tracking">
+    <${Shell} title="order-detail" subtitle="tracking">
       <section class="terminal-screen">
-        <${SectionHeading}
-          eyebrow="tracking"
-          title="ORDINE_"
-          titleSpan=${`#${(order.id || order._id)?.slice(-8) || 'N/A'}`}
-          subtitle=${`${restaurant.name || 'Filiale sconosciuta'} · ${formatDate(order.createdAt)}`}
-        />
-
-        <div class="status-timeline" style=${{ marginBottom: '24px', padding: '16px', border: '1px solid var(--line)', background: 'var(--panel)' }}>
-          <${SectionHeading} eyebrow="progress" title="STATO" subtitle="tracciamento preparazione" />
-          <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', position: 'relative' }}>
-            <div style=${{ position: 'absolute', top: '50%', left: '10%', right: '10%', height: '2px', background: 'var(--line)', transform: 'translateY(-50%)', zIndex: 1 }} />
-            ${statusOrder.map((status, index) => {
-              const isActive = index <= currentStatusIndex;
-              const isCurrent = index === currentStatusIndex;
-              return html`
-                <div style=${{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 2, flex: 1 }}>
-                  <div style=${{
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    background: isActive ? (statusColors[status] || 'var(--amber)') : 'var(--line)',
-                    border: isCurrent ? '2px solid var(--acid)' : 'none',
-                    boxShadow: isActive ? `0 0 8px ${statusColors[status] || 'var(--amber)'}` : 'none',
-                    transition: 'all 0.3s ease'
-                  }} />
-                  <span class="eyebrow" style=${{
-                    marginTop: '8px',
-                    fontSize: '8px',
-                    textAlign: 'center',
-                    color: isActive ? (statusColors[status] || 'var(--white)') : 'var(--dirty)',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    ${statusLabels[status]}
-                  </span>
-                </div>
-              `;
-            })}
-          </div>
-        </div>
-
-        <div style=${{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-            <${SectionHeading} eyebrow="details" title="INFO" />
-            <div style=${{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <span class="eyebrow">modalità</span>
-                <p style=${{ color: 'var(--white)', textTransform: 'uppercase' }}>
-                  ${order.mode === 'delivery' ? '🚚 Consegna a domicilio' : '🏪 Ritiro in sede'}
-                </p>
-              </div>
-              ${order.delivery?.address && html`
-                <div>
-                  <span class="eyebrow">indirizzo consegna</span>
-                  <p style=${{ color: 'var(--white)' }}>${order.delivery.address}</p>
-                </div>
-              `}
-              <div>
-                <span class="eyebrow">totale</span>
-                <p style=${{ fontSize: '24px', fontWeight: '600', color: 'var(--acid)' }}>
-                  ${formatEuro(order.totalAmount || 0)}
-                </p>
-              </div>
-              <div>
-                <span class="eyebrow">articoli</span>
-                <p style=${{ color: 'var(--white)' }}>${order.orderItems?.length || 0}</p>
-              </div>
-            </div>
-          </div>
-
-          <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-            <${SectionHeading} eyebrow="filiale" title="RISTORANTE" />
-            <div style=${{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div>
-                <span class="eyebrow">nome</span>
-                <p style=${{ color: 'var(--white)' }}>${restaurant.name || 'N/A'}</p>
-              </div>
-              ${order.restaurantAddress && html`
-                <div>
-                  <span class="eyebrow">indirizzo</span>
-                  <p style=${{ color: 'var(--white)' }}>${order.restaurantAddress}</p>
-                </div>
-              `}
-              ${order.restaurantPhone && html`
-                <div>
-                  <span class="eyebrow">telefono</span>
-                  <p style=${{ color: 'var(--white)' }}>${order.restaurantPhone}</p>
-                </div>
-              `}
-            </div>
-          </div>
-        </div>
-
-        <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-          <${SectionHeading} eyebrow="items" title="ARTICOLI" subtitle="dettaglio ordine" />
-          <div style=${{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            ${order.orderItems?.map((item, index) => html`
-              <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: index < (order.orderItems?.length || 0) - 1 ? '1px dashed var(--line)' : 'none' }}>
-                <div style=${{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span class="eyebrow" style=${{ minWidth: '30px', color: 'var(--acid)' }}>
-                    ${String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div>
-                    <b>${item.dishId?.name || 'Articolo'}</b>
-                    <small style=${{ display: 'block', color: 'var(--dirty)', fontSize: '10px' }}>
-                      qty ${item.quantity} · ${formatEuro(item.unitPrice || 0)} cad.
-                    </small>
-                  </div>
-                </div>
-                <strong style=${{ color: 'var(--acid)', fontSize: '16px' }}>
-                  ${formatEuro((item.unitPrice || 0) * (item.quantity || 1))}
-                </strong>
-              </div>
-            `)}
-            <div style=${{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderTop: '1px solid var(--line)', fontSize: '19px' }}>
-              <span style=${{ color: 'var(--dirty)', textTransform: 'uppercase' }}>totale</span>
-              <strong style=${{ color: 'var(--acid)' }}>${formatEuro(order.totalAmount || 0)}</strong>
-            </div>
-          </div>
-        </div>
-
-        <div style=${{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
-          <${TerminalButton} onClick={() => window.history.back()}>
-            [ esc ] indietro
-          <//>
-          ${order.status !== 'delivered' && order.status !== 'cancelled' && html`
-            <${TerminalButton} primary onClick=${fetchOrder}>
-              [ F5 ] aggiorna stato
-            <//>
-          `}
-        </div>
+        <${AsyncBoundary} loading=${order.loading} error=${order.error} label="ordine">
+          ${data
+            ? renderOrder({ order: data, action, orderId, reload: order.reload })
+            : html`<p class="queue-empty"><b>_</b> ordine non trovato.</p>`}
+        <//>
       </section>
     <//>
+  `;
+}
+
+function renderOrder({ order, action, orderId, reload }) {
+  const restaurant = restaurantOf(order);
+  const delivery = deliveryOf(order);
+  const confirmable = canConfirmDelivery(order);
+
+  return html`
+    <${SectionHeading}
+      eyebrow="ordine"
+      title="ORDINE_"
+      titleSpan=${orderReference(order)}
+      subtitle=${`${restaurant.name || 'filiale n/d'} · ${dateTime(order.createdAt)}`}
+    />
+
+    ${action.actionError && html`<div class="alert alert-danger" role="alert"><strong>errore:</strong> ${action.actionError}</div>`}
+
+    <div class="panel-block">
+      <${SectionHeading} eyebrow="avanzamento" title="STATO_" titleSpan=${modeLabel(order.mode).toUpperCase()} />
+      <${OrderStatusTimeline} mode=${order.mode} status=${order.status} />
+    </div>
+
+    <div class="panel-block">
+      <${SectionHeading} eyebrow="riepilogo" title="ARTICOLI" subtitle=${`${itemUnits(order)} unità`} />
+      ${renderItems(order)}
+    </div>
+
+    <div class="telemetry-rail">
+      <article class="telemetry-card">
+        <p class="eyebrow">modalità</p>
+        <p class="telemetry-value">${modeLabel(order.mode)}</p>
+        ${delivery && html`
+          <p class="telemetry-caption">${delivery.address}</p>
+          <p class="telemetry-caption">
+            ${delivery.distanceKm != null ? `${delivery.distanceKm} km` : 'distanza n/d'}
+            · consegna ${euro(delivery.deliveryFee)}
+          </p>
+        `}
+      </article>
+      <article class="telemetry-card">
+        <p class="eyebrow">filiale</p>
+        <p class="telemetry-value">${restaurant.name || 'n/d'}</p>
+        <p class="telemetry-caption">${restaurant.city || 'città n/d'}</p>
+      </article>
+      <article class="telemetry-card">
+        <p class="eyebrow">totale</p>
+        <p class="telemetry-value">${euro(order.totalAmount)}</p>
+        <p class="telemetry-caption">calcolato dal server</p>
+      </article>
+    </div>
+
+    <div class="shortcut-row panel-block">
+      <${TerminalButton} onClick=${() => navigate('/orders')}>[ esc ] storico ordini<//>
+      <${TerminalButton} onClick=${reload}>[ F5 ] aggiorna<//>
+      ${confirmable && html`
+        <${TerminalButton} primary disabled=${action.busyId === orderId} onClick=${() => action.run(orderId, () => orderService.confirmDelivery(orderId))}>
+          [ enter ] conferma ricezione
+        <//>
+      `}
+    </div>
+  `;
+}
+
+function renderItems(order) {
+  const items = order.orderItems || [];
+  if (items.length === 0) {
+    return html`<p class="queue-empty"><b>_</b> nessuna riga in questo ordine.</p>`;
+  }
+
+  return html`
+    <ul class="order-queue">
+      ${items.map((item, index) => html`
+        <li class="order-item" key=${item.dishId?._id || item.dishId || index}>
+          <header class="order-head">
+            <b class="order-code">${item.dishId?.name || 'piatto'}</b>
+            <span class="tag tone-amber">${item.quantity}×</span>
+          </header>
+          <p class="order-meta"><span>${euro(item.unitPrice)} cad.</span></p>
+          <footer class="order-foot"><b>${euro((item.unitPrice || 0) * (item.quantity || 1))}</b></footer>
+        </li>
+      `)}
+    </ul>
   `;
 }
 

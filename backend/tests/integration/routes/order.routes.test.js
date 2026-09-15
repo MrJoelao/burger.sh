@@ -316,6 +316,49 @@ describe('GET /api/orders/restaurant/:restaurantId', () => {
 
     expect(response.status).toBe(403);
   });
+
+  test('con status restituisce solo gli ordini di quella filiale in quello stato', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    const otherRestaurant = await createRestaurant();
+    await createOrder({ restaurantId: restaurant._id, status: 'preparing' });
+    await createOrder({ restaurantId: restaurant._id, status: 'delivered' });
+    await createOrder({ restaurantId: otherRestaurant._id, status: 'preparing' });
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${restaurant._id}?status=preparing`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0].status).toBe('preparing');
+  });
+
+  test('il totale della paginazione riflette il filtro, non tutti gli ordini della filiale', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    await createOrder({ restaurantId: restaurant._id, status: 'ready' });
+    await createOrder({ restaurantId: restaurant._id, status: 'delivered' });
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${restaurant._id}?status=ready`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.pagination.total).toBe(1);
+  });
+
+  test('rifiuta con 400 uno stato non previsto invece di restituire tutti gli ordini', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    await createOrder({ restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .get(`/api/orders/restaurant/${restaurant._id}?status=inesistente`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(400);
+  });
 });
 
 describe('GET /api/orders/restaurant/:restaurantId/dashboard', () => {

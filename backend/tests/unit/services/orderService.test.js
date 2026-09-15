@@ -1,7 +1,8 @@
 const {
   isValidStatusTransition,
   checkOrderAccess,
-  checkRestaurantOrdersAccess
+  checkRestaurantOrdersAccess,
+  buildRestaurantOrdersFilter
 } = require('@services/orderService');
 
 const customerId = '507f1f77bcf86cd799439011';
@@ -98,6 +99,24 @@ describe('orderService', () => {
       const result = checkRestaurantOrdersAccess({ id: otherUserId, role: 'manager' }, { managerId });
       expect(result.authorized).toBe(false);
       expect(result.statusCode).toBe(403);
+    });
+  });
+
+  describe('buildRestaurantOrdersFilter', () => {
+    const restaurantId = '507f1f77bcf86cd799439033';
+
+    test('senza stato filtra tutta la filiale escludendo solo il carrello in bozza', () => {
+      expect(buildRestaurantOrdersFilter(restaurantId, undefined)).toEqual({
+        restaurantId,
+        status: { $ne: 'draft' }
+      });
+    });
+
+    test('con uno stato concreto filtra esattamente quello stato', () => {
+      expect(buildRestaurantOrdersFilter(restaurantId, 'preparing')).toEqual({
+        restaurantId,
+        status: 'preparing'
+      });
     });
   });
 });

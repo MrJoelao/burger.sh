@@ -7,6 +7,7 @@ const formatEuro = (amount) => `€ ${amount.toFixed(2)}`;
 export function OrderBuffer({
   items = [],
   onClear = () => {},
+  onCheckout = null,
   emptyMessage = 'aggiungi una ricetta per iniziare.',
   showItemCount = true,
   showSubtotal = true
@@ -51,6 +52,11 @@ export function OrderBuffer({
         )}
         {showSubtotal && (
           <p><span>subtotal</span><strong id="cart-total">{formatEuro(subtotal)}</strong></p>
+        )}
+        {onCheckout && items.length > 0 && (
+          <button type="button" id="checkout-buffer" className="terminal-button primary" onClick={onCheckout}>
+            [ enter ] checkout →
+          </button>
         )}
         <button type="button" id="clear-buffer" className="terminal-button" onClick={onClear}>
           [ esc ] clear buffer

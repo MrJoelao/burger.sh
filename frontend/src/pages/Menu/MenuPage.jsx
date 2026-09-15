@@ -11,6 +11,7 @@ import { useOrderStore } from '../../state/orderStore.js';
 import { restaurantService } from '../../services/restaurantService.js';
 import { useEffect, useState } from 'preact/hooks';
 import { useAuthStore } from '../../state/authStore.js';
+import { navigate } from '../../router/navigate.js';
 
 export function MenuPage() {
   const order = useOrderStore();
@@ -125,6 +126,7 @@ export function MenuPage() {
       subtitle="production console"
       orderItems=${order.items}
       onClearBuffer=${handleClearBuffer}
+      onCheckout=${isAuthenticated && order.items.length > 0 ? () => navigate('/orders/confirm') : null}
     >
       ${order.selectedRecipe && html`
         <${AssemblyLayout}

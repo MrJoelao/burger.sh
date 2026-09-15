@@ -776,6 +776,15 @@ paths:
           schema: { $ref: '#/components/schemas/ObjectId' }
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          description: >
+            filtra per stato dell'ordine. Senza filtro restituisce tutti gli
+            ordini della filiale. Il carrello in bozza non è mai incluso, né
+            tra i risultati né come valore filtrabile.
+          schema:
+            type: string
+            enum: [ordered, preparing, ready, on_delivery, delivered]
       responses:
         '200':
           description: elenco paginato degli ordini della filiale
@@ -783,6 +792,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrderListEnvelope'
+        '400':
+          description: parametri di query non validi (es. stato sconosciuto)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

@@ -31,7 +31,9 @@ export function useResource(loader) {
 }
 
 /* esegue un'azione su un elemento (identificato da id) tenendo traccia di quale
-   è in corso e dell'ultimo errore, più la ricarica della risorsa al successo */
+   è in corso e dell'ultimo errore, più la ricarica della risorsa al successo.
+   run restituisce il valore del task (o undefined in caso di errore), così chi
+   chiama può reagire all'esito oltre che alla ricarica */
 export function useAction({ onSuccess } = {}) {
   const [busyId, setBusyId] = useState(null);
   const [actionError, setActionError] = useState('');
@@ -41,10 +43,12 @@ export function useAction({ onSuccess } = {}) {
     setActionError('');
 
     try {
-      await task();
+      const result = await task();
       await onSuccess?.();
+      return result;
     } catch (err) {
       setActionError(err.message || 'operazione non riuscita');
+      return undefined;
     } finally {
       setBusyId(null);
     }

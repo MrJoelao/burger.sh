@@ -43,7 +43,7 @@ describe('ManagerOrders', () => {
     expect(await screen.findByText('FF-AAA')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /PRONTO/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /IN CONSEGNA/i })).toBeInTheDocument();
-    expect(managerAdminService.getRestaurantOrders).toHaveBeenCalledWith('r1', { limit: 50 });
+    expect(managerAdminService.getRestaurantOrders).toHaveBeenCalledWith('r1', { status: '', limit: 50 });
   });
 
   test('avanza l’ordine al prossimo stato della sua modalità', async () => {
@@ -58,21 +58,37 @@ describe('ManagerOrders', () => {
     });
   });
 
-  test('filtra la coda per stato', async () => {
-    managerAdminService.getRestaurantOrders.mockResolvedValue({
-      success: true,
-      data: [
-        order({ _id: 'o1', orderCode: 'FF-AAA', status: 'preparing', mode: 'pickup' }),
-        order({ _id: 'o3', orderCode: 'FF-CCC', status: 'ready', mode: 'pickup' })
-      ]
-    });
+  test('filtra la coda chiedendo al server solo lo stato scelto', async () => {
+    managerAdminService.getRestaurantOrders.mockImplementation((_, params = {}) =>
+      Promise.resolve({
+        success: true,
+        data: params.status === 'ready'
+          ? [order({ _id: 'o3', orderCode: 'FF-CCC', status: 'ready', mode: 'pickup' })]
+          : [
+              order({ _id: 'o1', orderCode: 'FF-AAA', status: 'preparing', mode: 'pickup' }),
+              order({ _id: 'o3', orderCode: 'FF-CCC', status: 'ready', mode: 'pickup' })
+            ]
+      })
+    );
 
     render(<ManagerOrders />);
     await screen.findByText('FF-AAA');
 
     fireEvent.change(screen.getByLabelText('stato'), { target: { value: 'ready' } });
 
-    expect(screen.getByText('FF-CCC')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(managerAdminService.getRestaurantOrders).toHaveBeenCalledWith('r1', { status: 'ready', limit: 50 });
+    });
+    expect(await screen.findByText('FF-CCC')).toBeInTheDocument();
     expect(screen.queryByText('FF-AAA')).not.toBeInTheDocument();
+  });
+
+  test('non propone stati che il backend rifiuterebbe nel filtro', async () => {
+    managerAdminService.getRestaurantOrders.mockResolvedValue({ success: true, data: [order({})] });
+
+    render(<ManagerOrders />);
+    await screen.findByText('FF-AAA');
+
+    expect(screen.queryByRole('option', { name: /CONFERMATO/i })).not.toBeInTheDocument();
   });
 });

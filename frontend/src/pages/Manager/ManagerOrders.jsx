@@ -1,7 +1,8 @@
 /**
  * ManagerOrders - coda degli ordini della filiale.
- * Carica gli ordini della sede, li filtra per stato lato client e lascia
- * avanzare solo la transizione ammessa per la modalità dell'ordine.
+ * Carica dal server gli ordini della sede già filtrati per stato, così il filtro
+ * attraversa l'intera filiale e non solo la prima pagina, e lascia avanzare solo
+ * la transizione ammessa per la modalità dell'ordine.
  */
 
 import { useCallback, useState } from 'preact/hooks';
@@ -24,14 +25,15 @@ export function ManagerOrders() {
   const [status, setStatus] = useState('');
 
   const load = useCallback(
-    () => (branchId ? managerAdminService.getRestaurantOrders(branchId, { limit: 50 }) : Promise.resolve(EMPTY_LIST)),
-    [branchId]
+    () => (branchId
+      ? managerAdminService.getRestaurantOrders(branchId, { status, limit: 50 })
+      : Promise.resolve(EMPTY_LIST)),
+    [branchId, status]
   );
   const orders = useResource(load);
   const action = useAction({ onSuccess: orders.reload });
 
   const advance = (id, next) => action.run(id, () => managerAdminService.updateOrderStatus(id, next));
-  const list = filterByStatus(orders.response?.data || [], status);
 
   return html`
     <${ManagerShell} title="ordini" subtitle="restaurant orders">
@@ -58,16 +60,11 @@ export function ManagerOrders() {
             <${StatusFilter} value=${status} onChange=${setStatus} />
           </div>
 
-          <${OrderQueue} orders=${list} busyId=${action.busyId} onAdvance=${advance} />
+          <${OrderQueue} orders=${orders.response?.data || []} busyId=${action.busyId} onAdvance=${advance} />
         <//>
       </section>
     <//>
   `;
-}
-
-function filterByStatus(orders, status) {
-  if (!status) return orders;
-  return orders.filter(order => order.status === status);
 }
 
 export default ManagerOrders;
