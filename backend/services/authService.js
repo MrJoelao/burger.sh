@@ -23,6 +23,10 @@ function buildAuthResponse(user) {
     responseUser.managerStatus = user.managerStatus;
   }
 
+  if (user.restaurantId) {
+    responseUser.restaurantId = user.restaurantId.toString();
+  }
+
   // Include mustChangePassword nel response user
   responseUser.mustChangePassword = user.mustChangePassword || false;
 

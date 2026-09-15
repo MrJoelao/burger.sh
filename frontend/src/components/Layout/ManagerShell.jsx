@@ -27,7 +27,7 @@ export function ManagerShell({ children, title = 'manager-ops', subtitle = 'rest
           ${links.slice(0, 3).map((link, index) => html`<button class="nav-command" type="button" onClick=${() => navigate(link.path)}><kbd>0${index + 1}</kbd> ${link.label}</button>`)}
           <div class="nav-footer"><span>tty / manager</span><span>scope / restaurant</span><span>user / ${user?.name || 'manager'}</span></div>
         </nav>
-        <section class="workspace"><header class="workspace-head"><p>access <b>GRANTED</b></p></header><div>${children}</div></section>
+        <section class="workspace"><div>${children}</div></section>
       </div>
       <footer class="footer-status"><span><b>F1</b> help</span><span><b>esc</b> back</span><span class="live-command">manager@burger:~$ <i></i></span></footer>
     </main>

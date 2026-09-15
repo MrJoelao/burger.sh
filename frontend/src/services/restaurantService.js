@@ -46,6 +46,14 @@ export const restaurantService = {
   },
 
   /**
+   * Create first restaurant for an approved manager
+   * POST /restaurants/first
+   */
+  async createFirstRestaurant(data) {
+    return api.post('/restaurants/first', data);
+  },
+
+  /**
    * Update restaurant (admin or manager)
    * PUT /restaurants/{id}
    */
@@ -63,6 +71,14 @@ export const restaurantService = {
       config.body = JSON.stringify({ newManagerId: options.newManagerId });
     }
     return api.delete(`/restaurants/${id}`, config);
+  },
+
+  /**
+   * Create a custom dish for a restaurant
+   * POST /dishes
+   */
+  async createDish(restaurantId, dishData) {
+    return api.post('/dishes', { ...dishData, restaurantId, isCustom: true });
   }
 };
 

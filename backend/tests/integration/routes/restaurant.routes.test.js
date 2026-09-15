@@ -9,6 +9,7 @@ const {
   createDish,
   tokenFor
 } = require('../../helpers/factories');
+const User = require('../../../models/User');
 
 /* test di integrazione delle rotte dei ristoranti: lettura pubblica
    (lista e dettaglio) e scrittura riservata ad admin/manager proprietario. */
@@ -342,5 +343,97 @@ describe('DELETE /api/restaurants/:id', () => {
       .set('Authorization', `Bearer ${tokenFor(customer)}`);
 
     expect(response.status).toBe(403);
+  });
+});
+
+describe('POST /api/restaurants/first', () => {
+  test('un manager approvato può creare il proprio primo ristorante', async () => {
+    const manager = await createManager();
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Burger House Milano',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001'
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.name).toBe('Burger House Milano');
+    expect(response.body.data.managerId._id).toBe(manager._id.toString());
+
+    // verifica che il manager abbia ora un restaurantId
+    const updatedUser = await User.findById(manager._id);
+    expect(updatedUser.restaurantId).toBeDefined();
+  });
+
+  test('un manager che ha già un ristorante riceve errore 400', async () => {
+    const manager = await createManager();
+    await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Secondo Ristorante',
+        address: 'Via Napoli 2',
+        city: 'Roma',
+        phone: '+39 06 7654321',
+        vatNumber: 'IT00000002'
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.title.toLowerCase()).toContain('hai già un ristorante');
+  });
+
+  test('un customer riceve 403 nel creare un ristorante', async () => {
+    const customer = await createUser();
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
+      .send({
+        name: 'Burger House',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001'
+      });
+
+    expect(response.status).toBe(403);
+  });
+
+  test('un manager pending riceve 403 nel creare un ristorante', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Burger House',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001'
+      });
+
+    expect(response.status).toBe(403);
+  });
+
+  test('rifiuta con 400 se mancano campi obbligatori', async () => {
+    const manager = await createManager();
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Burger House',
+        // mancano address, city, phone, vatNumber
+      });
+
+    expect(response.status).toBe(400);
   });
 });

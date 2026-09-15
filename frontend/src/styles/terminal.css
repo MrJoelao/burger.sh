@@ -239,17 +239,41 @@
 .terminal-grid {
   display: grid;
   grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) minmax(240px, 300px);
-  min-height: calc(100vh - 232px);
 }
 
 .management-grid {
   display: grid;
   grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
-  min-height: calc(100vh - 232px);
 }
 
 .management-shell .workspace {
   min-width: 0;
+}
+
+/* Sticky footer per le console di lavoro.
+   Il piede resta in basso quando i contenuti sono corti e scorre con la
+   pagina quando superano l'altezza dello schermo. Usa min-height al posto
+   di height così da non bloccare lo scroll quando il contenuto eccede.
+   Le griglie interne si espandono per riempire lo spazio disponibile.
+   Lo workspace scorre internamente se il contenuto è troppo alto.
+*/
+.management-shell,
+.terminal-window {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.management-grid,
+.terminal-grid {
+  flex: 1;
+  min-height: 0;
+}
+
+.management-shell .workspace,
+.terminal-window .workspace {
+  overflow-y: auto;
 }
 
 .profile-form {
@@ -2852,5 +2876,128 @@
   }
   .callout {
     font-size: 8px;
+  }
+}
+
+/* Create First Restaurant Wizard - Congratulations Screen */
+.congratulations-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  background: var(--ink);
+  border: 2px solid var(--acid);
+  box-shadow: 0 0 20px rgba(215, 233, 109, 0.3);
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.terminal-title {
+  font-family: "Archivo Black", Impact, sans-serif;
+  font-size: 14px;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+}
+
+.terminal-status {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--acid);
+  padding: 4px 8px;
+  border: 1px solid var(--acid);
+}
+
+.terminal-body {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ascii-art {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  line-height: 1.2;
+  color: var(--amber);
+  white-space: pre;
+  text-align: center;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.success-message {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--paper);
+  background: var(--panel);
+  padding: 16px;
+  border-left: 3px solid var(--acid);
+}
+
+.success-message .prompt {
+  color: var(--acid);
+  margin-right: 8px;
+}
+
+.welcome-text {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 16px;
+  color: var(--paper);
+  text-align: center;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  margin-top: auto;
+}
+
+.welcome-text b {
+  color: var(--amber);
+}
+
+.terminal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--dirty);
+}
+
+.live-command i {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-command i {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .ascii-art {
+    font-size: 6px;
+  }
+  
+  .success-message {
+    font-size: 12px;
+  }
+  
+  .terminal-body {
+    padding: 16px;
   }
 }

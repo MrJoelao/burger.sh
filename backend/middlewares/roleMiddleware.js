@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const { isManager, unauthorized } = require('../utils/authorization');
+const { isManager, isAdmin, unauthorized } = require('../utils/authorization');
 const { handleAuth } = require('../utils/httpResponses');
 
 /* middleware generico per riservare una rotta a uno o più ruoli, così i
@@ -42,4 +42,30 @@ async function requireApprovedManager(req, res, next) {
   }
 }
 
-module.exports = { requireRole, requireAdmin, requireApprovedManager };
+/* middleware che blocca qualsiasi utente che non è un manager approvato.
+   diversamente da requireApprovedManager, qui i non-manager (customer e admin)
+   vengono bloccati invece di passare oltre. usato per rotte riservate
+   esclusivamente ai manager. */
+async function requireApprovedManagerOnly(req, res, next) {
+  if (isAdmin(req.user)) {
+    return next();
+  }
+
+  if (!isManager(req.user)) {
+    return handleAuth(res, unauthorized('Accesso riservato ai manager approvati'));
+  }
+
+  try {
+    const manager = await User.findById(req.user.id).select('managerStatus');
+
+    if (!manager || manager.managerStatus !== 'approved') {
+      return handleAuth(res, unauthorized('Manager account is pending approval'));
+    }
+
+    return next();
+  } catch (err) {
+    return next(err);
+  }
+}
+
+module.exports = { requireRole, requireAdmin, requireApprovedManager, requireApprovedManagerOnly };

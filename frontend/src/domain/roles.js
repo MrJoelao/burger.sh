@@ -35,10 +35,23 @@ export function adminCanVisit(path) {
 }
 
 /* destinazione forzata in base a sessione e percorso, oppure null se il
-   percorso va bene così. l'admin resta confinato nella sua console. */
+   percorso va bene cosi. l'admin resta confinato nella sua console. */
 export function redirectFor(user, path) {
   if (user?.mustChangePassword) {
     return path === '/change-password' || path === '/setup' ? null : '/change-password';
+  }
+
+  // Redirect manager approved senza ristorante al wizard di creazione
+  if (user?.role === 'manager' && user?.managerStatus === 'approved' && !user?.restaurantId) {
+    const managerWizardRoutes = [
+      /^\/manager\/first-restaurant$/,
+      /^\/dashboard\/manager$/,
+      /^\/profile$/
+    ];
+    const isOnManagerRoute = managerWizardRoutes.some(pattern => pattern.test(path));
+    if (!isOnManagerRoute) {
+      return '/manager/first-restaurant';
+    }
   }
 
   if (user?.role === 'admin' && !adminCanVisit(path)) {

@@ -21,6 +21,7 @@ import { AdminStats } from '../pages/Admin/AdminStats.jsx';
 import { ProfilePage } from '../pages/Profile/ProfilePage.jsx';
 import { SetupPage } from '../pages/Setup/SetupPage.jsx';
 import { ChangePasswordPage } from '../pages/Setup/ChangePasswordPage.jsx';
+import { CreateFirstRestaurantPage } from '../pages/CreateFirstRestaurant/CreateFirstRestaurantPage.jsx';
 import { TerminalWindow } from '../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../components/Auth/TerminalButton.jsx';
 import { useAuthStore } from '../state/authStore.js';
@@ -52,6 +53,7 @@ const ROUTES = [
   { path: '/admin/stats', component: AdminStats, roles: ['admin'] }
   ,{ path: '/setup', component: SetupPage }
   ,{ path: '/change-password', component: ChangePasswordPage, roles: ['admin'] }
+  ,{ path: '/manager/first-restaurant', component: CreateFirstRestaurantPage }
 ];
 
 /**

@@ -61,7 +61,17 @@ async function getMe(req, res, next) {
   try {
     const user = await findOrThrow(User.findById(req.user.id).select('-passwordHash'), 'User not found');
 
-    return jsonOk(res, 200, user);
+    // includi restaurantId se presente
+    const userData = user.toObject();
+    if (userData.restaurantId) {
+      // popola il ristorante per avere i dettagli completi
+      const restaurant = await Restaurant.findById(userData.restaurantId);
+      if (restaurant) {
+        userData.restaurant = restaurant;
+      }
+    }
+
+    return jsonOk(res, 200, userData);
   } catch (err) {
     next(err);
   }

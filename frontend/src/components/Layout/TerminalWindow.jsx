@@ -17,7 +17,7 @@ export function TerminalWindow({
   return (
     <>
       <div class="crt-noise" aria-hidden="true"></div>
-      <main class="console" aria-label="Burger.sh kitchen console">
+      <main class="console terminal-window" aria-label="Burger.sh kitchen console">
         <TitleBar
           section={title}
           context={subtitle}

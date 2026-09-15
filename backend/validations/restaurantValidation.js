@@ -9,6 +9,14 @@ const createRestaurantSchema = Joi.object({
   managerId: Joi.string().hex().length(24).required()
 });
 
+const createFirstRestaurantSchema = Joi.object({
+  name: Joi.string().min(2).required(),
+  address: Joi.string().min(5).required(),
+  city: Joi.string().min(2).required(),
+  phone: Joi.string().pattern(/^\+?[0-9\s\-()]+$/).required(),
+  vatNumber: Joi.string().required()
+});
+
 const updateRestaurantSchema = Joi.object({
   name: Joi.string().min(2).optional(),
   address: Joi.string().min(5).optional(),
@@ -18,4 +26,4 @@ const updateRestaurantSchema = Joi.object({
   managerId: Joi.string().hex().length(24).optional()
 });
 
-module.exports = { createRestaurantSchema, updateRestaurantSchema };
+module.exports = { createRestaurantSchema, createFirstRestaurantSchema, updateRestaurantSchema };

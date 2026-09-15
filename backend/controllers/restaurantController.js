@@ -128,6 +128,38 @@ async function createRestaurant(req, res, next) {
   }
 }
 
+// create first restaurant (solo per manager approvati che non hanno ancora un ristorante)
+async function createFirstRestaurant(req, res, next) {
+  try {
+    const { name, address, city, phone, vatNumber } = req.validated;
+    const managerId = req.user.id;
+
+    // verifica che il manager non abbia già un ristorante
+    const existingRestaurant = await Restaurant.findOne({ managerId });
+    if (existingRestaurant) {
+      return jsonError(res, 400, 'Hai già un ristorante associato al tuo account');
+    }
+
+    const restaurant = await Restaurant.create({
+      name,
+      address,
+      city,
+      phone,
+      vatNumber,
+      managerId
+    });
+
+    // aggiorna l'utente con il restaurantId
+    await User.findByIdAndUpdate(managerId, { restaurantId: restaurant._id });
+
+    const populatedRestaurant = await restaurant.populate('managerId', 'name surname email');
+
+    return jsonOk(res, 201, populatedRestaurant);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // update ristorante (solo il manager del ristorante o admin)
 async function updateRestaurant(req, res, next) {
   try {
@@ -196,6 +228,7 @@ module.exports = {
   getAllRestaurants,
   getRestaurantById,
   createRestaurant,
+  createFirstRestaurant,
   updateRestaurant,
   deleteRestaurant
 };
