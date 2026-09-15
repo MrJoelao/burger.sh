@@ -79,6 +79,22 @@ export const restaurantService = {
    */
   async createDish(restaurantId, dishData) {
     return api.post('/dishes', { ...dishData, restaurantId, isCustom: true });
+  },
+
+  /**
+   * Update a dish (admin, o manager proprietario di un piatto custom)
+   * PUT /dishes/{id}
+   */
+  async updateDish(dishId, dishData) {
+    return api.put(`/dishes/${dishId}`, dishData);
+  },
+
+  /**
+   * Delete a dish (admin, o manager proprietario di un piatto custom)
+   * DELETE /dishes/{id}
+   */
+  async deleteDish(dishId) {
+    return api.delete(`/dishes/${dishId}`);
   }
 };
 

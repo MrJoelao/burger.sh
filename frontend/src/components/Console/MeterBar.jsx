@@ -5,8 +5,8 @@
  * barra dice di cosa è fatto.
  */
 
-import { html } from '../../../utils/htm.js';
-import { totalOf } from '../../../domain/admin.js';
+import { html } from '../../utils/htm.js';
+import { totalOf } from '../../domain/analytics.js';
 
 export function MeterBar({ segments = [], label = '' }) {
   const total = totalOf(segments);

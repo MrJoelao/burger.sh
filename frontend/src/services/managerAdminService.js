@@ -12,9 +12,8 @@ export const managerAdminService = {
    * Get orders for a restaurant
    * GET /orders/restaurant/{id}
    */
-  async getRestaurantOrders(restaurantId, status) {
-    const query = status ? `?status=${status}` : '';
-    return api.get(`/orders/restaurant/${restaurantId}${query}`);
+  async getRestaurantOrders(restaurantId, params = {}) {
+    return api.get(`/orders/restaurant/${restaurantId}${buildQuery(params)}`);
   },
 
   /**

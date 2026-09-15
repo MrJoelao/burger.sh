@@ -13,9 +13,9 @@ import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { restaurantService } from '../../services/restaurantService.js';
 import { managerAdminService } from '../../services/managerAdminService.js';
 import { userId } from '../../domain/admin.js';
-import { useAdminResource, useAdminAction } from './hooks.js';
-import { AsyncBoundary } from './components/AsyncBoundary.jsx';
-import { ConfirmAction } from './components/ConfirmAction.jsx';
+import { useResource as useAdminResource, useAction as useAdminAction } from '../../hooks/useResource.js';
+import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
+import { ConfirmAction } from '../../components/Console/ConfirmAction.jsx';
 
 export function AdminBranches() {
   const branches = useAdminResource(useCallback(() => restaurantService.getRestaurants({ limit: 50 }), []));

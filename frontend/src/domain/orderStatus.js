@@ -26,3 +26,27 @@ export const statusColors = {
 };
 
 export const statusOrder = ['ordered', 'confirmed', 'preparing', 'ready', 'on_delivery', 'delivered'];
+
+/* sequenza di stati ammessi per ogni modalità di completamento: il ritiro
+   salta "on_delivery" (non c'è consegna), la consegna a domicilio salta
+   "ready" (il cliente non ritira di persona). è la stessa state machine del
+   backend (services/orderService.js), così la UI propone solo la mossa valida
+   e la transizione non viene mai rifiutata con 400. */
+export const statusFlows = {
+  pickup: ['ordered', 'preparing', 'ready', 'delivered'],
+  delivery: ['ordered', 'preparing', 'on_delivery', 'delivered']
+};
+
+export function statusFlowFor(mode) {
+  return statusFlows[mode] || [];
+}
+
+/* prossimo stato raggiungibile, oppure null se l'ordine è già concluso o lo
+   stato corrente non appartiene al flusso della modalità */
+export function nextStatus(mode, currentStatus) {
+  const flow = statusFlowFor(mode);
+  const index = flow.indexOf(currentStatus);
+
+  if (index === -1) return null;
+  return flow[index + 1] || null;
+}

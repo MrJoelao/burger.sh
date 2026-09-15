@@ -1509,8 +1509,13 @@
 .form-message {
   min-height: 18px;
   margin: 0;
-  color: var(--acid);
+  padding: 0;
+  color: var(--alert);
   font-size: 10px;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .auth-switch {
@@ -2501,6 +2506,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
+  min-height: 36px;
+}
+
+.action-placeholder {
+  visibility: hidden;
+  width: 1px;
+  height: 1px;
 }
 
 .composition-table .meter-dot {
@@ -2707,6 +2720,113 @@
   min-width: 0;
   gap: 8px;
   padding: 7px 10px;
+}
+
+/* Coda degli ordini della filiale */
+.order-queue {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.order-item {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.order-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.order-code {
+  color: var(--white);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  color: var(--dirty);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.order-items {
+  margin: 0;
+  color: var(--paper);
+  font-size: 12px;
+}
+
+.order-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+
+.order-foot b {
+  color: var(--white);
+  font-size: 15px;
+}
+
+/* Classifica dei piatti più venduti */
+.top-dishes {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.top-dishes li {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  background: var(--ink);
+}
+
+.top-dishes .rank {
+  color: var(--amber);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+
+.top-dishes .name {
+  color: var(--paper);
+}
+
+.top-dishes b {
+  color: var(--white);
+}
+
+/* Azioni di un form disposte in linea */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
 /* Responsive Breakpoints */
@@ -3264,6 +3384,234 @@
   .live-command i {
     animation: none;
     opacity: 1;
+  }
+}
+
+/* Full-Screen Error Pages */
+.error-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  background-image: var(--grid-pattern);
+  background-size: var(--grid-size);
+  overflow: hidden;
+}
+
+.error-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 48px 32px;
+  max-width: 680px;
+  width: 100%;
+}
+
+.error-glitch {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.error-glitch-layer {
+  position: absolute;
+  inset: 0;
+  font-size: 120px;
+  font-family: "Archivo Black", Impact, sans-serif;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  opacity: 0.15;
+  animation: glitch-shift 3s ease-in-out infinite;
+}
+
+.error-glitch-layer:nth-child(2) {
+  color: var(--alert);
+  animation-delay: 0.5s;
+}
+
+@keyframes glitch-shift {
+  0%, 100% { transform: translate(0); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(2px, -2px); }
+  75% { transform: translate(-1px, -1px); }
+}
+
+.error-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--dirty);
+  margin-bottom: 16px;
+}
+
+.error-title {
+  font-family: "Archivo Black", Impact, sans-serif;
+  font-size: 56px;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--white);
+  margin: 0 0 24px 0;
+}
+
+.error-code {
+  color: var(--paper);
+}
+
+.error-title-highlight {
+  color: var(--amber);
+}
+
+.error-message {
+  font-size: 14px;
+  color: var(--paper);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.error-ascii-art {
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--amber);
+  white-space: pre;
+  margin: 24px auto;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  max-width: 200px;
+  animation: ascii-pop 300ms ease-out both;
+}
+
+@keyframes ascii-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.error-secret {
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--acid);
+  white-space: pre;
+  margin: 24px auto;
+  padding: 16px;
+  border: 1px solid var(--acid);
+  background: var(--panel);
+  animation: secret-pop 300ms ease-out both;
+}
+
+@keyframes secret-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.error-konami {
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  font-size: 12px;
+  color: var(--amber);
+  margin: 24px auto;
+  padding: 16px;
+  border: 1px dashed var(--amber);
+  background: var(--panel);
+  animation: konami-flash 500ms ease-out both;
+}
+
+@keyframes konami-flash {
+  0% { opacity: 0; }
+  50% { opacity: 1; background: var(--amber); color: var(--ink); }
+  100% { opacity: 1; }
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.error-btn-primary {
+  min-width: 200px;
+}
+
+.error-btn-secondary {
+  min-width: 160px;
+}
+
+.error-hint {
+  font-size: 10px;
+  color: var(--dirty);
+  letter-spacing: 0.05em;
+  margin-bottom: 32px;
+  animation: hint-blink 2s ease-in-out infinite;
+}
+
+@keyframes hint-blink {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.error-status {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 10px;
+  color: var(--dirty);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--alert);
+  display: inline-block;
+  animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.error-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+@media (max-width: 600px) {
+  .error-title {
+    font-size: 40px;
+  }
+  .error-glitch-layer {
+    font-size: 80px;
+  }
+  .error-content {
+    padding: 32px 20px;
   }
 }
 

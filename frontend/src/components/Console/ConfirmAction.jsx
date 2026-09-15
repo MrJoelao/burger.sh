@@ -5,8 +5,8 @@
  */
 
 import { useState } from 'preact/hooks';
-import { html } from '../../../utils/htm.js';
-import { TerminalButton } from '../../../components/Auth/TerminalButton.jsx';
+import { html } from '../../utils/htm.js';
+import { TerminalButton } from '../Auth/TerminalButton.jsx';
 
 export function ConfirmAction({
   label,

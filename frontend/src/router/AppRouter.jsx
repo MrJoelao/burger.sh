@@ -13,7 +13,10 @@ import { OrderConfirmPage } from '../pages/Order/OrderConfirmPage.jsx';
 import { OrderHistoryPage } from '../pages/Order/OrderHistoryPage.jsx';
 import { OrderDetailPage } from '../pages/Order/OrderDetailPage.jsx';
 import { CustomerDashboard } from '../pages/Dashboard/CustomerDashboard.jsx';
-import { ManagerDashboard } from '../pages/Dashboard/ManagerDashboard.jsx';
+import { ManagerOverview } from '../pages/Manager/ManagerOverview.jsx';
+import { ManagerOrders } from '../pages/Manager/ManagerOrders.jsx';
+import { ManagerMenu } from '../pages/Manager/ManagerMenu.jsx';
+import { ManagerRestaurant } from '../pages/Manager/ManagerRestaurant.jsx';
 import { AdminOverview } from '../pages/Admin/AdminOverview.jsx';
 import { AdminUsers } from '../pages/Admin/AdminUsers.jsx';
 import { AdminBranches } from '../pages/Admin/AdminBranches.jsx';
@@ -22,6 +25,7 @@ import { ProfilePage } from '../pages/Profile/ProfilePage.jsx';
 import { SetupPage } from '../pages/Setup/SetupPage.jsx';
 import { ChangePasswordPage } from '../pages/Setup/ChangePasswordPage.jsx';
 import { CreateFirstRestaurantPage } from '../pages/CreateFirstRestaurant/CreateFirstRestaurantPage.jsx';
+import { FullScreenError } from '../pages/Error/FullScreenError.jsx';
 import { TerminalWindow } from '../components/Layout/TerminalWindow.jsx';
 import { TerminalButton } from '../components/Auth/TerminalButton.jsx';
 import { useAuthStore } from '../state/authStore.js';
@@ -43,11 +47,12 @@ const ROUTES = [
   { path: '/orders', component: OrderHistoryPage, roles: ['customer'] },
   { path: '/orders/:id', component: OrderDetailPage, roles: ['customer', 'manager', 'admin'] },
   { path: '/dashboard', component: CustomerDashboard, roles: ['customer'] },
-  { path: '/dashboard/manager', component: ManagerDashboard, roles: ['manager'] },
+  { path: '/dashboard/manager', component: ManagerOverview, roles: ['manager'] },
   { path: '/dashboard/admin', component: AdminOverview, roles: ['admin'] },
   { path: '/profile', component: ProfilePage, roles: ['customer', 'manager', 'admin'] },
-  { path: '/manager/orders', component: ManagerDashboard, roles: ['manager'] },
-  { path: '/manager/menu', component: ManagerDashboard, roles: ['manager'] },
+  { path: '/manager/orders', component: ManagerOrders, roles: ['manager'] },
+  { path: '/manager/menu', component: ManagerMenu, roles: ['manager'] },
+  { path: '/manager/restaurant', component: ManagerRestaurant, roles: ['manager'] },
   { path: '/admin/users', component: AdminUsers, roles: ['admin'] },
   { path: '/admin/branches', component: AdminBranches, roles: ['admin'] },
   { path: '/admin/stats', component: AdminStats, roles: ['admin'] }
@@ -225,23 +230,17 @@ function RouteGuard({ component: Component, roles, routeProps = {} }) {
 
   // Protected route with role restriction, wrong role → access denied
   if (!roles.includes(user?.role)) {
-    showToast('Accesso negato: ruolo insufficiente');
-    return html`
-      <${TerminalWindow} title="access-denied" subtitle="403">
-        <section class="terminal-screen" style=${{ textAlign: 'center', padding: '48px' }}>
-          <p class="eyebrow">authorization error</p>
-          <h2 style=${{ font: '42px/.9 "Archivo Black", Impact, sans-serif', letterSpacing: '-0.06em', color: 'var(--alert)', margin: '12px 0' }}>
-            ACCESS_<span style=${{ color: 'var(--amber)' }}>DENIED</span>
-          </h2>
-          <p style=${{ color: 'var(--paper)', marginBottom: '24px' }}>
-            Il tuo ruolo (${user?.role || 'sconosciuto'}) non consente l'accesso a questa sezione.
-          </p>
-          <${TerminalButton} primary onClick=${() => window.history.back()}>
-            [ esc ] torna indietro <b>→</b>
-          <//>
-        </section>
-      <//>
-    `;
+    return html`<${FullScreenError}
+      statusCode=${403}
+      title="DENIED"
+      subtitle="authorization error"
+      message=${`Il tuo ruolo (${user?.role || 'sconosciuto'}) non consente l'accesso a questa sezione. Richiedi i permessi adeguati a un amministratore.`}
+      primaryLabel="torna alla home"
+      primaryAction=${() => navigate('/')}
+      secondaryLabel="torna indietro"
+      secondaryAction=${() => window.history.back()}
+      easterEggLabel="shhh... prova a digitare \"burger\" o usa il codice konami (↑↑↓↓←→←→BA)"
+    />`;
   }
 
   return html`<${Component} ...${routeProps} />`;
@@ -270,22 +269,17 @@ function AuthRequired() {
 }
 
 function NotFoundPage() {
-  return html`
-    <${TerminalWindow} title="404" subtitle="not found">
-      <section class="terminal-screen" style=${{ textAlign: 'center', padding: '48px' }}>
-        <p class="eyebrow">address not found</p>
-        <h2 style=${{ font: '48px/.8 "Archivo Black", Impact, sans-serif', letterSpacing: '-0.06em', color: 'var(--white)', margin: '12px 0' }}>
-          404_<span style=${{ color: 'var(--amber)' }}>VOID</span>
-        </h2>
-        <p style=${{ color: 'var(--paper)', marginBottom: '24px' }}>
-          Questo percorso non esiste nella directory del sistema.
-        </p>
-        <${TerminalButton} primary onClick=${() => navigate('/')}>
-          [ enter ] torna alla home <b>→</b>
-        <//>
-      </section>
-    <//>
-  `;
+  return html`<${FullScreenError}
+    statusCode=${404}
+    title="VOID"
+    subtitle="address not found"
+    message="Questo percorso non esiste nella directory del sistema. Il file cercato è stato smarrito nel cyberspazio."
+    primaryLabel="torna alla home"
+    primaryAction=${() => navigate('/')}
+    secondaryLabel="torna indietro"
+    secondaryAction=${() => window.history.back()}
+    easterEggLabel="shhh... prova a digitare \"burger\" o usa il codice konami (↑↑↓↓←→←→BA)"
+  />`;
 }
 
 export default AppRouter;

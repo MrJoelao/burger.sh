@@ -13,7 +13,7 @@ import { systemService } from '../../services/systemService.js';
 import { setupService } from '../../services/setupService.js';
 import { navigate } from '../../router/navigate.js';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
-import { ConfirmAction } from './components/ConfirmAction.jsx';
+import { ConfirmAction } from '../../components/Console/ConfirmAction.jsx';
 import { decodeJwtPayload, maskToken, tokenTiming } from '../../domain/debug.js';
 
 export function DebugConsole() {

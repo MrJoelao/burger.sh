@@ -10,6 +10,13 @@ export const roleLabels = {
   admin: 'admin'
 };
 
+/* stato di approvazione di un account manager (User.managerStatus) */
+export const managerStatusLabels = {
+  pending: 'in attesa',
+  approved: 'approvato',
+  rejected: 'rifiutato'
+};
+
 export function dashboardPathFor(role) {
   if (role === 'admin') return '/dashboard/admin';
   if (role === 'manager') return '/dashboard/manager';

@@ -54,14 +54,27 @@ export async function fetchWithAuth(endpoint, options = {}) {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-    // Handle 401 - unauthorized (expired token)
+    // Parse response body first so we can access error messages
+    const data = await response.json().catch(() => ({}));
+
+    // Handle 401 - unauthorized
     if (response.status === 401) {
+      /* se siamo nella pagina di autenticazione, il 401 indica sempre
+         credenziali errate: lasciamo che il messaggio del backend arrivi
+         all'utente senza sovrascriverlo */
+      const currentPath = window.location.pathname;
+      if (currentPath === '/auth') {
+        throw new ApiError(
+          data.message || data.detail || 'Credenziali non valide.',
+          401,
+          data
+        );
+      }
+      /* altrimenti il 401 indica sessione scaduta: redirect e messaggio generico */
       clearAuthToken();
       navigate('/auth');
       throw new ApiError('Session expired. Please login again.', 401);
     }
-
-    const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
       throw new ApiError(

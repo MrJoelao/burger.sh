@@ -1,12 +1,13 @@
 /**
- * Meccanica asincrona condivisa dalle pagine admin: caricamento di una risorsa
- * e esecuzione di un'azione con stato di busy ed errore. Tenerla qui evita che
- * ogni pagina ripeta lo stesso try/catch con loading e error.
+ * meccanica asincrona condivisa dalle console di lavoro (manager e admin):
+ * caricamento di una risorsa e esecuzione di un'azione con stato di busy ed
+ * errore. tenerla qui evita che ogni pagina ripeta lo stesso try/catch con
+ * loading, error e reload.
  */
 
 import { useState, useEffect, useCallback } from 'preact/hooks';
 
-export function useAdminResource(loader) {
+export function useResource(loader) {
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,7 +30,9 @@ export function useAdminResource(loader) {
   return { response, loading, error, reload };
 }
 
-export function useAdminAction({ onSuccess } = {}) {
+/* esegue un'azione su un elemento (identificato da id) tenendo traccia di quale
+   è in corso e dell'ultimo errore, più la ricarica della risorsa al successo */
+export function useAction({ onSuccess } = {}) {
   const [busyId, setBusyId] = useState(null);
   const [actionError, setActionError] = useState('');
 
@@ -49,3 +52,5 @@ export function useAdminAction({ onSuccess } = {}) {
 
   return { run, busyId, actionError };
 }
+
+export default useResource;

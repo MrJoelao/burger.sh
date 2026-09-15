@@ -13,10 +13,10 @@ import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
 import { managerAdminService } from '../../services/managerAdminService.js';
 import { navigate } from '../../router/navigate.js';
 import { userQuery, roleComposition, orderComposition } from '../../domain/admin.js';
-import { roleTones, statusTones, withTones } from './tones.js';
-import { useAdminResource, useAdminAction } from './hooks.js';
-import { AsyncBoundary } from './components/AsyncBoundary.jsx';
-import { StatTile } from './components/StatTile.jsx';
+import { roleTones, statusTones, withTones } from '../../domain/tones.js';
+import { useResource as useAdminResource, useAction as useAdminAction } from '../../hooks/useResource.js';
+import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
+import { StatTile } from '../../components/Console/StatTile.jsx';
 import { ManagerQueue } from './components/ManagerQueue.jsx';
 import { DebugConsole } from './DebugConsole.jsx';
 

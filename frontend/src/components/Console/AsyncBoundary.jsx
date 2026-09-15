@@ -3,8 +3,8 @@
  * contenuto, così ogni pagina non ripete la stessa coppia loading/error.
  */
 
-import { html } from '../../../utils/htm.js';
-import { Loading } from '../../../components/UI/Loading.jsx';
+import { html } from '../../utils/htm.js';
+import { Loading } from '../UI/Loading.jsx';
 
 export function AsyncBoundary({ loading, error, label = 'dati', children }) {
   if (loading) return html`<${Loading} message=${`caricamento ${label}...`} />`;

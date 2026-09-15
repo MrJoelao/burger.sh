@@ -14,10 +14,10 @@ import { managerAdminService } from '../../services/managerAdminService.js';
 import { useAuthStore } from '../../state/authStore.js';
 import { roleLabels } from '../../domain/roles.js';
 import { userQuery, userId, isPendingManager, managerStatusLabels } from '../../domain/admin.js';
-import { roleTones, managerStatusTones } from './tones.js';
-import { useAdminResource, useAdminAction } from './hooks.js';
-import { AsyncBoundary } from './components/AsyncBoundary.jsx';
-import { ConfirmAction } from './components/ConfirmAction.jsx';
+import { roleTones, managerStatusTones } from '../../domain/tones.js';
+import { useResource as useAdminResource, useAction as useAdminAction } from '../../hooks/useResource.js';
+import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
+import { ConfirmAction } from '../../components/Console/ConfirmAction.jsx';
 
 const ROLE_OPTIONS = ['', 'customer', 'manager', 'admin'];
 const STATUS_OPTIONS = ['', 'pending', 'approved'];
@@ -125,6 +125,7 @@ function renderUsers(users, busyId, selfId, decide, remove) {
                   <${TerminalButton} className="compact" primary disabled=${busy} onClick=${() => decide(id, 'approved')}>[ y ] approva<//>
                   <${TerminalButton} className="compact" disabled=${busy} onClick=${() => decide(id, 'rejected')}>[ n ] rifiuta<//>
                 `}
+                ${!isPendingManager(user) && html`<span class="action-placeholder" aria-hidden="true"></span>`}
                 ${id === selfId
                   ? html`<span class="muted">tu</span>`
                   : html`

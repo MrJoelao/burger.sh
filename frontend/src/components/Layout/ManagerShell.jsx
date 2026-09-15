@@ -7,11 +7,17 @@ const links = [
   { label: 'dashboard', path: '/dashboard/manager' },
   { label: 'ordini', path: '/manager/orders' },
   { label: 'menu', path: '/manager/menu' },
+  { label: 'sede', path: '/manager/restaurant' },
   { label: 'profilo', path: '/profile' }
 ];
 
+/* le sezioni operative stanno nella directory laterale, il profilo resta solo
+   nella barra in alto */
+const directoryLinks = links.slice(0, 4);
+
 export function ManagerShell({ children, title = 'manager-ops', subtitle = 'restaurant control' }) {
   const { user } = useAuthStore();
+  const currentPath = window.location.pathname;
   return html`
     <div class="crt-noise" aria-hidden="true"></div>
     <main class="console management-shell" aria-label="Manager operations console">
@@ -24,7 +30,7 @@ export function ManagerShell({ children, title = 'manager-ops', subtitle = 'rest
       <div class="management-grid">
         <nav class="command-list" aria-label="Manager directory">
           <p class="eyebrow">directory</p>
-          ${links.slice(0, 3).map((link, index) => html`<button class="nav-command" type="button" onClick=${() => navigate(link.path)}><kbd>0${index + 1}</kbd> ${link.label}</button>`)}
+          ${directoryLinks.map((link, index) => html`<button class=${`nav-command ${link.path === currentPath ? 'active' : ''}`} type="button" onClick=${() => navigate(link.path)}><kbd>0${index + 1}</kbd> ${link.label}</button>`)}
           <div class="nav-footer"><span>tty / manager</span><span>scope / restaurant</span><span>user / ${user?.name || 'manager'}</span></div>
         </nav>
         <section class="workspace"><div>${children}</div></section>

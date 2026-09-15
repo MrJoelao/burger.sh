@@ -1,7 +1,8 @@
 /**
- * Toni dell'area admin. Qui vivono solo i nomi di classe, il colore vero sta in
- * terminal.css: così nessuna pagina sceglie un hex a mano e i token restano in
- * un posto solo. withTones aggancia il tono a ogni segmento dalla sua chiave.
+ * toni delle console di lavoro: qui vivono solo i nomi di classe, il colore
+ * vero sta in terminal.css, così nessuna pagina sceglie un hex a mano e i token
+ * restano in un posto solo. withTones aggancia il tono a ogni segmento dalla
+ * sua chiave.
  */
 
 export const roleTones = { customer: 'paper', manager: 'amber', admin: 'acid' };

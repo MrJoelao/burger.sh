@@ -10,7 +10,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { html } from '../../../utils/htm.js';
 import { useAuthStore } from '../../../state/authStore.js';
 import { TerminalButton } from '../../../components/Auth/TerminalButton.jsx';
-import { ConfirmAction } from '../../Admin/components/ConfirmAction.jsx';
+import { ConfirmAction } from '../../../components/Console/ConfirmAction.jsx';
 import { navigate } from '../../../router/navigate.js';
 import { restaurantService } from '../../../services/restaurantService.js';
 import { userId, managerStatusLabels } from '../../../domain/admin.js';

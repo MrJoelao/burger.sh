@@ -10,10 +10,10 @@ import { AdminShell } from '../../components/Layout/AdminShell.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { managerAdminService } from '../../services/managerAdminService.js';
 import { roleComposition, orderComposition } from '../../domain/admin.js';
-import { roleTones, statusTones, withTones } from './tones.js';
-import { useAdminResource } from './hooks.js';
-import { AsyncBoundary } from './components/AsyncBoundary.jsx';
-import { StatTile } from './components/StatTile.jsx';
+import { roleTones, statusTones, withTones } from '../../domain/tones.js';
+import { useResource as useAdminResource } from '../../hooks/useResource.js';
+import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
+import { StatTile } from '../../components/Console/StatTile.jsx';
 
 export function AdminStats() {
   const stats = useAdminResource(useCallback(() => managerAdminService.getStats(), []));
