@@ -136,6 +136,28 @@ describe('POST /api/restaurants', () => {
     expect(response.body.data.name).toBe('Burger House');
   });
 
+  test('allinea il restaurantId del manager alla filiale appena creata', async () => {
+    const admin = await createAdmin();
+    const manager = await createManager();
+
+    const response = await request(app)
+      .post('/api/restaurants')
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({
+        name: 'Burger House',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001',
+        managerId: manager._id.toString()
+      });
+
+    expect(response.status).toBe(201);
+
+    const updatedManager = await User.findById(manager._id);
+    expect(updatedManager.restaurantId.toString()).toBe(response.body.data._id.toString());
+  });
+
   test('un non admin riceve 403 nel creare un ristorante', async () => {
     const manager = await createManager();
     const otherManager = await createManager();
@@ -321,6 +343,56 @@ describe('DELETE /api/restaurants/:id', () => {
     const Restaurant = require('../../../models/Restaurant');
     const transferred = await Restaurant.findById(restaurant._id);
     expect(transferred.managerId.toString()).toBe(newManager._id.toString());
+  });
+
+  test('trasferendo la filiale sposta il restaurantId dal vecchio al nuovo manager', async () => {
+    const manager = await createManager();
+    const newManager = await createManager({ managerStatus: 'approved' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    await User.findByIdAndUpdate(manager._id, { restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({ newManagerId: newManager._id.toString() });
+
+    expect(response.status).toBe(200);
+
+    const previousManager = await User.findById(manager._id);
+    const successor = await User.findById(newManager._id);
+    expect(previousManager.restaurantId).toBeNull();
+    expect(successor.restaurantId.toString()).toBe(restaurant._id.toString());
+  });
+
+  test('chiudendo la filiale azzera il restaurantId del manager', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    await User.findByIdAndUpdate(manager._id, { restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(200);
+
+    const updatedManager = await User.findById(manager._id);
+    expect(updatedManager.restaurantId).toBeNull();
+  });
+
+  test('chiudendo una filiale il restaurantId resta sulla filiale superstite', async () => {
+    const manager = await createManager();
+    const closing = await createRestaurant({ managerId: manager._id });
+    const surviving = await createRestaurant({ managerId: manager._id });
+    await User.findByIdAndUpdate(manager._id, { restaurantId: surviving._id });
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${closing._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+
+    expect(response.status).toBe(200);
+
+    const updatedManager = await User.findById(manager._id);
+    expect(updatedManager.restaurantId.toString()).toBe(surviving._id.toString());
   });
 
   test('un manager non proprietario riceve 403 nell\'eliminare un ristorante altrui', async () => {

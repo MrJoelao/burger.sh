@@ -65,7 +65,7 @@ export async function fetchWithAuth(endpoint, options = {}) {
       const currentPath = window.location.pathname;
       if (currentPath === '/auth') {
         throw new ApiError(
-          data.message || data.detail || 'Credenziali non valide.',
+          data.message || data.detail || 'Username o password non validi.',
           401,
           data
         );

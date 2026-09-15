@@ -4,7 +4,7 @@ const Dish = require('../models/Dish');
 const { isAdmin, isOwner, unauthorized, findOrThrow } = require('../utils/authorization');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
 const { containsFilter, combineFilters } = require('../utils/searchFilters');
-const { settleRestaurants } = require('./userController');
+const { settleRestaurants, syncManagerRestaurant } = require('./userController');
 
 /* controller dei ristoranti: consultazione pubblica (lista e dettaglio) e
    gestione riservata a admin (creazione/eliminazione) e al manager
@@ -122,6 +122,11 @@ async function createRestaurant(req, res, next) {
     });
 
     const populatedRestaurant = await restaurant.populate('managerId', 'name surname email');
+
+    /* assegna la filiale al manager anche sul suo documento: senza questo il
+       manager resterebbe senza restaurantId finché non passa da /restaurants/first,
+       che però risponde 400 perché la filiale esiste già */
+    await syncManagerRestaurant(managerId);
 
     return jsonOk(res, 201, populatedRestaurant);
   } catch (err) {

@@ -121,21 +121,23 @@ function renderUsers(users, busyId, selfId, decide, remove) {
                   : html`<span class="muted">n/d</span>`}
               </td>
               <td class="cell-actions">
-                ${isPendingManager(user) && html`
-                  <${TerminalButton} className="compact" primary disabled=${busy} onClick=${() => decide(id, 'approved')}>[ y ] approva<//>
-                  <${TerminalButton} className="compact" disabled=${busy} onClick=${() => decide(id, 'rejected')}>[ n ] rifiuta<//>
-                `}
-                ${!isPendingManager(user) && html`<span class="action-placeholder" aria-hidden="true"></span>`}
-                ${id === selfId
-                  ? html`<span class="muted">tu</span>`
-                  : html`
-                    <${ConfirmAction}
-                      disabled=${busy}
-                      label="[ x ] elimina"
-                      confirmLabel=${user.role === 'manager' ? 'eliminare? la filiale verrà chiusa' : 'eliminare l\'account?'}
-                      onConfirm=${() => remove(id)}
-                    />
+                <div class="cell-action-group">
+                  ${isPendingManager(user) && html`
+                    <${TerminalButton} className="compact" primary disabled=${busy} onClick=${() => decide(id, 'approved')}>[ y ] approva<//>
+                    <${TerminalButton} className="compact" disabled=${busy} onClick=${() => decide(id, 'rejected')}>[ n ] rifiuta<//>
                   `}
+                  ${!isPendingManager(user) && html`<span class="action-placeholder" aria-hidden="true"></span>`}
+                  ${id === selfId
+                    ? html`<span class="muted">tu</span>`
+                    : html`
+                      <${ConfirmAction}
+                        disabled=${busy}
+                        label="[ x ] elimina"
+                        confirmLabel=${user.role === 'manager' ? 'eliminare? la filiale verrà chiusa' : 'eliminare l\'account?'}
+                        onConfirm=${() => remove(id)}
+                      />
+                    `}
+                </div>
               </td>
             </tr>
           `;

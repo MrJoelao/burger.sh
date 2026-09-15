@@ -175,7 +175,7 @@ export function SetupWizard({
       <div class="wizard-actions">
         ${step > 0
           ? html`<${TerminalButton} type="button" onClick=${back}>[ ← ] indietro<//>`
-          : html`<span></span>`}
+          : html``}
         <${TerminalButton} primary type="submit" disabled=${loading}>
           [ ${step === STEPS.length - 1 ? 'enter' : '→'} ] ${step === STEPS.length - 1 ? 'crea amministratore' : 'continua'}
         <//>

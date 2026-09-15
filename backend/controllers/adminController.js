@@ -84,11 +84,13 @@ function isManagerStatusConsistent(updates, currentRole) {
 
 /* quando l'update fa uscire l'utente dal ruolo manager, managerStatus non ha
    più senso e va rimosso esplicitamente: un $set con un valore undefined
-   verrebbe semplicemente ignorato da mongo, lasciando lo stato precedente */
+   verrebbe semplicemente ignorato da mongo, lasciando lo stato precedente.
+   lo stesso vale per restaurantId, che un customer non deve conservare */
 function buildUserUpdate(updates, isLeavingManagerRole) {
   const mongoUpdate = { $set: updates };
+
   if (isLeavingManagerRole) {
-    mongoUpdate.$unset = { managerStatus: '' };
+    mongoUpdate.$unset = { managerStatus: '', restaurantId: '' };
   }
   return mongoUpdate;
 }

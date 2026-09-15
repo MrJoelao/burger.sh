@@ -203,6 +203,44 @@ describe('PATCH /api/admin/users/:id', () => {
     const transferredRestaurant = await Restaurant.findById(restaurant._id);
     expect(transferredRestaurant.managerId.toString()).toBe(newManager._id.toString());
   });
+
+  test('declassando un manager, il restaurantId passa al successore e si azzera sul precedente', async () => {
+    const admin = await createAdmin();
+    const manager = await createManager();
+    const newManager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    await User.findByIdAndUpdate(manager._id, { restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .patch(`/api/admin/users/${manager._id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ role: 'customer', newManagerId: newManager._id.toString() });
+
+    expect(response.status).toBe(200);
+
+    const previousManager = await User.findById(manager._id);
+    const successor = await User.findById(newManager._id);
+    expect(previousManager.restaurantId).toBeNull();
+    expect(successor.restaurantId.toString()).toBe(restaurant._id.toString());
+  });
+
+  test('declassando un manager con un restaurantId stantio, il puntatore viene rimosso', async () => {
+    const admin = await createAdmin();
+    const manager = await createManager();
+    const foreignRestaurant = await createRestaurant();
+    await User.findByIdAndUpdate(manager._id, { restaurantId: foreignRestaurant._id });
+
+    const response = await request(app)
+      .patch(`/api/admin/users/${manager._id}`)
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({ role: 'customer' });
+
+    expect(response.status).toBe(200);
+
+    // lean() evita che il default null dello schema mascheri un campo ancora presente
+    const updatedUser = await User.findById(manager._id).lean();
+    expect(updatedUser.restaurantId).toBeUndefined();
+  });
 });
 
 describe('DELETE /api/admin/users/:id', () => {
