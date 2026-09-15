@@ -43,13 +43,7 @@ export function redirectFor(user, path) {
 
   // Redirect manager approved senza ristorante al wizard di creazione
   if (user?.role === 'manager' && user?.managerStatus === 'approved' && !user?.restaurantId) {
-    const managerWizardRoutes = [
-      /^\/manager\/first-restaurant$/,
-      /^\/dashboard\/manager$/,
-      /^\/profile$/
-    ];
-    const isOnManagerRoute = managerWizardRoutes.some(pattern => pattern.test(path));
-    if (!isOnManagerRoute) {
+    if (path !== '/manager/first-restaurant') {
       return '/manager/first-restaurant';
     }
   }

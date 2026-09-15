@@ -68,6 +68,9 @@ async function getMe(req, res, next) {
       const restaurant = await Restaurant.findById(userData.restaurantId);
       if (restaurant) {
         userData.restaurant = restaurant;
+      } else {
+        // evita che un riferimento obsoleto lasci il manager fuori dal wizard
+        userData.restaurantId = null;
       }
     }
 

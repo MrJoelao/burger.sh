@@ -87,10 +87,10 @@ function matchRoute(pathname) {
 export function AppRouter() {
   const [path, setPath] = useState(window.location.pathname);
   const [setupChecked, setSetupChecked] = useState(false);
-  const { user } = useAuthStore();
+  const { user, loading: authLoading } = useAuthStore();
 
   /* dove deve andare questa sessione su questo percorso, o null se va bene */
-  const redirect = redirectFor(user, path);
+  const redirect = authLoading ? null : redirectFor(user, path);
 
   useEffect(() => {
     const syncPath = () => setPath(window.location.pathname);

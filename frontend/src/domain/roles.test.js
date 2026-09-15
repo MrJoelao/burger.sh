@@ -46,9 +46,22 @@ describe('redirectFor', () => {
     expect(redirectFor({ role: 'admin' }, '/admin/users')).toBeNull();
   });
 
-  test('non tocca cliente e manager', () => {
+  test('non tocca cliente e manager con ristorante', () => {
     expect(redirectFor({ role: 'customer' }, '/')).toBeNull();
     expect(redirectFor({ role: 'manager' }, '/dashboard/manager')).toBeNull();
     expect(redirectFor(null, '/')).toBeNull();
+  });
+
+  test('blocca ogni percorso del manager approvato senza ristorante nel wizard', () => {
+    const managerWithoutRestaurant = {
+      role: 'manager',
+      managerStatus: 'approved',
+      restaurantId: null
+    };
+
+    expect(redirectFor(managerWithoutRestaurant, '/manager/first-restaurant')).toBeNull();
+    ['/dashboard/manager', '/profile', '/manager/orders', '/menu', '/'].forEach(path => {
+      expect(redirectFor(managerWithoutRestaurant, path)).toBe('/manager/first-restaurant');
+    });
   });
 });

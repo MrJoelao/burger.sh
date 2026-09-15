@@ -58,6 +58,22 @@ describe('restaurantValidation', () => {
       expect(error).toBeDefined();
     });
 
+    test('fallisce se il CAP non ha cinque cifre', () => {
+      const payload = {
+        name: 'Burger House',
+        address: 'via Roma 10',
+        city: 'Milano',
+        zip: '2010',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT12345678901',
+        managerId: validObjectId
+      };
+
+      const { error } = createRestaurantSchema.validate(payload);
+
+      expect(error).toBeDefined();
+    });
+
     test('fallisce se l\'indirizzo è troppo corto', () => {
       // arrange
       const payload = {

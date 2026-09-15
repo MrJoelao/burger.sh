@@ -357,12 +357,14 @@ describe('POST /api/restaurants/first', () => {
         name: 'Burger House Milano',
         address: 'Via Roma 1',
         city: 'Milano',
+        zip: '20100',
         phone: '+39 02 1234567',
         vatNumber: 'IT00000001'
       });
 
     expect(response.status).toBe(201);
     expect(response.body.data.name).toBe('Burger House Milano');
+    expect(response.body.data.zip).toBe('20100');
     expect(response.body.data.managerId._id).toBe(manager._id.toString());
 
     // verifica che il manager abbia ora un restaurantId

@@ -17,6 +17,7 @@ export function CreateFirstRestaurantPage() {
   const { user, isAuthenticated, refreshUser } = useAuthStore();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasCreatedRestaurant, setHasCreatedRestaurant] = useState(false);
 
   // Redirect se l'utente non è un manager approvato o ha già un ristorante
   if (!isAuthenticated || user?.role !== 'manager' || user?.managerStatus !== 'approved') {
@@ -24,7 +25,7 @@ export function CreateFirstRestaurantPage() {
     return null;
   }
 
-  if (user?.restaurantId) {
+  if (user?.restaurantId && !hasCreatedRestaurant) {
     navigate('/dashboard/manager');
     return null;
   }
@@ -38,8 +39,11 @@ export function CreateFirstRestaurantPage() {
 
       if (!result.success) {
         setError(result.message || 'Errore nella creazione del ristorante');
-        return;
+        setLoading(false);
+        throw new Error(result.message || 'Errore nella creazione del ristorante');
       }
+
+      setHasCreatedRestaurant(true);
 
       // Crea i piatti custom uno per uno
       if (payload.dishes && payload.dishes.length > 0) {
@@ -55,13 +59,17 @@ export function CreateFirstRestaurantPage() {
       // Ricarica i dati utente per aggiornare il restaurantId
       await refreshUser();
 
-      // Redirect alla dashboard manager
-      navigate('/dashboard/manager');
+      // Non navighiamo qui: il wizard gestisce la transizione alla schermata di congratulazioni.
+      setLoading(false);
     } catch (submissionError) {
       setError(submissionError.message || 'Errore nella creazione del ristorante');
-    } finally {
       setLoading(false);
+      throw submissionError; // il wizard deve sapere che è fallito
     }
+  };
+
+  const handleSuccess = () => {
+    navigate('/dashboard/manager');
   };
 
   return html`
@@ -76,6 +84,7 @@ export function CreateFirstRestaurantPage() {
           loading=${loading}
           error=${error}
           user=${user}
+          onSuccess=${handleSuccess}
         />
       </section>
     <//>

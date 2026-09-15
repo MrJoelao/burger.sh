@@ -48,6 +48,9 @@ function validateStep(step, values, dishes) {
     if (!values.city.trim()) errors.city = 'Inserisci la città';
     else if (values.city.trim().length < 2) errors.city = 'Almeno 2 caratteri';
 
+    if (!values.zip.trim()) errors.zip = 'Inserisci il CAP';
+    else if (!/^\d{5}$/.test(values.zip.trim())) errors.zip = 'CAP non valido';
+
     if (!values.phone.trim()) errors.phone = 'Inserisci il telefono';
     else if (!/^\+?[0-9\s\-()]+$/.test(values.phone)) errors.phone = 'Telefono non valido';
 
@@ -92,7 +95,8 @@ export function CreateFirstRestaurantWizard({
   onSubmit = () => {},
   loading = false,
   error = '',
-  user = null
+  user = null,
+  onSuccess = () => {}
 }) {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState(INITIAL_VALUES);
@@ -100,6 +104,7 @@ export function CreateFirstRestaurantWizard({
   const [errors, setErrors] = useState({});
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDish, setNewDish] = useState({ name: '', description: '', price: '', type: 'burger' });
+  const [submitting, setSubmitting] = useState(false);
 
   const update = (field, value) => {
     setValues(previous => ({ ...previous, [field]: value }));
@@ -145,10 +150,16 @@ export function CreateFirstRestaurantWizard({
     if (Object.keys(nextErrors).length > 0) return;
 
     if (step === STEPS.length - 2) {
-      // Last step before congratulations - submit
-      const payload = buildPayload(values, dishes);
-      await onSubmit(payload);
-      setStep(3);
+      // Submit fase - gestito interamente dal wizard
+      setSubmitting(true);
+      try {
+        const payload = buildPayload(values, dishes);
+        await onSubmit(payload);
+        setStep(3);
+      } catch (e) {
+        // errore: il page组件 gestisce l'errore e lo propaga via loading/error props
+        setSubmitting(false);
+      }
       return;
     }
 
@@ -178,7 +189,7 @@ export function CreateFirstRestaurantWizard({
               <${Field} label="nome filiale" name="name" placeholder="es. Burger House Milano" value=${values.name} error=${errors.name} onInput=${event => update('name', event.target.value)} wide />
               <${Field} label="indirizzo" name="street" autocomplete="street-address" placeholder="Via Roma 1" value=${values.street} error=${errors.street} onInput=${event => update('street', event.target.value)} wide />
               <${Field} label="città" name="city" autocomplete="address-level2" placeholder="Milano" value=${values.city} error=${errors.city} onInput=${event => update('city', event.target.value)} />
-              <${Field} label="CAP" name="zip" autocomplete="postal-code" placeholder="20100" value=${values.zip} onInput=${event => update('zip', event.target.value)} />
+              <${Field} label="CAP" name="zip" autocomplete="postal-code" placeholder="20100" value=${values.zip} error=${errors.zip} onInput=${event => update('zip', event.target.value)} />
               <${Field} label="telefono" name="phone" type="tel" autocomplete="tel" placeholder="+39 02 1234567" value=${values.phone} error=${errors.phone} onInput=${event => update('phone', event.target.value)} />
               <${Field} label="partita IVA" name="vatNumber" autocomplete="off" placeholder="IT0000000000" value=${values.vatNumber} error=${errors.vatNumber} onInput=${event => update('vatNumber', event.target.value)} />
             </div>
@@ -190,9 +201,9 @@ export function CreateFirstRestaurantWizard({
               <p><span>nome filiale</span><b>${values.name || '-'}</b></p>
               <p><span>indirizzo</span><b>${values.street || '-'}</b></p>
               <p><span>città</span><b>${values.city || '-'}</b></p>
+              <p><span>CAP</span><b>${values.zip || '-'}</b></p>
               <p><span>telefono</span><b>${values.phone || '-'}</b></p>
               <p><span>partita IVA</span><b>${values.vatNumber || '-'}</b></p>
-              <p><span>piatti custom</span><b>${dishes.length > 0 ? dishes.length + ' aggiunti' : 'nessuno (puoi aggiungere dopo)'}</b></p>
             </div>
             <p class="wizard-hint">Se qualcosa non va, torna indietro con il pulsante.</p>
           `}
@@ -256,32 +267,20 @@ export function CreateFirstRestaurantWizard({
           `}
 
           ${step === 3 && html`
-            <div class="congratulations-screen">
-              <div class="terminal-header">
-                <span class="terminal-title">burger.sh</span>
-                <span class="terminal-status">✓ CONNESSO</span>
-              </div>
-              <div class="terminal-body">
-                <pre class="ascii-art" aria-hidden="true">
- ██████╗ ██╗   ██╗███╗   ██╗██╗  ██╗███████╗██████╗
-██╔═══██╗██║   ██║████╗  ██║██║ ██╔╝██╔════╝██╔══██╗
-██║   ██║██║   ██║██╔██╗ ██║█████╔╝ █████╗  ██║  ██║
-██║▄▄ ██║██║   ██║██║╚██╗██║██╔═██╗ ██╔══╝  ██║  ██║
-╚██████╔╝╚██████╔╝██║ ╚████║██║  ██╗███████╗██████╔╝
- ╚══▀▀═╝  ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═════╝
-                </pre>
-                <p class="success-message">
-                  <span class="prompt">></span> Filiale creata con successo!<br/>
-                  <span class="prompt">></span> Nome: <b>${values.name}</b><br/>
-                  <span class="prompt">></span> Indirizzo: <b>${values.street}, ${values.city}</b><br/>
-                  ${dishes.length > 0 && html`<span class="prompt">></span> Piatti custom aggiunti: <b>${dishes.length}</b><br/>`}
-                  <span class="prompt">></span> Status: <b style=${{ color: 'var(--acid)' }}>ATTIVA</b>
-                </p>
-                <p class="welcome-text">Benvenuto a bordo, <b>${user?.name}</b>!</p>
-              </div>
-              <div class="terminal-footer">
-                <span>premi INVIO per continuare</span>
-                <span class="live-command">manager@burger:~$ <i></i></span>
+            <div class="congrats-fullscreen">
+              <div class="congrats-content">
+                <p class="congrats-eyebrow">first restaurant / done</p>
+                <div class="congrats-logo">burger.sh</div>
+                <div class="congrats-check">✓</div>
+                <h2 class="congrats-title">filiale creata con successo</h2>
+                <div class="congrats-details">
+                  <p><span>nome</span> <b>${values.name}</b></p>
+                  <p><span>sede</span> <b>${values.street}, ${values.zip} ${values.city}</b></p>
+                  ${dishes.length > 0 && html`<p><span>piatti custom</span> <b>${dishes.length}</b></p>`}
+                  <p class="status-line"><span>stato</span> <b style=${{ color: 'var(--acid)' }}>ATTIVA</b></p>
+                </div>
+                <p class="congrats-welcome">benvenuto a bordo, <b>${user?.name}</b>!</p>
+                <${TerminalButton} primary type="button" onClick=${onSuccess}>[ → ] vai alla dashboard</${TerminalButton}>
               </div>
             </div>
           `}
@@ -295,8 +294,8 @@ export function CreateFirstRestaurantWizard({
           ${step > 0
             ? html`<${TerminalButton} type="button" onClick=${back}>[ ← ] indietro<//>`
             : html``}
-          <${TerminalButton} primary type="submit" disabled=${loading}>
-            [ → ] ${step === 1 ? 'continua' : 'continua'}
+          <${TerminalButton} primary type="submit" disabled=${loading || submitting}>
+            [ → ] ${submitting ? 'creazione...' : 'continua'}
           <//>
         </div>
       `}
@@ -309,6 +308,7 @@ function buildPayload(values, dishes) {
     name: values.name.trim(),
     address: values.street.trim(),
     city: values.city.trim(),
+    zip: values.zip.trim(),
     phone: values.phone.trim(),
     vatNumber: values.vatNumber.trim()
   };

@@ -103,7 +103,7 @@ async function getRestaurantById(req, res, next) {
 // create ristorante (solo admin)
 async function createRestaurant(req, res, next) {
   try {
-    const { name, address, city, phone, vatNumber, managerId } = req.validated;
+    const { name, address, city, zip, phone, vatNumber, managerId } = req.validated;
 
     // verifica che il manager esista e sia un manager
     const manager = await User.findById(managerId);
@@ -115,6 +115,7 @@ async function createRestaurant(req, res, next) {
       name,
       address,
       city,
+      zip,
       phone,
       vatNumber,
       managerId
@@ -131,7 +132,7 @@ async function createRestaurant(req, res, next) {
 // create first restaurant (solo per manager approvati che non hanno ancora un ristorante)
 async function createFirstRestaurant(req, res, next) {
   try {
-    const { name, address, city, phone, vatNumber } = req.validated;
+    const { name, address, city, zip, phone, vatNumber } = req.validated;
     const managerId = req.user.id;
 
     // verifica che il manager non abbia già un ristorante
@@ -144,6 +145,7 @@ async function createFirstRestaurant(req, res, next) {
       name,
       address,
       city,
+      zip,
       phone,
       vatNumber,
       managerId

@@ -1710,15 +1710,15 @@
 }
 
 /* Override the auth-form width:100% rule for wizard action buttons */
-.wizard-actions .terminal-button {
-  width: auto;
-  flex: 0 0 auto;
+.register-wizard .wizard-actions .terminal-button {
+  width: auto !important;
+  flex: 0 0 auto !important;
 }
 
 /* il pulsante primario nei wizard actions riempie lo spazio rimanente */
-.wizard-actions .terminal-button.primary {
-  flex: 1;
-  min-width: 0;
+.register-wizard .wizard-actions .terminal-button.primary {
+  flex: 1 !important;
+  min-width: 0 !important;
 }
 
 /* Dish list styles */
@@ -3001,7 +3001,110 @@
   }
 }
 
-/* Create First Restaurant Wizard - Congratulations Screen */
+/* Create First Restaurant Wizard - Fullscreen Congratulations Screen */
+.congrats-fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  padding: 32px 24px;
+}
+
+.congrats-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  max-width: 480px;
+  width: 100%;
+}
+
+.congrats-eyebrow {
+  color: var(--dirty);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.congrats-logo {
+  font-family: "Archivo Black", Impact, sans-serif;
+  font-size: 28px;
+  color: var(--amber);
+  letter-spacing: 0.15em;
+  margin: 0;
+}
+
+.congrats-check {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--acid);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: var(--acid);
+  font-weight: 700;
+}
+
+.congrats-title {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 16px;
+  color: var(--paper);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.congrats-details {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 16px 20px;
+  text-align: left;
+}
+
+.congrats-details p {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 6px 0;
+  font-size: 12px;
+  color: var(--paper);
+}
+
+.congrats-details p span {
+  color: var(--dirty);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.congrats-details p b {
+  color: var(--paper);
+}
+
+.congrats-details .status-line {
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.congrats-welcome {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  color: var(--dirty);
+  margin: 0;
+}
+
+.congrats-welcome b {
+  color: var(--amber);
+}
+
+/* Legacy styles (kept for backwards compatibility) */
 .congratulations-screen {
   display: flex;
   flex-direction: column;
