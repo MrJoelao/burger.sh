@@ -1709,6 +1709,128 @@
   gap: 12px;
 }
 
+/* Override the auth-form width:100% rule for wizard action buttons */
+.wizard-actions .terminal-button {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+/* il pulsante primario nei wizard actions riempie lo spazio rimanente */
+.wizard-actions .terminal-button.primary {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Dish list styles */
+.dish-list {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--ink);
+}
+
+.dish-list .eyebrow {
+  margin: 0 0 12px;
+  color: var(--amber);
+}
+
+.dish-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--paper);
+  font-size: 12px;
+}
+
+.dish-item:last-child {
+  border-bottom: none;
+}
+
+.dish-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.dish-type {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--dirty);
+  letter-spacing: 0.05em;
+}
+
+.dish-name b {
+  color: var(--paper);
+}
+
+.dish-desc {
+  color: var(--dirty);
+  font-size: 11px;
+}
+
+.dish-price {
+  color: var(--acid);
+  font-weight: 600;
+}
+
+.dish-remove {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--alert);
+  padding: 4px 8px;
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dish-remove:hover {
+  border-color: var(--alert);
+  background: rgba(240, 108, 69, 0.1);
+}
+
+.dish-add-form {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--amber);
+  background: rgba(242, 191, 78, 0.05);
+}
+
+.dish-add-form .eyebrow {
+  margin: 0 0 12px;
+  color: var(--amber);
+}
+
+.dish-add-form .wizard-fields {
+  margin-bottom: 12px;
+}
+
+.dish-add-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.dish-add-actions .terminal-button {
+  flex: 1;
+}
+
+.dish-empty {
+  padding: 24px;
+  border: 1px dashed var(--line);
+  text-align: center;
+  color: var(--dirty);
+  font-size: 12px;
+}
+
+.dish-add-btn {
+  margin-top: 16px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .wizard-step {
     animation: none;

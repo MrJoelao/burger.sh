@@ -161,7 +161,8 @@ function RouteGuard({ component: Component, roles, routeProps = {} }) {
   }
 
   function AuthRoute({ mode = 'login' }) {
-    const { login, register } = useAuthStore();
+  const authStore = useAuthStore();
+  const { login, register, refreshUser } = authStore;
     const [currentMode, setCurrentMode] = useState(mode);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -177,6 +178,17 @@ function RouteGuard({ component: Component, roles, routeProps = {} }) {
 
         if (!result.success) {
           setError(result.message || 'Operazione non riuscita');
+          return;
+        }
+
+        // dopo il login, ricarica i dati utente per avere lo stato più recente
+        // (es. restaurantId aggiornato dal backend)
+        await refreshUser();
+
+        // verifica se il manager approvato deve andare al wizard
+        const currentUser = authStore.user; // letto dopo refreshUser
+        if (currentUser?.role === 'manager' && currentUser?.managerStatus === 'approved' && !currentUser?.restaurantId) {
+          navigate('/manager/first-restaurant');
           return;
         }
 

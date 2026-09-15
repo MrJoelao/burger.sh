@@ -97,6 +97,17 @@ export function AuthStoreProvider({ children }) {
     return response;
   }, []);
 
+  /* ricarica i dati utente dal backend: utile dopo azioni che modificano lo
+     stato dell'utente (es. creazione ristorante, modifica profilo). evita di
+     lavorare con dati in cache obsoleti quando il backend è la fonte di verità. */
+  const refreshUser = useCallback(async () => {
+    const response = await authService.getProfile();
+    if (response.success) {
+      setUser(response.data);
+    }
+    return response;
+  }, []);
+
   /* chiude il cambio password forzato: ricarica l'utente da /users/me per
      leggere il flag aggiornato lato server. se il refresh fallisce subito dopo
      il cambio, il backend ha comunque già azzerato mustChangePassword, quindi
@@ -124,12 +135,14 @@ export function AuthStoreProvider({ children }) {
     isManager: user?.role === 'manager',
     isCustomer: user?.role === 'customer',
     managerStatus: user?.managerStatus || null,
+    restaurantId: user?.restaurantId || null,
     login,
     register,
     logout,
     updateProfile,
     deleteAccount,
-    completePasswordChange
+    completePasswordChange,
+    refreshUser
   };
 
   return html`<${AuthContext.Provider} value=${value}>${children}<//>`;

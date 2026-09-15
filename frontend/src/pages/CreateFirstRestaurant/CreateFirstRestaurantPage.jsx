@@ -4,7 +4,7 @@
  * usa il layout SetupLayout per un'esperienza full-screen
  */
 
-import { useState, useEffect } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import { html } from '../../utils/htm.js';
 import { SetupLayout } from '../Setup/SetupLayout.jsx';
 import { CreateFirstRestaurantWizard } from './CreateFirstRestaurantWizard.jsx';
@@ -14,23 +14,20 @@ import { navigate } from '../../router/navigate.js';
 import { dashboardPathFor } from '../../domain/roles.js';
 
 export function CreateFirstRestaurantPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, refreshUser } = useAuthStore();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(0);
 
-  useEffect(() => {
-    // Verifica che l'utente sia un manager approvato senza ristorante
-    if (!isAuthenticated || user?.role !== 'manager' || user?.managerStatus !== 'approved') {
-      navigate(dashboardPathFor(user?.role));
-      return;
-    }
+  // Redirect se l'utente non è un manager approvato o ha già un ristorante
+  if (!isAuthenticated || user?.role !== 'manager' || user?.managerStatus !== 'approved') {
+    navigate(dashboardPathFor(user?.role));
+    return null;
+  }
 
-    if (user?.restaurantId) {
-      // Il manager ha già un ristorante, redirect alla dashboard
-      navigate('/dashboard/manager');
-    }
-  }, [isAuthenticated, user]);
+  if (user?.restaurantId) {
+    navigate('/dashboard/manager');
+    return null;
+  }
 
   const handleSubmit = async (payload) => {
     setLoading(true);
@@ -44,16 +41,22 @@ export function CreateFirstRestaurantPage() {
         return;
       }
 
-      // Se è stato aggiunto un piatto custom, crealo separatamente
-      if (payload.dish) {
-        const dishResult = await restaurantService.createDish(result.data._id, payload.dish);
-        if (!dishResult.success) {
-          console.error('Errore nella creazione del piatto:', dishResult.message);
-          // Non blocchiamo il flusso principale
+      // Crea i piatti custom uno per uno
+      if (payload.dishes && payload.dishes.length > 0) {
+        const restaurantId = result.data._id;
+        for (const dish of payload.dishes) {
+          const dishResult = await restaurantService.createDish(restaurantId, dish);
+          if (!dishResult.success) {
+            console.error('Errore nella creazione del piatto:', dishResult.message);
+          }
         }
       }
 
-      setStep(3); // Vai alla schermata di congratulazioni
+      // Ricarica i dati utente per aggiornare il restaurantId
+      await refreshUser();
+
+      // Redirect alla dashboard manager
+      navigate('/dashboard/manager');
     } catch (submissionError) {
       setError(submissionError.message || 'Errore nella creazione del ristorante');
     } finally {
@@ -61,28 +64,15 @@ export function CreateFirstRestaurantPage() {
     }
   };
 
-  const handleSkipDish = () => {
-    setStep(3);
-  };
-
-  if (!isAuthenticated || user?.role !== 'manager' || user?.managerStatus !== 'approved') {
-    return null; // Il redirect avverrà nell'useEffect
-  }
-
-  if (user?.restaurantId) {
-    return null; // Il redirect avverrà nell'useEffect
-  }
-
   return html`
     <${SetupLayout}
       section="first-restaurant-setup"
       context="manager bootstrap"
-      status=${step === 3 ? 'setup complete' : 'awaiting creation'}
+      status=${loading ? 'creating...' : 'awaiting creation'}
     >
       <section class="setup-panel">
         <${CreateFirstRestaurantWizard}
           onSubmit=${handleSubmit}
-          onSkipDish=${handleSkipDish}
           loading=${loading}
           error=${error}
           user=${user}
