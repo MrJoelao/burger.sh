@@ -67,6 +67,17 @@ describe('ProfilePage', () => {
     expect(sectionPanel('indirizzo')).toHaveAttribute('hidden');
   });
 
+  /* la griglia che tiene indice e pannelli affiancati è agganciata a queste due
+     classi: sono il perno del layout a tutta schermata */
+  test('indice e pannelli stanno nella stessa area della schermata', () => {
+    useAuthStore.mockReturnValue(storeWith(CUSTOMER));
+    const { container } = render(<ProfilePage />);
+
+    const screen_ = container.querySelector('.profile-screen');
+    expect(screen_.querySelector(':scope > .profile-index')).not.toBeNull();
+    expect(screen_.querySelector(':scope > .profile-panels')).not.toBeNull();
+  });
+
   test('cambiare sezione non perde le modifiche non salvate', () => {
     useAuthStore.mockReturnValue(storeWith(CUSTOMER));
     render(<ProfilePage />);

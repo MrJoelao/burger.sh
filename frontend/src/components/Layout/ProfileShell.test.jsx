@@ -47,4 +47,18 @@ describe('ProfileShell', () => {
     expect(screen.getByText('contenuto profilo')).toBeInTheDocument();
     expect(screen.getByText('Luca')).toBeInTheDocument();
   });
+
+  /* il CSS fissa la console allo schermo con una colonna flex: se cambia la
+     struttura qui sotto, quegli stili smettono di applicarsi in silenzio */
+  test('tiene titlebar, schermata e footer figli diretti della console', () => {
+    useAuthStore.mockReturnValue(storeWith({ role: 'manager', name: 'Joel' }));
+    const { container } = render(<ProfileShell><p>contenuto</p></ProfileShell>);
+
+    const console_ = container.querySelector('main.console');
+    expect(console_).toHaveClass('profile-console');
+    expect(console_.querySelector(':scope > .titlebar')).not.toBeNull();
+    expect(console_.querySelector(':scope > .identity-strip')).not.toBeNull();
+    expect(console_.querySelector(':scope > .profile-screen')).not.toBeNull();
+    expect(console_.querySelector(':scope > .footer-status')).not.toBeNull();
+  });
 });

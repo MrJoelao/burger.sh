@@ -295,14 +295,27 @@
 
 /* --- Profilo: schermata a sé, indice a schede --- */
 
-/* riempie lo spazio libero tra titlebar e footer, che insieme occupano circa
-   155px: così l'indice resta alto quanto la schermata e non c'è buco in basso */
+/* la console è alta esattamente quanto lo schermo: titlebar e footer restano
+   sempre visibili e la pagina non scorre. Fra i due c'è lo spazio che avanza,
+   calcolato dal flex, quindi non c'è nessuna quota fissa da tenere allineata
+   all'altezza reale di titlebar e striscia identità */
+.profile-console {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .profile-screen {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(180px, 232px) minmax(0, 1fr);
   gap: 28px;
   align-items: stretch;
-  min-height: calc(100vh - 155px);
+  overflow: hidden;
   padding: 24px;
 }
 
@@ -361,12 +374,18 @@
   color: var(--dirty);
 }
 
+/* un pannello alla volta, ma la colonna è sempre alta quanto la schermata:
+   il pannello attivo la riempie invece di lasciare un vuoto sotto di sé */
 .profile-panels {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
   min-width: 0;
+  min-height: 0;
 }
 
 /* sfondo opaco come le branch-card: nessuna riga di sfondo sotto le etichette */
 .profile-panel {
+  overflow-y: auto;
   padding: 26px;
   border: 1px solid var(--line);
   background: var(--panel);
@@ -544,10 +563,27 @@
 }
 
 @media (max-width: 880px) {
+  /* su schermo stretto non c'è spazio per fissare tutto: torno al flusso
+     normale, con la pagina che scorre come nelle altre console */
+  .profile-console {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
   .profile-screen {
     grid-template-columns: minmax(0, 1fr);
-    min-height: 0;
+    grid-auto-rows: auto;
+    overflow: visible;
     padding: 16px;
+  }
+
+  .profile-panels {
+    grid-template-rows: auto;
+  }
+
+  .profile-panel {
+    overflow-y: visible;
   }
 }
 
