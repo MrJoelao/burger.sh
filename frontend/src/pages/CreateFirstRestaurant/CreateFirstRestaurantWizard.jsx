@@ -294,7 +294,7 @@ export function CreateFirstRestaurantWizard({
         <div class="wizard-actions">
           ${step > 0
             ? html`<${TerminalButton} type="button" onClick=${back}>[ ← ] indietro<//>`
-            : html`<span></span>`}
+            : html``}
           <${TerminalButton} primary type="submit" disabled=${loading}>
             [ → ] ${step === 1 ? 'continua' : 'continua'}
           <//>
