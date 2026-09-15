@@ -90,7 +90,8 @@ export function OrderDetailPage({ orderId }) {
       <section class="terminal-screen">
         <${SectionHeading}
           eyebrow="tracking"
-          title="ORDINE_<span>#${(order.id || order._id)?.slice(-8) || 'N/A'}</span>"
+          title="ORDINE_"
+          titleSpan=${`#${(order.id || order._id)?.slice(-8) || 'N/A'}`}
           subtitle=${`${restaurant.name || 'Filiale sconosciuta'} · ${formatDate(order.createdAt)}`}
         />
 

@@ -16,7 +16,7 @@ const PREFERENCES = [
   ['ritiro_in_sede', 'Ritiro in sede']
 ];
 
-const STEPS = [
+const FULL_STEPS = [
   { eyebrow: 'identity gate / account type', title: 'SCEGLI IL TUO RUOLO.', subtitle: 'Partiamo da come userai burger.sh.' },
   { eyebrow: 'identity gate / profile', title: 'PRESENTATI.', subtitle: 'Un nome rende ogni ordine riconoscibile.' },
   { eyebrow: 'identity gate / credentials', title: 'METTI AL SICURO.', subtitle: 'Crea le credenziali per ritrovare il tuo profilo.' },
@@ -94,6 +94,16 @@ export function RegisterWizard({
   const [answers, setAnswers] = useState(INITIAL_ANSWERS);
   const [errors, setErrors] = useState({});
 
+  const isManager = answers.role === 'manager';
+  const STEPS = isManager ? FULL_STEPS.slice(0, 4) : FULL_STEPS;
+
+  // Assicura che step restri entro i limiti quando il ruolo cambia
+  useEffect(() => {
+    if (step >= STEPS.length) {
+      setStep(STEPS.length - 1);
+    }
+  }, [STEPS.length, step]);
+
   useEffect(() => {
     onStepChange(step);
   }, [step, onStepChange]);
@@ -141,7 +151,6 @@ export function RegisterWizard({
   };
 
   const current = STEPS[step];
-  const isManager = answers.role === 'manager';
 
   return html`
     <form class="auth-form register-wizard" onSubmit=${step === STEPS.length - 1 ? submit : next} novalidate>

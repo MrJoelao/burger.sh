@@ -57,11 +57,17 @@ export const authService = {
   /**
    * Delete current user account
    * DELETE /users/me
+   *
+   * un manager proprietario di filiali può indicare newManagerId per
+   * trasferirle: è l'unico campo ammesso dal backend su questa rotta
+   * (userValidation.js), quindi senza di esso le filiali vengono chiuse.
    */
-  async deleteAccount(reason) {
-    return api.delete('/users/me', {
-      body: reason ? JSON.stringify({ reason }) : undefined
-    });
+  async deleteAccount(options = {}) {
+    const config = {};
+    if (options.newManagerId) {
+      config.body = JSON.stringify({ newManagerId: options.newManagerId });
+    }
+    return api.delete('/users/me', config);
   },
 
   /**

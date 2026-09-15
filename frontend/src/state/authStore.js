@@ -84,6 +84,19 @@ export function AuthStoreProvider({ children }) {
     return response;
   }, []);
 
+  /* elimina l'account dell'utente autenticato. a differenza del token scaduto,
+     qui la sessione finisce perché l'utente non esiste più: svuoto lo stato
+     locale solo quando il backend conferma la cancellazione. */
+  const deleteAccount = useCallback(async (options = {}) => {
+    const response = await authService.deleteAccount(options);
+    if (response.success) {
+      authService.logout();
+      setUser(null);
+      setToken(null);
+    }
+    return response;
+  }, []);
+
   /* chiude il cambio password forzato: ricarica l'utente da /users/me per
      leggere il flag aggiornato lato server. se il refresh fallisce subito dopo
      il cambio, il backend ha comunque già azzerato mustChangePassword, quindi
@@ -115,6 +128,7 @@ export function AuthStoreProvider({ children }) {
     register,
     logout,
     updateProfile,
+    deleteAccount,
     completePasswordChange
   };
 

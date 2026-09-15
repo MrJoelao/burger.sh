@@ -52,7 +52,7 @@ export function ManagerDashboard() {
   return html`
     <${ManagerShell} title="dashboard" subtitle="manager">
       <section class="terminal-screen">
-        <${SectionHeading} eyebrow="restaurant" title="BENVENUTO_<span>${user.name} (${user.restaurantName || '...'})</span>" />
+        <${SectionHeading} eyebrow="restaurant" title="BENVENUTO_" titleSpan=${`${user.name} (${user.restaurantName || '...'})`} />
 
         ${loading && html`<${Loading} message="CARICAMENTO DATI..." />`}
 
@@ -64,7 +64,7 @@ export function ManagerDashboard() {
 
         <div class="dashboard-grid" style=${{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-            <${SectionHeading} eyebrow="orders" title="ORDINI_<span>OGGI</span>" />
+            <${SectionHeading} eyebrow="orders" title="ORDINI_" titleSpan="OGGI" />
             <div style=${{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               ${Object.entries(dashboardData.ordersByStatus).map(([status, count]) => html`
                 <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px dashed var(--line)' }}>
@@ -76,14 +76,14 @@ export function ManagerDashboard() {
           </div>
 
           <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-            <${SectionHeading} eyebrow="revenue" title="INCASSI_<span>GIORNALIERI</span>" />
+            <${SectionHeading} eyebrow="revenue" title="INCASSI_" titleSpan="GIORNALIERI" />
             <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', fontSize: '24px', fontWeight: '600', color: 'var(--acid)' }}>
               ${formatEuro(dashboardData.revenue)}
             </div>
           </div>
 
           <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-            <${SectionHeading} eyebrow="menu" title="PIATTI_<span>PIÙ VENDUTI</span>" />
+            <${SectionHeading} eyebrow="menu" title="PIATTI_" titleSpan="PIÙ VENDUTI" />
             <div style=${{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               ${dashboardData.topDishes.slice(0, 5).map((dish, index) => html`
                 <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: index < 4 ? '1px dashed var(--line)' : 'none' }}>

@@ -64,7 +64,7 @@ export function OrderHistoryPage() {
   return html`
     <${TerminalWindow} title="order-history" subtitle="customer dashboard">
       <section class="terminal-screen">
-        <${SectionHeading} eyebrow="dashboard" title="STORICO_<span>ORDINI</span>" subtitle="visualizza e traccia i tuoi ordini" />
+        <${SectionHeading} eyebrow="dashboard" title="STORICO_" titleSpan="ORDINI" subtitle="visualizza e traccia i tuoi ordini" />
 
         <div class="filter-tabs" style=${{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
           ${filterTabs.map(tab => html`

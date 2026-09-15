@@ -172,7 +172,7 @@
 .identity-strip {
   display: grid;
   grid-template-columns: 290px 1fr 190px;
-  min-height: 154px;
+  min-height: 80px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -264,7 +264,8 @@
   gap: 14px;
 }
 
-.profile-form label {
+.profile-form label,
+.profile-field > label {
   display: grid;
   gap: 6px;
   color: var(--dirty);
@@ -288,38 +289,227 @@
   outline-offset: 1px;
 }
 
-.profile-form fieldset {
-  border: 1px solid var(--line);
-  padding: 14px;
+.setup-credentials b {
+  color: var(--acid);
 }
 
-.preference-list {
+/* --- Profilo: indice laterale e pannelli --- */
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  margin-top: 22px;
+}
+
+.profile-index {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.profile-index .eyebrow {
+  margin: 0 0 6px;
+}
+
+.profile-index-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-left: 2px solid transparent;
+  color: var(--dirty);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.profile-index-link:hover,
+.profile-index-link:focus-visible {
+  border-left-color: var(--amber);
+  color: var(--amber);
+}
+
+.profile-index-link.active {
+  border-left-color: var(--amber);
+  background: rgba(242, 191, 78, 0.07);
+  color: var(--amber);
+}
+
+.profile-index-link kbd {
+  color: var(--dirty);
+}
+
+.profile-panels {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* sfondo opaco come le branch-card: nessuna riga di sfondo sotto le etichette */
+.profile-panel {
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.profile-panel-body {
+  margin-top: 16px;
+}
+
+.profile-field {
+  display: grid;
+  gap: 6px;
+}
+
+/* un filo di respiro in più tra etichetta e campo: a 6px il bordo del campo
+   sembra toccare il testo quando la fila è densa */
+.profile-field > label {
+  gap: 8px;
+}
+
+.profile-field-help {
+  color: var(--dirty);
+  font-size: 10px;
+}
+
+.profile-field-help.error {
+  color: var(--alert);
+}
+
+.profile-feedback {
+  margin: 0;
+  font-size: 11px;
+}
+
+.profile-feedback.ok {
+  color: var(--acid);
+}
+
+.profile-feedback.error {
+  color: var(--alert);
+}
+
+.profile-preferences {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-preference-group {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-preference-group .eyebrow {
+  margin: 0;
+}
+
+.profile-preference-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 18px;
+  gap: 10px 20px;
 }
 
-.preference-list label {
-  display: block;
+/* doppia classe per battere .profile-form label, che impone grid e maiuscolo */
+.profile-form .profile-preference {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--paper);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  cursor: pointer;
 }
 
-.preference-list input {
+.profile-form .profile-preference input {
   width: auto;
   accent-color: var(--amber);
 }
 
-.profile-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  color: var(--dirty);
-  font-size: 11px;
+.profile-status {
+  display: grid;
+  gap: 8px;
+  margin: 0;
 }
 
-.profile-meta b,
-.setup-credentials b {
-  color: var(--acid);
+.profile-status div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.profile-status dt {
+  color: var(--dirty);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profile-status dd {
+  margin: 0;
+  color: var(--white);
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.profile-danger {
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid var(--alert);
+  background: rgba(240, 108, 69, 0.07);
+}
+
+.profile-danger .eyebrow {
+  margin: 0 0 6px;
+  color: var(--alert);
+}
+
+.profile-danger-copy {
+  margin: 0 0 10px;
+  color: var(--paper);
+}
+
+.profile-branch-transfer {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.profile-branch-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-branch-list li {
+  padding: 8px 10px;
+  border: 1px dashed var(--line);
+  color: var(--white);
+}
+
+@media (max-width: 880px) {
+  .profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profile-index {
+    position: static;
+  }
 }
 
 .setup-note {
@@ -2012,7 +2202,8 @@
 }
 
 .filter-field select,
-.profile-form select {
+.profile-form select,
+.profile-field select {
   border: 1px solid var(--line);
   border-radius: 0;
   padding: 9px 10px;
@@ -2030,7 +2221,8 @@
 }
 
 .filter-field select:focus,
-.profile-form select:focus {
+.profile-form select:focus,
+.profile-field select:focus {
   outline: 2px solid var(--amber);
   outline-offset: 1px;
 }

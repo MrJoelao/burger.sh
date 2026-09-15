@@ -62,7 +62,7 @@ export function OrderConfirmPage() {
   return html`
     <${TerminalWindow} title="order-confirm" subtitle="checkout">
       <section class="terminal-screen" style=${{ maxWidth: '700px', margin: '0 auto' }}>
-        <${SectionHeading} eyebrow="checkout" title="CONFERMA_<span>ORDINE</span>" subtitle="verifica i dettagli e scegli la modalità" />
+        <${SectionHeading} eyebrow="checkout" title="CONFERMA_" titleSpan="ORDINE" subtitle="verifica i dettagli e scegli la modalità" />
 
         <div style=${{ marginBottom: '24px' }}>
           <div style=${{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>

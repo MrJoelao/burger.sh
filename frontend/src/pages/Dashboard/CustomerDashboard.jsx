@@ -55,7 +55,7 @@ export function CustomerDashboard() {
   return html`
     <${TerminalWindow} title="dashboard" subtitle="customer">
       <section class="terminal-screen">
-        <${SectionHeading} eyebrow="profile" title="BENVENUTO_<span>${user?.name || '...'}</span>" />
+        <${SectionHeading} eyebrow="profile" title="BENVENUTO_" titleSpan=${user?.name || '...'} />
 
         <div class="dashboard-grid" style=${{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
@@ -77,7 +77,7 @@ export function CustomerDashboard() {
           </div>
 
           <div style=${{ border: '1px solid var(--line)', padding: '16px', background: 'var(--panel)' }}>
-            <${SectionHeading} eyebrow="orders" title="ULTIMI_<span>ORDINI</span>" />
+            <${SectionHeading} eyebrow="orders" title="ULTIMI_" titleSpan="ORDINI" />
             <div style=${{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               ${orders.slice(0, 3).map(order => html`
                 <article style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px dashed var(--line)' }}>
