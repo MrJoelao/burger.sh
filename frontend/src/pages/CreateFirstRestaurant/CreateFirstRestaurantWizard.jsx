@@ -170,13 +170,15 @@ export function CreateFirstRestaurantWizard({
 
   return html`
     <form class="auth-form register-wizard" onSubmit=${next} novalidate>
-      <div class="wizard-progress" aria-label="Avanzamento creazione ristorante">
-        ${STEPS.map((item, index) => html`
-          <span class=${`wizard-progress-step ${index === step ? 'active' : ''} ${index < step ? 'complete' : ''}`}>
-            <b>${String(index + 1).padStart(2, '0')}</b> ${item.title.replace('.', '').toLowerCase()}
-          </span>
-        `)}
-      </div>
+      ${step < 3 && html`
+        <div class="wizard-progress" aria-label="Avanzamento creazione ristorante">
+          ${STEPS.map((item, index) => html`
+            <span class=${`wizard-progress-step ${index === step ? 'active' : ''} ${index < step ? 'complete' : ''}`}>
+              <b>${String(index + 1).padStart(2, '0')}</b> ${item.title.replace('.', '').toLowerCase()}
+            </span>
+          `)}
+        </div>
+      `}
 
       <div class="wizard-viewport">
         <section class="wizard-step" key=${step} aria-labelledby="wizard-step-title">
@@ -276,8 +278,10 @@ export function CreateFirstRestaurantWizard({
                 <div class="congrats-details">
                   <p><span>nome</span> <b>${values.name}</b></p>
                   <p><span>sede</span> <b>${values.street}, ${values.zip} ${values.city}</b></p>
+                  <p><span>telefono</span> <b>${values.phone}</b></p>
+                  <p><span>partita iva</span> <b>${values.vatNumber}</b></p>
                   ${dishes.length > 0 && html`<p><span>piatti custom</span> <b>${dishes.length}</b></p>`}
-                  <p class="status-line"><span>stato</span> <b style=${{ color: 'var(--acid)' }}>ATTIVA</b></p>
+                  <p class="status-line"><span>stato</span> <b style=${{ color: 'var(--acid)' }}>attiva</b></p>
                 </div>
                 <p class="congrats-welcome">benvenuto a bordo, <b>${user?.name}</b>!</p>
                 <${TerminalButton} primary type="button" onClick=${onSuccess}>[ → ] vai alla dashboard</${TerminalButton}>
