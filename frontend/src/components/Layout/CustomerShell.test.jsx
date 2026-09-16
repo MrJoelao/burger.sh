@@ -8,7 +8,7 @@ vi.mock('../../state/authStore.js', () => ({
 vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
 
 describe('CustomerShell', () => {
-  test('offre solo ordini e profilo come opzioni, senza directory laterale', () => {
+  test('offre dashboard, ordini e profilo come opzioni, senza directory laterale', () => {
     render(<CustomerShell><p>contenuto</p></CustomerShell>);
 
     expect(screen.getByText('contenuto')).toBeInTheDocument();
@@ -16,7 +16,7 @@ describe('CustomerShell', () => {
     const nav = screen.getByRole('navigation', { name: 'Navigazione principale' });
     const labels = within(nav).getAllByRole('link').map(link => link.textContent);
 
-    expect(labels).toEqual(['ordini', 'profilo']);
+    expect(labels).toEqual(['dashboard', 'ordini', 'profilo']);
     expect(document.querySelector('.command-list')).toBeNull();
   });
 

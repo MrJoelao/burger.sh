@@ -1,8 +1,8 @@
 /**
  * CustomerShell - cornice dell'area cliente. Niente directory laterale: le
- * uniche opzioni stanno nella barra in alto (ordini e profilo), così il flusso
- * resta guidato e non si ripete la stessa navigazione due volte. Il brand
- * riporta alla dashboard, dove gli ordini in corso sono subito visibili.
+ * uniche opzioni stanno nella barra in alto (dashboard, ordini e profilo),
+ * così il flusso resta guidato e non si ripete la stessa navigazione due volte.
+ * Il brand riporta sempre alla home.
  */
 
 import { html } from '../../utils/htm.js';
@@ -10,6 +10,7 @@ import { TitleBar } from './TitleBar.jsx';
 import { useAuthStore } from '../../state/authStore.js';
 
 const links = [
+    { label: 'dashboard', path: '/dashboard' },
   { label: 'ordini', path: '/orders' },
   { label: 'profilo', path: '/profile' }
 ];
@@ -21,7 +22,7 @@ export function CustomerShell({ children, title = 'customer-ops', subtitle = 'ac
   return html`
     <div class="crt-noise" aria-hidden="true"></div>
     <main class="console customer-console" aria-label="Customer console">
-      <${TitleBar} section=${title} context=${subtitle} status="customer online" links=${links} brandPath="/dashboard" showClock=${false} />
+      <${TitleBar} section=${title} context=${subtitle} status="customer online" links=${links} brandPath="/" showClock=${false} />
 
       ${!wizardMode && html`
         <section class="identity-strip">
