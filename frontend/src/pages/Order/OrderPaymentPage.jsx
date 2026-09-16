@@ -24,6 +24,8 @@ import { entityId } from '../../domain/entity.js';
 import { orderReference } from '../../domain/orders.js';
 import { cardFormErrors, cardMethodPayload, paymentMethodSummary } from '../../domain/payments.js';
 import { useResource } from '../../hooks/useResource.js';
+import { useAuthStore } from '../../state/authStore.js';
+import { AuthRequiredModal } from '../../components/Auth/AuthRequiredModal.jsx';
 
 /* tariffa solo indicativa: il totale definitivo arriva dal server alla conferma */
 const ESTIMATED_DELIVERY_FEE = 3.5;
@@ -33,6 +35,24 @@ const EMPTY_CARD = { name: '', surname: '', number: '', expiry: '', cvv: '' };
 
 export function OrderPaymentPage() {
   const order = useOrderStore();
+  const { isAuthenticated } = useAuthStore();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  // Se non autenticato, mostra il modal di login
+  if (!isAuthenticated) {
+    return html`
+      <${CustomerShell} title="ordina" subtitle="passo 3 · pagamento">
+        <section class="terminal-screen">
+          <${WizardSteps} current="payment" />
+          <div class="queue-empty">
+            <p><b>_</b> sessione richiesta</p>
+            <p class="muted">Per procedere al pagamento devi essere autenticato.</p>
+          </div>
+        </section>
+      </${CustomerShell}>
+      <${AuthRequiredModal} onDismiss=${() => navigate('/orders')} />
+    `;
+  }
+
   const [mode, setMode] = useState('pickup');
   const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [choice, setChoice] = useState('cash');

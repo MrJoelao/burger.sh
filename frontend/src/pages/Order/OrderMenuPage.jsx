@@ -5,7 +5,7 @@
  * riassume l ordine e porta al pagamento.
  */
 
-import { useCallback, useEffect } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 import { html } from '../../utils/htm.js';
 import { CustomerShell } from '../../components/Layout/CustomerShell.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
@@ -18,12 +18,18 @@ import { navigate } from '../../router/navigate.js';
 import { entityId } from '../../domain/entity.js';
 import { euro } from '../../domain/format.js';
 import { menuSections } from '../../domain/menu.js';
+import { addGuestCartItem, changeGuestCartQuantity, guestCartFor, saveGuestCart } from '../../domain/guestCart.js';
 import { useResource } from '../../hooks/useResource.js';
+import { useAuthStore } from '../../state/authStore.js';
+import { AuthRequiredModal } from '../../components/Auth/AuthRequiredModal.jsx';
 
 const LIMIT = 100;
 
 export function OrderMenuPage({ restaurantId }) {
   const order = useOrderStore();
+  const { isAuthenticated } = useAuthStore();
+  const [guestItems, setGuestItems] = useState(() => guestCartFor(restaurantId));
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const loadRestaurant = useCallback(() => restaurantService.getRestaurant(restaurantId), [restaurantId]);
   const loadDishes = useCallback(() => restaurantService.getDishesByRestaurant(restaurantId, { limit: LIMIT }), [restaurantId]);
@@ -36,28 +42,55 @@ export function OrderMenuPage({ restaurantId }) {
 
   /* il carrello in bozza arriva dal backend: sincronizza lo store al montaggio */
   useEffect(() => {
+    if (!isAuthenticated) return;
     order.fetchCart();
-  }, []);
+  }, [isAuthenticated]);
 
   /* la filiale scelta nel primo passo resta nota allo store */
   useEffect(() => {
     if (data) order.selectRestaurant(data);
   }, [data]);
 
+  useEffect(() => {
+    setGuestItems(guestCartFor(restaurantId));
+  }, [restaurantId]);
+
+  const updateGuestItems = (update) => {
+    setGuestItems(currentItems => {
+      const nextItems = update(currentItems);
+      saveGuestCart(restaurantId, nextItems);
+      return nextItems;
+    });
+  };
+
+  const items = isAuthenticated ? order.items : guestItems;
+
   const quantityOf = (dishId) => {
-    const item = order.items.find(candidate => candidate.dishId === dishId);
+    const item = items.find(candidate => candidate.dishId === dishId);
     return item?.quantity || 0;
   };
 
-  const addDish = (dishId) => {
-    order.addCartItem(restaurantId, dishId, 1);
+  const addDish = (dish) => {
+    if (!isAuthenticated) {
+      updateGuestItems(items => addGuestCartItem(items, dish));
+      return;
+    }
+    order.addCartItem(restaurantId, entityId(dish), 1);
   };
 
   const increase = (dishId, quantity) => {
+    if (!isAuthenticated) {
+      updateGuestItems(items => changeGuestCartQuantity(items, dishId, quantity + 1));
+      return;
+    }
     order.updateCartItem(dishId, quantity + 1);
   };
 
   const decrease = (dishId, quantity) => {
+    if (!isAuthenticated) {
+      updateGuestItems(items => changeGuestCartQuantity(items, dishId, quantity - 1));
+      return;
+    }
     if (quantity <= 1) {
       order.removeCartItem(dishId);
       return;
@@ -65,7 +98,23 @@ export function OrderMenuPage({ restaurantId }) {
     order.updateCartItem(dishId, quantity - 1);
   };
 
-  const hasItems = order.items.length > 0;
+  const clearCart = () => {
+    if (!isAuthenticated) {
+      updateGuestItems(() => []);
+      return;
+    }
+    order.clearCart();
+  };
+
+  const hasItems = items.length > 0;
+
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+    navigate('/orders/payment');
+  };
 
   return html`
     <${CustomerShell} title="ordina" subtitle="passo 2 · menu">
@@ -99,7 +148,7 @@ export function OrderMenuPage({ restaurantId }) {
                             key=${entityId(dish)}
                             dish=${dish}
                             quantity=${quantityOf(entityId(dish))}
-                            onAdd=${() => addDish(entityId(dish))}
+                            onAdd=${() => addDish(dish)}
                             onIncrease=${() => increase(entityId(dish), quantityOf(entityId(dish)))}
                             onDecrease=${() => decrease(entityId(dish), quantityOf(entityId(dish)))}
                           />
@@ -116,14 +165,15 @@ export function OrderMenuPage({ restaurantId }) {
           </div>
 
           <${OrderBuffer}
-            items=${order.items}
-            onClear=${() => order.clearCart()}
-            onCheckout=${hasItems ? () => navigate('/orders/payment') : null}
+            items=${items}
+            onClear=${clearCart}
+            onCheckout=${hasItems ? handleCheckout : null}
             emptyMessage="aggiungi un piatto per iniziare."
           />
         </div>
       </section>
-    <//>
+    </${CustomerShell}>
+    ${showAuthModal && html`<${AuthRequiredModal} onDismiss=${() => setShowAuthModal(false)} />`}
   `;
 }
 

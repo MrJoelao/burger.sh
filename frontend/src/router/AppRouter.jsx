@@ -7,7 +7,6 @@ import { html } from '../utils/htm.js';
 import { useState, useEffect } from 'preact/hooks';
 import { HomePage } from '../pages/Home/HomePage.jsx';
 import { AuthLayout } from '../pages/Auth/AuthLayout.jsx';
-import { RestaurantListPage } from '../pages/Restaurants/RestaurantListPage.jsx';
 import { RestaurantSelectPage } from '../pages/Order/RestaurantSelectPage.jsx';
 import { OrderMenuPage } from '../pages/Order/OrderMenuPage.jsx';
 import { OrderPaymentPage } from '../pages/Order/OrderPaymentPage.jsx';
@@ -33,7 +32,6 @@ import { useUIStore } from '../state/uiStore.js';
 import { navigate } from './navigate.js';
 import { dashboardPathFor, redirectFor } from '../domain/roles.js';
 import { setupService } from '../services/setupService.js';
-import { entityId } from '../domain/entity.js';
 
 /**
  * Route table: ordered patterns with optional role restrictions.
@@ -42,9 +40,9 @@ import { entityId } from '../domain/entity.js';
 const ROUTES = [
   { path: '/', component: HomePage },
   { path: '/auth', component: AuthLayout, props: { mode: 'login' } },
-  { path: '/restaurants', component: RestaurantListPage, props: { onRestaurantSelect: (r) => navigate(`/orders/menu/${entityId(r)}`) } },
-  { path: '/orders', component: RestaurantSelectPage, roles: ['customer'] },
-  { path: '/orders/menu/:restaurantId', component: OrderMenuPage, roles: ['customer'] },
+  { path: '/restaurants', component: RestaurantSelectPage },
+  { path: '/orders', component: RestaurantSelectPage },
+  { path: '/orders/menu/:restaurantId', component: OrderMenuPage },
   { path: '/orders/payment', component: OrderPaymentPage, roles: ['customer'] },
   { path: '/orders/:orderId', component: OrderDetailPage, roles: ['customer', 'manager', 'admin'] },
   { path: '/dashboard', component: CustomerDashboard, roles: ['customer'] },

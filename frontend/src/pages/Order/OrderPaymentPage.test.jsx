@@ -3,10 +3,12 @@ import { OrderPaymentPage } from './OrderPaymentPage.jsx';
 import { paymentService } from '../../services/paymentService.js';
 import { navigate } from '../../router/navigate.js';
 import { useOrderStore } from '../../state/orderStore.js';
+import { useAuthStore } from '../../state/authStore.js';
 
-vi.mock('../../state/authStore.js', () => ({
-  useAuthStore: () => ({ user: { id: 'c1', name: 'Luca', role: 'customer' } })
-}));
+vi.mock('../../state/authStore.js', () => {
+  const useAuthStore = vi.fn(() => ({ user: { id: 'c1', name: 'Luca', role: 'customer' }, isAuthenticated: true }));
+  return { useAuthStore };
+});
 
 vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
 
@@ -158,5 +160,28 @@ describe('OrderPaymentPage', () => {
 
     expect(await screen.findByText(/carrello è vuoto/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /conferma e paga/i })).not.toBeInTheDocument();
+  });
+
+  test('mostra modal auth quando utente non autenticato arriva al pagamento', async () => {
+    useAuthStore.mockReturnValue({ user: null, isAuthenticated: false });
+    paymentService.list.mockResolvedValue({ success: true, data: [] });
+    useOrderStore.mockReturnValue(storeWith());
+
+    render(<OrderPaymentPage />);
+
+    expect(await screen.findByText(/SESSIONE_/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /accedi/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /conferma e paga/i })).not.toBeInTheDocument();
+  });
+
+  test('chiudendo il modal auth reindirizza alla selezione filiale', async () => {
+    useAuthStore.mockReturnValue({ user: null, isAuthenticated: false });
+    paymentService.list.mockResolvedValue({ success: true, data: [] });
+    useOrderStore.mockReturnValue(storeWith());
+
+    render(<OrderPaymentPage />);
+    fireEvent.click(screen.getByRole('button', { name: /continua a sfogliare/i }));
+
+    expect(navigate).toHaveBeenCalledWith('/orders');
   });
 });

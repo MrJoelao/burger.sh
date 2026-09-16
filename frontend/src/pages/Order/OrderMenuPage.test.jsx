@@ -3,10 +3,12 @@ import { OrderMenuPage } from './OrderMenuPage.jsx';
 import { restaurantService } from '../../services/restaurantService.js';
 import { navigate } from '../../router/navigate.js';
 import { useOrderStore } from '../../state/orderStore.js';
+import { useAuthStore } from '../../state/authStore.js';
 
-vi.mock('../../state/authStore.js', () => ({
-  useAuthStore: () => ({ user: { id: 'c1', name: 'Luca', role: 'customer' } })
-}));
+vi.mock('../../state/authStore.js', () => {
+  const useAuthStore = vi.fn(() => ({ user: null, isAuthenticated: false }));
+  return { useAuthStore };
+});
 
 vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
 
@@ -39,7 +41,10 @@ function storeWith(overrides = {}) {
 }
 
 describe('OrderMenuPage', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
 
   test('mostra i piatti divisi per sezione', async () => {
     restaurantService.getRestaurant.mockResolvedValue({ success: true, data: RESTAURANT });
@@ -58,6 +63,7 @@ describe('OrderMenuPage', () => {
 
   test('aggiunge un piatto al carrello con filiale e piatto', async () => {
     const store = storeWith();
+    useAuthStore.mockReturnValue({ user: { id: 'c1' }, isAuthenticated: true });
     restaurantService.getRestaurant.mockResolvedValue({ success: true, data: RESTAURANT });
     restaurantService.getDishesByRestaurant.mockResolvedValue({ success: true, data: DISHES });
     useOrderStore.mockReturnValue(store);
@@ -70,6 +76,7 @@ describe('OrderMenuPage', () => {
 
   test('modifica la quantità di un piatto già nel carrello', async () => {
     const store = storeWith({ items: [{ dishId: 'd1', name: 'Cheeseburger', price: 6.5, quantity: 2 }] });
+    useAuthStore.mockReturnValue({ user: { id: 'c1' }, isAuthenticated: true });
     restaurantService.getRestaurant.mockResolvedValue({ success: true, data: RESTAURANT });
     restaurantService.getDishesByRestaurant.mockResolvedValue({ success: true, data: DISHES });
     useOrderStore.mockReturnValue(store);
@@ -82,6 +89,7 @@ describe('OrderMenuPage', () => {
 
   test('porta al pagamento solo con un carrello pieno', async () => {
     const store = storeWith({ items: [{ dishId: 'd1', name: 'Cheeseburger', price: 6.5, quantity: 1 }] });
+    useAuthStore.mockReturnValue({ user: { id: 'c1' }, isAuthenticated: true });
     restaurantService.getRestaurant.mockResolvedValue({ success: true, data: RESTAURANT });
     restaurantService.getDishesByRestaurant.mockResolvedValue({ success: true, data: DISHES });
     useOrderStore.mockReturnValue(store);
@@ -93,6 +101,7 @@ describe('OrderMenuPage', () => {
   });
 
   test('torna alla scelta della filiale', async () => {
+    useAuthStore.mockReturnValue({ user: null, isAuthenticated: false });
     restaurantService.getRestaurant.mockResolvedValue({ success: true, data: RESTAURANT });
     restaurantService.getDishesByRestaurant.mockResolvedValue({ success: true, data: DISHES });
     useOrderStore.mockReturnValue(storeWith());
@@ -101,5 +110,38 @@ describe('OrderMenuPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /cambia filiale/i }));
 
     expect(navigate).toHaveBeenCalledWith('/orders');
+  });
+
+  test('un ospite aggiunge e modifica i piatti nel carrello locale senza chiamare le API', async () => {
+    const store = storeWith();
+    restaurantService.getRestaurant.mockResolvedValue({ success: true, data: RESTAURANT });
+    restaurantService.getDishesByRestaurant.mockResolvedValue({ success: true, data: DISHES });
+    useOrderStore.mockReturnValue(store);
+
+    render(<OrderMenuPage restaurantId="r1" />);
+    fireEvent.click(await screen.findByRole('button', { name: /aggiungi cheeseburger/i }));
+    fireEvent.click(screen.getByRole('button', { name: /più cheeseburger/i }));
+
+    expect(store.fetchCart).not.toHaveBeenCalled();
+    expect(store.addCartItem).not.toHaveBeenCalled();
+    expect(store.updateCartItem).not.toHaveBeenCalled();
+    expect(screen.queryByText(/SESSIONE_/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/qty 2/i)).toBeInTheDocument();
+  });
+
+
+
+  test('mostra la modale auth solo quando un ospite prova il checkout', async () => {
+    const store = storeWith();
+    restaurantService.getRestaurant.mockResolvedValue({ success: true, data: RESTAURANT });
+    restaurantService.getDishesByRestaurant.mockResolvedValue({ success: true, data: DISHES });
+    useOrderStore.mockReturnValue(store);
+
+    render(<OrderMenuPage restaurantId="r1" />);
+    fireEvent.click(await screen.findByRole('button', { name: /aggiungi cheeseburger/i }));
+    fireEvent.click(screen.getByRole('button', { name: /checkout/i }));
+
+    expect(await screen.findByText(/SESSIONE_/i)).toBeInTheDocument();
+    expect(navigate).not.toHaveBeenCalledWith('/orders/payment');
   });
 });

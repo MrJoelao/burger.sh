@@ -3770,6 +3770,105 @@
   .error-content { padding: 40px 20px; }
 }
 
+/* ── Auth Required Modal ───────────────────────────────────────────────────── */
+
+.auth-required-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(23, 21, 16, 0.92);
+  backdrop-filter: blur(4px);
+}
+
+.auth-required-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.auth-required-content {
+  position: relative;
+  z-index: 1;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 0 8px rgba(102, 85, 50, 0.1), 0 0 48px rgba(242, 189, 78, 0.15);
+  max-width: 480px;
+  width: calc(100% - 32px);
+  margin: 16px;
+}
+
+.auth-required-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.auth-required-header h2 {
+  font-family: "Archivo Black", Impact, sans-serif;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--paper);
+}
+
+.auth-required-close {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--dirty);
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.auth-required-close:hover {
+  border-color: var(--alert);
+  color: var(--alert);
+}
+
+.auth-required-body {
+  padding: 24px;
+}
+
+.auth-required-body p {
+  margin: 0 0 12px;
+  color: var(--paper);
+  line-height: 1.6;
+}
+
+.auth-required-body .muted {
+  color: var(--dirty);
+  font-size: 13px;
+}
+
+.auth-required-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--line);
+}
+
+.auth-required-footer .terminal-button {
+  width: 100%;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .auth-required-content {
+    margin: 8px;
+  }
+
+  .auth-required-header, .auth-required-body, .auth-required-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 /* ── Customer console ─────────────────────────────────────────────────────── */
 
 .customer-console {

@@ -9,7 +9,7 @@ import { html } from '../../utils/htm.js';
 import { navigate } from '../../router/navigate.js';
 
 export const DEFAULT_NAV_LINKS = [
-  { label: 'ordina', path: '/menu' },
+  { label: 'ordina', path: '/orders' },
   { label: 'accedi', path: '/auth' }
 ];
 
