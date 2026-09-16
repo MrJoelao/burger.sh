@@ -6,9 +6,10 @@
  * passo 4: schermata di congratulazioni in stile terminale
  */
 
-import { useState } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { html } from '../../utils/htm.js';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
+import '../../styles/address-suggestions.css';
 
 const STEPS = [
   { eyebrow: 'first restaurant / identity', title: 'IDENTITÀ DELLA FILIALE', subtitle: 'Diamo un nome e una sede al tuo ristorante.' },
@@ -101,15 +102,61 @@ export function CreateFirstRestaurantWizard({
   const [step, setStep] = useState(0);
   const [values, setValues] = useState(INITIAL_VALUES);
   const [dishes, setDishes] = useState([]);
-  const [errors, setErrors] = useState({});
+  const [lat, setLat] = useState(null);
+  const [lng, setLng] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const debounceRef = useRef(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDish, setNewDish] = useState({ name: '', description: '', price: '', type: 'burger' });
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const update = (field, value) => {
     setValues(previous => ({ ...previous, [field]: value }));
     if (errors[field]) setErrors(previous => ({ ...previous, [field]: '' }));
   };
+
+  const handleStreetChange = (event) => {
+    const v = event.target.value;
+    update('street', v);
+    if (v.length > 3) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        setSuggestLoading(true);
+        fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(v)}&format=jsonv2&addressdetails=1&limit=5`)
+          .then(r => r.json())
+          .then(data => {
+            setSuggestions(data);
+            setSuggestLoading(false);
+          });
+      }, 300);
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  function selectSuggestion(item) {
+    setSuggestions([]);
+    setLat(item.lat);
+    setLng(item.lon);
+    const addr = item.address || {};
+    update('street', `${addr.road || ''} ${addr.house_number || ''}`.trim());
+    if (addr.city || addr.town || addr.village) {
+      update('city', addr.city || addr.town || addr.village);
+    }
+    if (addr.postcode) {
+      update('zip', addr.postcode);
+    }
+  }
+
+
 
   const updateNewDish = (field, value) => {
     setNewDish(previous => ({ ...previous, [field]: value }));
@@ -157,7 +204,7 @@ export function CreateFirstRestaurantWizard({
         await onSubmit(payload);
         setStep(3);
       } catch (e) {
-        // errore: il page组件 gestisce l'errore e lo propaga via loading/error props
+        // errore: il page componente gestisce l'errore e lo propaga via loading/error props
         setSubmitting(false);
       }
       return;
@@ -189,7 +236,10 @@ export function CreateFirstRestaurantWizard({
             </p>
             <div class="wizard-fields two-up">
               <${Field} label="nome filiale" name="name" placeholder="es. Burger House Milano" value=${values.name} error=${errors.name} onInput=${event => update('name', event.target.value)} wide />
-              <${Field} label="indirizzo" name="street" autocomplete="street-address" placeholder="Via Roma 1" value=${values.street} error=${errors.street} onInput=${event => update('street', event.target.value)} wide />
+              <div class="wizard-field wide address-field-wrapper">
+                <${Field} label="indirizzo" name="street" autocomplete="street-address" placeholder="Via Roma 1" value=${values.street} error=${errors.street} onInput=${handleStreetChange} />
+                ${suggestions.length > 0 && html`<ul class="address-suggestions">${suggestions.map((s, i) => html`<li key=${i} onClick=${() => selectSuggestion(s)}>${s.display_name}</li>`)}</ul>`}
+              </div>
               <${Field} label="città" name="city" autocomplete="address-level2" placeholder="Milano" value=${values.city} error=${errors.city} onInput=${event => update('city', event.target.value)} />
               <${Field} label="CAP" name="zip" autocomplete="postal-code" placeholder="20100" value=${values.zip} error=${errors.zip} onInput=${event => update('zip', event.target.value)} />
               <${Field} label="telefono" name="phone" type="tel" autocomplete="tel" placeholder="+39 02 1234567" value=${values.phone} error=${errors.phone} onInput=${event => update('phone', event.target.value)} />
@@ -316,6 +366,10 @@ function buildPayload(values, dishes) {
     phone: values.phone.trim(),
     vatNumber: values.vatNumber.trim()
   };
+
+  if (lat !== null && lng !== null) {
+    payload.location = { lat: Number(lat), lng: Number(lng) };
+  }
 
   if (dishes.length > 0) {
     payload.dishes = dishes.map(d => ({
