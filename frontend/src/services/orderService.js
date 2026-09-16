@@ -56,6 +56,10 @@ export const orderService = {
     return api.post('/cart/confirm', { mode, ...(delivery && { delivery }) });
   },
 
+  async estimateDelivery(address) {
+    return api.post('/cart/delivery-estimate', { address });
+  },
+
   // --- Order operations ---
 
   /**

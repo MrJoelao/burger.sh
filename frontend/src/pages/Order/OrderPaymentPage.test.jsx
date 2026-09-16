@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { OrderPaymentPage } from './OrderPaymentPage.jsx';
 import { paymentService } from '../../services/paymentService.js';
+import { orderService } from '../../services/orderService.js';
 import { navigate } from '../../router/navigate.js';
 import { useOrderStore } from '../../state/orderStore.js';
 import { useAuthStore } from '../../state/authStore.js';
@@ -16,6 +17,10 @@ vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
 
 vi.mock('../../services/paymentService.js', () => ({
   paymentService: { list: vi.fn(), create: vi.fn() }
+}));
+
+vi.mock('../../services/orderService.js', () => ({
+  orderService: { estimateDelivery: vi.fn() }
 }));
 
 vi.mock('../../state/orderStore.js', () => ({ useOrderStore: vi.fn() }));
@@ -50,6 +55,10 @@ function continueToSummary() {
 describe('OrderPaymentPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    orderService.estimateDelivery.mockResolvedValue({
+      success: true,
+      data: { distanceKm: 3.2, deliveryFee: 2.5 }
+    });
     useAuthStore.mockReturnValue({
       user: { id: 'c1', name: 'Luca', role: 'customer' },
       isAuthenticated: true
@@ -84,6 +93,9 @@ describe('OrderPaymentPage', () => {
     continueToPayment();
 
     expect(await screen.findByText(/completa via, città e cap/i)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Completa via, città e CAP');
+    expect(screen.getByRole('alert').closest('fieldset')).toBeInTheDocument();
+    expect(screen.queryByText(/completa via, città e cap/i, { selector: '.form-message' })).not.toBeInTheDocument();
     expect(screen.getByText(/DOVE ARRIVA/)).toBeInTheDocument();
   });
 
@@ -94,6 +106,7 @@ describe('OrderPaymentPage', () => {
     fireEvent.input(screen.getByLabelText('via e numero'), { target: { value: 'Via Roma 1' } });
     fireEvent.input(screen.getByLabelText('città'), { target: { value: 'Milano' } });
     fireEvent.input(screen.getByLabelText(/cap/i), { target: { value: '20100' } });
+    await screen.findByText(/€ 2.50/);
     continueToPayment();
     continueToSummary();
     fireEvent.click(screen.getByRole('button', { name: /conferma ordine/i }));
@@ -101,6 +114,22 @@ describe('OrderPaymentPage', () => {
     await waitFor(() => expect(store.confirmCart).toHaveBeenCalledWith('delivery', {
       address: 'Via Roma 1, Milano, 20100'
     }));
+  });
+
+  test('mostra un errore leggibile quando l’indirizzo è fuori zona', async () => {
+    orderService.estimateDelivery.mockRejectedValue({
+      message: 'Delivery address is 127.61km away, farther than the maximum served distance of 15km',
+      status: 422
+    });
+    await renderPage();
+
+    fireEvent.click(screen.getByRole('radio', { name: /consegna a domicilio/i }));
+    fireEvent.input(screen.getByLabelText('via e numero'), { target: { value: 'Via Roma 1' } });
+    fireEvent.input(screen.getByLabelText('città'), { target: { value: 'Milano' } });
+    fireEvent.input(screen.getByLabelText(/cap/i), { target: { value: '20100' } });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('indirizzo è fuori dalla zona di consegna');
+    expect(screen.queryByText(/127.61km/)).not.toBeInTheDocument();
   });
 
   test('permette di usare un indirizzo salvato o inserirne uno nuovo', async () => {

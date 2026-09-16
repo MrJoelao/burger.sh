@@ -16,6 +16,7 @@ import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
 import { WizardSteps } from '../../components/Order/WizardSteps.jsx';
 import { Loading } from '../../components/UI/Loading.jsx';
 import { paymentService } from '../../services/paymentService.js';
+import { orderService } from '../../services/orderService.js';
 import { useOrderStore } from '../../state/orderStore.js';
 import { navigate } from '../../router/navigate.js';
 import { euro } from '../../domain/format.js';
@@ -28,9 +29,6 @@ import { AuthRequiredModal } from '../../components/Auth/AuthRequiredModal.jsx';
 import { PaymentMethodForm } from '../../components/PaymentMethods/PaymentMethodForm.jsx';
 import '../../styles/address-suggestions.css';
 
-/* tariffa solo indicativa: il totale definitivo arriva dal server alla conferma */
-const ESTIMATED_DELIVERY_FEE = 3.5;
-
 const EMPTY_ADDRESS = { street: '', city: '', province: '', zip: '', notes: '' };
 export function OrderPaymentPage() {
   const order = useOrderStore();
@@ -41,6 +39,9 @@ export function OrderPaymentPage() {
   const savedAddress = normalizeAddress(user?.address);
   const hasSavedAddress = isCompleteAddress(savedAddress);
   const [addressSource, setAddressSource] = useState(hasSavedAddress ? 'saved' : 'new');
+  const [deliveryEstimate, setDeliveryEstimate] = useState(null);
+  const [estimateLoading, setEstimateLoading] = useState(false);
+  const [deliveryError, setDeliveryError] = useState('');
   const [phase, setPhase] = useState('delivery');
   const [choice, setChoice] = useState('cash');
   const [savedMethodId, setSavedMethodId] = useState('');
@@ -55,12 +56,42 @@ export function OrderPaymentPage() {
 
   const items = order.items;
   const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
-  const estimatedTotal = subtotal + (mode === 'delivery' ? ESTIMATED_DELIVERY_FEE : 0);
   const addressComplete = address.street.trim() && address.city.trim() && address.zip.trim();
+  const deliveryFee = deliveryEstimate?.deliveryFee || 0;
+  const estimatedTotal = subtotal + deliveryFee;
 
   useEffect(() => {
     if (hasSavedAddress) setAddress(savedAddress);
   }, [user]);
+
+  useEffect(() => {
+    if (mode !== 'delivery' || !addressComplete) {
+      setDeliveryEstimate(null);
+      setDeliveryError('');
+      return undefined;
+    }
+
+    const timer = setTimeout(async () => {
+      setEstimateLoading(true);
+      setDeliveryError('');
+      try {
+        const response = await orderService.estimateDelivery(formatAddress(address));
+        if (!response?.success || !response.data) {
+          setDeliveryEstimate(null);
+          setDeliveryError(friendlyDeliveryError(response?.message));
+          return;
+        }
+        setDeliveryEstimate(response.data);
+      } catch (error) {
+        setDeliveryEstimate(null);
+        setDeliveryError(friendlyDeliveryError(error.message, error.status));
+      } finally {
+        setEstimateLoading(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [mode, address.street, address.city, address.province, address.zip]);
 
   if (!isAuthenticated) {
     return html`
@@ -80,7 +111,17 @@ export function OrderPaymentPage() {
   const moveTo = (nextPhase) => {
     setError('');
     if (nextPhase !== 'delivery' && mode === 'delivery' && !addressComplete) {
-      setError('Completa via, città e CAP per la consegna a domicilio.');
+      setDeliveryError('Completa via, città e CAP per la consegna a domicilio.');
+      setPhase('delivery');
+      return;
+    }
+    if (nextPhase !== 'delivery' && mode === 'delivery' && estimateLoading) {
+      setDeliveryError('Attendi il calcolo del costo di consegna prima di continuare.');
+      setPhase('delivery');
+      return;
+    }
+    if (nextPhase !== 'delivery' && mode === 'delivery' && !deliveryEstimate) {
+      setDeliveryError(deliveryError || 'Correggi l’indirizzo per calcolare la consegna.');
       setPhase('delivery');
       return;
     }
@@ -97,7 +138,12 @@ export function OrderPaymentPage() {
     setError('');
 
     if (mode === 'delivery' && !addressComplete) {
-      setError('Completa via, città e CAP per la consegna a domicilio.');
+      setDeliveryError('Completa via, città e CAP per la consegna a domicilio.');
+      setPhase('delivery');
+      return;
+    }
+    if (mode === 'delivery' && !deliveryEstimate) {
+      setDeliveryError(deliveryError || 'Correggi l’indirizzo per calcolare la consegna.');
       return;
     }
 
@@ -114,12 +160,22 @@ export function OrderPaymentPage() {
 
       const response = await order.confirmCart(mode, delivery);
       if (!response?.success || !response.data) {
+        if (mode === 'delivery') {
+          setDeliveryError(friendlyDeliveryError(response?.message));
+          setPhase('delivery');
+          return;
+        }
         setError(response?.message || 'Conferma non riuscita. Riprova.');
         return;
       }
 
       setDone(response.data);
     } catch (err) {
+      if (mode === 'delivery') {
+        setDeliveryError(friendlyDeliveryError(err.message, err.status));
+        setPhase('delivery');
+        return;
+      }
       setError(err.message || 'Errore di connessione. Riprova.');
     } finally {
       setBusy(false);
@@ -165,6 +221,8 @@ export function OrderPaymentPage() {
                 mode, setMode,
                 address, setAddress, savedAddress, hasSavedAddress,
                 addressSource, setAddressSource,
+                deliveryEstimate, estimateLoading,
+                deliveryError,
                 choice, setChoice,
                 savedMethodId, setSavedMethodId,
                 savedMethods, methodsError: methods.error, reloadMethods: methods.reload,
@@ -186,6 +244,8 @@ function renderPayment(props) {
     savedMethods, methodsError, reloadMethods,
     address, setAddress, setMode, setChoice,
     savedAddress, hasSavedAddress, addressSource, setAddressSource,
+    deliveryEstimate, estimateLoading,
+    deliveryError,
     savedMethodId, setSavedMethodId,
     showPaymentForm, setShowPaymentForm,
     moveTo, handleConfirm
@@ -197,14 +257,14 @@ function renderPayment(props) {
 
     <form class="payment-form" onSubmit=${handleConfirm}>
       <div class="checkout-stage" key=${phase}>
-        ${phase === 'delivery' && renderDelivery(address, setAddress, mode, setMode, moveTo, savedAddress, hasSavedAddress, addressSource, setAddressSource)}
+        ${phase === 'delivery' && renderDelivery(address, setAddress, mode, setMode, moveTo, savedAddress, hasSavedAddress, addressSource, setAddressSource, deliveryEstimate, estimateLoading, deliveryError)}
         ${phase === 'payment' && renderPaymentChoice({
           choice, setChoice, savedMethods, methodsError, savedMethodId,
           setSavedMethodId, showPaymentForm, setShowPaymentForm, reloadMethods, moveTo
         })}
         ${phase === 'summary' && renderSummary({
           items, subtotal, estimatedTotal, mode, address, choice, savedMethods,
-          savedMethodId, moveTo, busy
+          savedMethodId, moveTo, busy, deliveryEstimate
         })}
       </div>
     </form>
@@ -212,7 +272,7 @@ function renderPayment(props) {
   `;
 }
 
-function renderDelivery(address, setAddress, mode, setMode, moveTo, savedAddress, hasSavedAddress, addressSource, setAddressSource) {
+function renderDelivery(address, setAddress, mode, setMode, moveTo, savedAddress, hasSavedAddress, addressSource, setAddressSource, deliveryEstimate, estimateLoading, deliveryError) {
   return html`
     <section class="panel-block">
       <div class="delivery-intro">
@@ -234,7 +294,7 @@ function renderDelivery(address, setAddress, mode, setMode, moveTo, savedAddress
           current=${mode}
           onSelect=${setMode}
           label="CONSEGNA A DOMICILIO"
-          detail=${`+€ ${ESTIMATED_DELIVERY_FEE.toFixed(2)} · direttamente da te`}
+          detail="costo calcolato in base alla distanza"
           marker="02"
         />
       </div>
@@ -246,7 +306,12 @@ function renderDelivery(address, setAddress, mode, setMode, moveTo, savedAddress
           hasSavedAddress=${hasSavedAddress}
           addressSource=${addressSource}
           setAddressSource=${setAddressSource}
+          error=${deliveryError}
         />
+        <p class="delivery-estimate ${deliveryError ? 'has-error' : ''}" aria-live="polite">
+          <span>costo calcolato dal server</span>
+          <strong>${estimateLoading ? 'calcolo...' : deliveryEstimate ? `€ ${deliveryEstimate.deliveryFee.toFixed(2)} · ${deliveryEstimate.distanceKm} km` : 'inserisci un indirizzo completo'}</strong>
+        </p>
       `}
       <div class="shortcut-row stage-actions">
         <button class="terminal-button primary" type="button" onClick=${() => moveTo('payment')}>[ enter ] continua al pagamento</button>
@@ -286,7 +351,7 @@ function renderPaymentChoice({ choice, setChoice, savedMethods, methodsError, sa
   `;
 }
 
-function renderSummary({ items, subtotal, estimatedTotal, mode, address, choice, savedMethods, savedMethodId, moveTo, busy }) {
+function renderSummary({ items, subtotal, estimatedTotal, mode, address, choice, savedMethods, savedMethodId, moveTo, busy, deliveryEstimate }) {
   const selected = savedMethods.find(method => entityId(method) === savedMethodId);
   return html`
     <section class="panel-block">
@@ -306,7 +371,7 @@ function renderSummary({ items, subtotal, estimatedTotal, mode, address, choice,
       </ul>
       <div class="checkout-totals">
         <p><span>subtotale</span><b>${euro(subtotal)}</b></p>
-        ${mode === 'delivery' && html`<p><span>consegna (stima)</span><b>${euro(ESTIMATED_DELIVERY_FEE)}</b></p>`}
+        ${mode === 'delivery' && html`<p><span>consegna</span><b>${deliveryEstimate ? euro(deliveryEstimate.deliveryFee) : 'in calcolo'}</b></p>`}
         <p class="checkout-grand-total"><span>totale stimato</span><strong>${euro(estimatedTotal)}</strong></p>
       </div>
       <div class="shortcut-row stage-actions">
@@ -348,7 +413,7 @@ function PaymentChoice({ name, value, current, onSelect, label, detail }) {
   `;
 }
 
-function AddressFields({ address, setAddress, savedAddress, hasSavedAddress, addressSource, setAddressSource }) {
+function AddressFields({ address, setAddress, savedAddress, hasSavedAddress, addressSource, setAddressSource, error }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -393,6 +458,12 @@ function AddressFields({ address, setAddress, savedAddress, hasSavedAddress, add
     <fieldset class="address-fields">
       <legend>indirizzo di consegna</legend>
       <p class="address-helper">Scegli un recapito già salvato oppure inseriscine uno nuovo.</p>
+      ${error && html`
+        <div class="delivery-error" role="alert">
+          <strong>controlla l'indirizzo</strong>
+          <p>${error}</p>
+        </div>
+      `}
       <div class="address-source-switch" role="tablist" aria-label="origine dell'indirizzo">
         ${hasSavedAddress && html`
           <button
@@ -462,6 +533,20 @@ function normalizeAddress(address) {
 
 function isCompleteAddress(address) {
   return Boolean(address.street.trim() && address.city.trim() && address.zip.trim());
+}
+
+function friendlyDeliveryError(message = '', status = 0) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes('farther than the maximum served distance')) {
+    return 'Questo indirizzo è fuori dalla zona di consegna. Scegli un indirizzo entro 15 km dalla filiale.';
+  }
+  if (status === 422 || normalized.includes('geocod') || normalized.includes('address')) {
+    return 'Non riconosciamo questo indirizzo. Controlla via, città e CAP, poi riprova.';
+  }
+  if (status === 0 || status >= 500) {
+    return 'Il calcolo della consegna non è disponibile in questo momento. Riprova tra poco.';
+  }
+  return 'Non riusciamo a calcolare la consegna. Controlla l’indirizzo e riprova.';
 }
 
 export default OrderPaymentPage;

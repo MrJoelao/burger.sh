@@ -765,6 +765,53 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
 
+  /cart/delivery-estimate:
+    post:
+      tags: [Cart]
+      summary: calcola distanza e costo stimato della consegna
+      description: >
+        Usa la filiale del carrello attivo e geocodifica l'indirizzo indicato.
+        Distanza e tariffa vengono sempre calcolate dal server. La conferma
+        dell'ordine ricalcola comunque questi valori.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address:
+                  type: string
+                  minLength: 2
+                  example: Via Torino 5, Milano
+      responses:
+        '200':
+          description: stima della consegna
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      distanceKm: { type: number, example: 3.2 }
+                      deliveryFee: { type: number, example: 2.5 }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: nessun carrello in bozza attivo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: indirizzo non geocodificabile o oltre la distanza massima servita
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
   /cart/confirm:
     post:
       tags: [Cart]

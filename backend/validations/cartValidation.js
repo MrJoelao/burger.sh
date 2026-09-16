@@ -23,4 +23,8 @@ const confirmCartSchema = Joi.object({
   })
 });
 
-module.exports = { addCartItemSchema, updateCartItemSchema, confirmCartSchema };
+const deliveryEstimateSchema = Joi.object({
+  address: Joi.string().min(2).trim().required()
+});
+
+module.exports = { addCartItemSchema, updateCartItemSchema, confirmCartSchema, deliveryEstimateSchema };
