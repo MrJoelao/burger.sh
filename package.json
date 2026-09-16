@@ -16,6 +16,8 @@
     "dev": "concurrently \"npm run backend\" \"npm run frontend:dev\"",
     "backend": "cd backend && npm run dev",
     "backend:start": "cd backend && npm start",
+    "demo": "npm run frontend:build && concurrently --kill-others-on-fail \"npm run demo:backend\" \"npm run frontend:preview -- --host 0.0.0.0\"",
+    "demo:backend": "cd backend && npm run demo",
     "frontend:dev": "cd frontend && vite",
     "frontend:build": "cd frontend && vite build",
     "frontend:preview": "cd frontend && vite preview",
