@@ -2054,6 +2054,20 @@
   min-height: 540px;
 }
 
+/* the welcome screen is the product's first and only landing surface */
+.intro-console {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.intro-console .intro-hero {
+  min-height: 0;
+  height: 100%;
+}
+
 .intro-copy {
   display: flex;
   flex-direction: column;
@@ -3169,6 +3183,44 @@
 
   .footer-status {
     min-height: 30px;
+  }
+
+  .intro-console .intro-hero {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .intro-console .intro-copy {
+    min-height: 0;
+    padding: 24px 20px;
+  }
+
+  .intro-console .intro-copy h1 {
+    margin: 10px 0;
+    font-size: clamp(38px, 12vw, 54px);
+  }
+
+  .intro-console .intro-lead {
+    margin-bottom: 16px;
+    font-size: 12px;
+  }
+
+  .intro-console .hero-instrument {
+    min-height: 0;
+  }
+
+  .intro-console .intro-burger {
+    transform: translate(-50%, -48%) scale(.82);
+  }
+
+  .intro-console .ring-one {
+    width: min(82vw, 340px);
+    height: min(82vw, 340px);
+  }
+
+  .intro-console .ring-two {
+    width: min(58vw, 230px);
+    height: min(58vw, 230px);
   }
 }
 
