@@ -13,6 +13,8 @@ describe('FullScreenError', () => {
 
     expect(screen.getByRole('heading', { name: /ACCEDI_PER PROCEDERE/i })).toBeInTheDocument();
     expect(container.querySelector('main.error-fullscreen[data-error-kind="auth"]')).not.toBeNull();
+    expect(container.querySelector('.crt-noise')).not.toBeNull();
+    expect(container.querySelector('.error-noise')).toBeNull();
     expect(container.querySelector('.command-list')).toBeNull();
     expect(screen.queryByText(/buffer empty/i)).toBeNull();
   });

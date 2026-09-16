@@ -32,7 +32,7 @@ export function FullScreenError({
 
   return html`
     <main class="error-fullscreen" data-error-kind=${errorKind} aria-labelledby="error-title">
-      <div class="error-noise" aria-hidden="true"></div>
+      <div class="crt-noise" aria-hidden="true"></div>
       <div class="error-shell">
         <${TitleBar}
           section="system"

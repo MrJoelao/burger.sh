@@ -3841,7 +3841,19 @@
   overflow: hidden;
 }
 
+.error-fullscreen::before {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background-image: var(--grid-pattern);
+  background-size: var(--grid-size);
+}
+
 .error-shell {
+  position: relative;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -4012,15 +4024,6 @@
 .error-fullscreen {
   background: var(--ink);
   background-image: var(--grid-pattern);
-}
-
-.error-noise {
-  position: absolute;
-  inset: 0;
-  opacity: .24;
-  pointer-events: none;
-  background-image: linear-gradient(rgba(242, 189, 78, .05) 1px, transparent 1px), linear-gradient(90deg, rgba(242, 189, 78, .05) 1px, transparent 1px);
-  background-size: 32px 32px;
 }
 
 .error-eyebrow {
