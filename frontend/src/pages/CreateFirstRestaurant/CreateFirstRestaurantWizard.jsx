@@ -181,7 +181,7 @@ export function CreateFirstRestaurantWizard({
       `}
 
       <div class="wizard-viewport">
-        <section class="wizard-step" key=${step} aria-labelledby="wizard-step-title">
+        <section class="register-wizard-step" key=${step} aria-labelledby="wizard-step-title">
           ${step === 0 && html`
             <p class="wizard-explainer">
               Ciao <b>${user?.name || 'Manager'}</b>, ora creiamo la tua prima filiale.
