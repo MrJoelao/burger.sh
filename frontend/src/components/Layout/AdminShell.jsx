@@ -5,15 +5,17 @@ import { navigate } from '../../router/navigate.js';
 
 const links = [
   { label: 'dashboard', path: '/dashboard/admin' },
-  { label: 'utenti', path: '/admin/users' },
-  { label: 'filiali', path: '/admin/branches' },
-  { label: 'statistiche', path: '/admin/stats' },
   { label: 'profilo', path: '/profile' }
 ];
 
 /* le sezioni operative stanno nella directory laterale, il profilo resta solo
    nella barra in alto */
-const directoryLinks = links.slice(0, 4);
+const directoryLinks = [
+  { label: 'dashboard', path: '/dashboard/admin' },
+  { label: 'utenti', path: '/admin/users' },
+  { label: 'filiali', path: '/admin/branches' },
+  { label: 'statistiche', path: '/admin/stats' }
+];
 
 export function AdminShell({ children, title = 'admin-ops', subtitle = 'system control' }) {
   const { user } = useAuthStore();
