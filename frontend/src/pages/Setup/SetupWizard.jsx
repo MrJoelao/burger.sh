@@ -137,7 +137,7 @@ export function SetupWizard({
       </div>
 
       <div class="wizard-viewport setup-viewport">
-        <section class="wizard-step" key=${step} aria-labelledby="setup-step-title">
+        <section class="setup-wizard-step" key=${step} aria-labelledby="setup-step-title">
           ${step === 0 && html`
             <div class="wizard-fields">
               ${pinRequired

@@ -19,6 +19,13 @@ function submitStep(form) {
 }
 
 describe('RegisterWizard', () => {
+  test('usa una superficie distinta dal wizard ordini', () => {
+    const { container } = renderWizard();
+
+    expect(container.querySelector('.register-wizard-step')).toBeInTheDocument();
+    expect(container.querySelector('.register-wizard-step.wizard-step')).toBeNull();
+  });
+
   test('al passo identita mette nome e cognome su due colonne', () => {
     const { container, form } = renderWizard();
 

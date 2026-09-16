@@ -163,7 +163,7 @@ export function RegisterWizard({
       </div>
 
       <div class="wizard-viewport">
-        <section class="wizard-step" key=${step} aria-labelledby="wizard-step-title">
+        <section class="register-wizard-step" key=${step} aria-labelledby="wizard-step-title">
           <p class="wizard-explainer">${step === 0 ? 'Il ruolo determina gli strumenti e il percorso che vedrai.' : current.subtitle}</p>
 
           ${step === 0 && html`

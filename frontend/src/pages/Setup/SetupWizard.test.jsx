@@ -26,6 +26,13 @@ describe('SetupWizard', () => {
     expect(container.querySelectorAll('.wizard-progress-step')).toHaveLength(3);
   });
 
+  test('usa una superficie distinta dal wizard ordini', () => {
+    const { container } = renderWizard();
+
+    expect(container.querySelector('.setup-wizard-step')).toBeInTheDocument();
+    expect(container.querySelector('.setup-wizard-step.wizard-step')).toBeNull();
+  });
+
   test('quando il PIN non serve il primo passo non chiede il pin', () => {
     renderWizard();
 
