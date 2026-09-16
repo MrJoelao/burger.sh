@@ -26,6 +26,10 @@
   --color-text-primary: var(--white);
   --color-text-on-accent: var(--ink);
   --color-text-on-paper: var(--ink);
+
+  --grid-pattern: linear-gradient(rgba(242, 189, 78, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(242, 189, 78, 0.035) 1px, transparent 1px);
+  --grid-size: 20px 20px;
 }
 
 * {

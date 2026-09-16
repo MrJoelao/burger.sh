@@ -16,15 +16,29 @@
 
 /* Main Console Window */
 .console {
+  position: relative;
   overflow-x: hidden;
   width: 100vw;
   min-height: 100vh;
   margin: 0;
   border: none;
   background-color: var(--ink);
+  box-shadow: none;
+}
+
+.console::before {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  pointer-events: none;
+  content: "";
   background-image: var(--grid-pattern);
   background-size: var(--grid-size);
-  box-shadow: none;
+}
+
+.console > * {
+  position: relative;
+  z-index: 6;
 }
 
 .route-root {
@@ -3676,7 +3690,7 @@
   .success-message {
     font-size: 12px;
   }
-  
+
   .terminal-body {
     padding: 16px;
   }
