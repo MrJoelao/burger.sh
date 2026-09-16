@@ -123,12 +123,14 @@ export function OrderMenuPage({ restaurantId }) {
 
         <div class="menu-flow">
           <div>
-            <${SectionHeading}
-              eyebrow="menu della filiale"
-              title=${`MENU_`}
-              titleSpan=${data?.name || 'filiale'}
-              subtitle="aggiungi i piatti al carrello; il totale si calcola al pagamento"
-            />
+            <div class="menu-intro">
+              <${SectionHeading}
+                eyebrow="stai ordinando da"
+                title="IL MENU DI_"
+                titleSpan=${data?.name || 'questa sede'}
+                subtitle="Scegli i piatti. Il carrello resta visibile mentre componi l’ordine."
+              />
+            </div>
 
             <${AsyncBoundary} loading=${dishes.loading} error=${dishes.error} label="menu">
               ${sections.length === 0

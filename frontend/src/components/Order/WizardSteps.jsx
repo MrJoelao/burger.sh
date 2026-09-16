@@ -20,7 +20,7 @@ export function WizardSteps({ current = '', steps = ORDER_WIZARD_STEPS }) {
           class=${`wizard-step ${step.id === current ? 'current' : ''}`}
           aria-current=${step.id === current ? 'step' : undefined}
         >
-          <span class="wizard-step-index">${String(index + 1).padStart(2, '0')}</span>
+          <span class="wizard-step-index" aria-hidden="true">${index < steps.findIndex(step => step.id === current) ? '✓' : '·'}</span>
           <span class="wizard-step-label">${step.label}</span>
         </li>
       `)}
