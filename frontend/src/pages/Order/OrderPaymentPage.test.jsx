@@ -35,7 +35,7 @@ async function renderPage(overrides = {}) {
   paymentService.list.mockResolvedValue({ success: true, data: [] });
   useOrderStore.mockReturnValue(storeWith(overrides));
   render(<OrderPaymentPage />);
-  await screen.findByText('DOVE_');
+  await screen.findByText(/DOVE ARRIVA/);
   return useOrderStore.mock.results.at(-1).value;
 }
 
@@ -61,6 +61,9 @@ describe('OrderPaymentPage', () => {
 
     expect(screen.getAllByRole('list', { name: /passi dell.?ordine/i })).toHaveLength(1);
     expect(screen.queryByText('riepilogo')).not.toBeInTheDocument();
+    expect(screen.queryByText(/checkout guidato/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/chiudi l'ordine/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('indirizzo di consegna')).not.toBeInTheDocument();
   });
 
   test('passa dal ritiro al pagamento e poi al riepilogo', async () => {
@@ -77,17 +80,17 @@ describe('OrderPaymentPage', () => {
   test('una consegna a domicilio richiede via, città e CAP', async () => {
     await renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /consegna \(\+/i }));
+    fireEvent.click(screen.getByRole('radio', { name: /consegna a domicilio/i }));
     continueToPayment();
 
     expect(await screen.findByText(/completa via, città e cap/i)).toBeInTheDocument();
-    expect(screen.getByText('DOVE_')).toBeInTheDocument();
+    expect(screen.getByText(/DOVE ARRIVA/)).toBeInTheDocument();
   });
 
   test('una consegna completa invia modalità e indirizzo alla conferma', async () => {
     const store = await renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: /consegna \(\+/i }));
+    fireEvent.click(screen.getByRole('radio', { name: /consegna a domicilio/i }));
     fireEvent.input(screen.getByLabelText('via e numero'), { target: { value: 'Via Roma 1' } });
     fireEvent.input(screen.getByLabelText('città'), { target: { value: 'Milano' } });
     fireEvent.input(screen.getByLabelText(/cap/i), { target: { value: '20100' } });
@@ -98,6 +101,26 @@ describe('OrderPaymentPage', () => {
     await waitFor(() => expect(store.confirmCart).toHaveBeenCalledWith('delivery', {
       address: 'Via Roma 1, Milano, 20100'
     }));
+  });
+
+  test('permette di usare un indirizzo salvato o inserirne uno nuovo', async () => {
+    useAuthStore.mockReturnValue({
+      user: {
+        id: 'c1',
+        name: 'Luca',
+        role: 'customer',
+        address: { street: 'Via Verdi 2', city: 'Milano', zip: '20100' }
+      },
+      isAuthenticated: true
+    });
+    await renderPage();
+
+    fireEvent.click(screen.getByRole('radio', { name: /consegna a domicilio/i }));
+    expect(screen.getByRole('tab', { name: /indirizzo salvato/i })).toHaveTextContent('Via Verdi 2, Milano, 20100');
+    expect(screen.queryByLabelText('via e numero')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: /aggiungi nuovo indirizzo/i }));
+    expect(screen.getByLabelText('via e numero')).toBeInTheDocument();
   });
 
   test('mostra il codice ordine dopo la conferma', async () => {

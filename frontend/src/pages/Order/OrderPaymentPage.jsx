@@ -34,10 +34,13 @@ const ESTIMATED_DELIVERY_FEE = 3.5;
 const EMPTY_ADDRESS = { street: '', city: '', province: '', zip: '', notes: '' };
 export function OrderPaymentPage() {
   const order = useOrderStore();
-  const { isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mode, setMode] = useState('pickup');
   const [address, setAddress] = useState(EMPTY_ADDRESS);
+  const savedAddress = normalizeAddress(user?.address);
+  const hasSavedAddress = isCompleteAddress(savedAddress);
+  const [addressSource, setAddressSource] = useState(hasSavedAddress ? 'saved' : 'new');
   const [phase, setPhase] = useState('delivery');
   const [choice, setChoice] = useState('cash');
   const [savedMethodId, setSavedMethodId] = useState('');
@@ -54,6 +57,10 @@ export function OrderPaymentPage() {
   const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
   const estimatedTotal = subtotal + (mode === 'delivery' ? ESTIMATED_DELIVERY_FEE : 0);
   const addressComplete = address.street.trim() && address.city.trim() && address.zip.trim();
+
+  useEffect(() => {
+    if (hasSavedAddress) setAddress(savedAddress);
+  }, [user]);
 
   if (!isAuthenticated) {
     return html`
@@ -156,7 +163,8 @@ export function OrderPaymentPage() {
             : renderPayment({
                 order,
                 mode, setMode,
-                address, setAddress,
+                address, setAddress, savedAddress, hasSavedAddress,
+                addressSource, setAddressSource,
                 choice, setChoice,
                 savedMethodId, setSavedMethodId,
                 savedMethods, methodsError: methods.error, reloadMethods: methods.reload,
@@ -177,6 +185,7 @@ function renderPayment(props) {
     items, subtotal, estimatedTotal, mode, error, busy, choice, phase,
     savedMethods, methodsError, reloadMethods,
     address, setAddress, setMode, setChoice,
+    savedAddress, hasSavedAddress, addressSource, setAddressSource,
     savedMethodId, setSavedMethodId,
     showPaymentForm, setShowPaymentForm,
     moveTo, handleConfirm
@@ -184,17 +193,11 @@ function renderPayment(props) {
 
   return html`
     <div class="checkpoint-center">
-    <${SectionHeading}
-      eyebrow="checkout guidato"
-      title="CHIUDI L'ORDINE_"
-      subtitle="un passo alla volta. puoi tornare indietro senza perdere le scelte."
-    />
-
     ${error && html`<${FormMessage} message=${error} type="error" />`}
 
     <form class="payment-form" onSubmit=${handleConfirm}>
       <div class="checkout-stage" key=${phase}>
-        ${phase === 'delivery' && renderDelivery(address, setAddress, mode, setMode, moveTo)}
+        ${phase === 'delivery' && renderDelivery(address, setAddress, mode, setMode, moveTo, savedAddress, hasSavedAddress, addressSource, setAddressSource)}
         ${phase === 'payment' && renderPaymentChoice({
           choice, setChoice, savedMethods, methodsError, savedMethodId,
           setSavedMethodId, showPaymentForm, setShowPaymentForm, reloadMethods, moveTo
@@ -209,15 +212,42 @@ function renderPayment(props) {
   `;
 }
 
-function renderDelivery(address, setAddress, mode, setMode, moveTo) {
+function renderDelivery(address, setAddress, mode, setMode, moveTo, savedAddress, hasSavedAddress, addressSource, setAddressSource) {
   return html`
     <section class="panel-block">
-      <${SectionHeading} eyebrow="01 / consegna" title="DOVE_" titleSpan="LO VUOI" subtitle="scegli ritiro in sede o consegna a domicilio" />
-      <div class="shortcut-row">
-        <${ModeChoice} value="pickup" current=${mode} onSelect=${setMode} label="RITIRO IN SEDE" />
-        <${ModeChoice} value="delivery" current=${mode} onSelect=${setMode} label=${`CONSEGNA (+€ ${ESTIMATED_DELIVERY_FEE.toFixed(2)})`} />
+      <div class="delivery-intro">
+        <p class="eyebrow">01 / destinazione</p>
+        <h2>DOVE ARRIVA<span class="heading-accent">?</span></h2>
+        <p>Scegli come vuoi ricevere il tuo ordine. L'indirizzo resta qui mentre completi il pagamento.</p>
       </div>
-      ${mode === 'delivery' && html`<${AddressFields} address=${address} setAddress=${setAddress} />`}
+      <div class="delivery-modes" role="radiogroup" aria-label="modalità di ricezione">
+        <${ModeChoice}
+          value="pickup"
+          current=${mode}
+          onSelect=${setMode}
+          label="RITIRO IN SEDE"
+          detail="passa tu a prenderlo"
+          marker="01"
+        />
+        <${ModeChoice}
+          value="delivery"
+          current=${mode}
+          onSelect=${setMode}
+          label="CONSEGNA A DOMICILIO"
+          detail=${`+€ ${ESTIMATED_DELIVERY_FEE.toFixed(2)} · direttamente da te`}
+          marker="02"
+        />
+      </div>
+      ${mode === 'delivery' && html`
+        <${AddressFields}
+          address=${address}
+          setAddress=${setAddress}
+          savedAddress=${savedAddress}
+          hasSavedAddress=${hasSavedAddress}
+          addressSource=${addressSource}
+          setAddressSource=${setAddressSource}
+        />
+      `}
       <div class="shortcut-row stage-actions">
         <button class="terminal-button primary" type="button" onClick=${() => moveTo('payment')}>[ enter ] continua al pagamento</button>
       </div>
@@ -287,8 +317,18 @@ function renderSummary({ items, subtotal, estimatedTotal, mode, address, choice,
   `;
 }
 
-function ModeChoice({ value, current, onSelect, label }) {
-  return html`<button class=${`terminal-button ${current === value ? 'primary' : ''}`} type="button" aria-pressed=${current === value} onClick=${() => onSelect(value)}>${label}</button>`;
+function ModeChoice({ value, current, onSelect, label, detail, marker }) {
+  const active = current === value;
+  return html`
+    <button class=${`delivery-mode ${active ? 'active' : ''}`} type="button" role="radio" aria-checked=${active} onClick=${() => onSelect(value)}>
+      <span class="delivery-mode-marker">${marker}</span>
+      <span class="delivery-mode-copy">
+        <strong>${label}</strong>
+        <small>${detail}</small>
+      </span>
+      <span class="delivery-mode-state" aria-hidden="true">${active ? '●' : '○'}</span>
+    </button>
+  `;
 }
 
 function PaymentChoice({ name, value, current, onSelect, label, detail }) {
@@ -308,7 +348,7 @@ function PaymentChoice({ name, value, current, onSelect, label, detail }) {
   `;
 }
 
-function AddressFields({ address, setAddress }) {
+function AddressFields({ address, setAddress, savedAddress, hasSavedAddress, addressSource, setAddressSource }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -350,8 +390,34 @@ function AddressFields({ address, setAddress }) {
   };
 
   return html`
-    <div class="address-fields">
-      <div class="profile-grid">
+    <fieldset class="address-fields">
+      <legend>indirizzo di consegna</legend>
+      <p class="address-helper">Scegli un recapito già salvato oppure inseriscine uno nuovo.</p>
+      <div class="address-source-switch" role="tablist" aria-label="origine dell'indirizzo">
+        ${hasSavedAddress && html`
+          <button
+            class=${`address-source-choice ${addressSource === 'saved' ? 'active' : ''}`}
+            type="button"
+            role="tab"
+            aria-selected=${addressSource === 'saved'}
+            onClick=${() => { setAddressSource('saved'); setAddress(savedAddress); }}
+          >
+            <span>indirizzo salvato</span>
+            <small>${formatAddress(savedAddress)}</small>
+          </button>
+        `}
+        <button
+          class=${`address-source-choice ${addressSource === 'new' ? 'active' : ''}`}
+          type="button"
+          role="tab"
+          aria-selected=${addressSource === 'new'}
+          onClick=${() => { setAddressSource('new'); setAddress(EMPTY_ADDRESS); }}
+        >
+          <span>aggiungi nuovo indirizzo</span>
+          <small>compila i dati di consegna</small>
+        </button>
+      </div>
+      ${addressSource === 'new' && html`<div class="profile-grid">
         <label class="profile-field address-field-wrapper">
           via e numero
           <input type="text" autocomplete="street-address" placeholder="Via Roma 1" value=${address.street} onInput=${event => setAddress(current => ({ ...current, street: event.currentTarget.value }))} />
@@ -361,8 +427,8 @@ function AddressFields({ address, setAddress }) {
         ${[['city', 'città', 'Milano', 'address-level2'], ['province', 'provincia', 'Milano', 'address-level1'], ['zip', 'CAP', '20100', 'postal-code'], ['notes', 'note (opzionale)', 'Citofono, piano...', undefined]].map(([name, label, placeholder, autocomplete]) => html`
           <label class="profile-field" key=${name}>${label}<input type="text" autocomplete=${autocomplete} placeholder=${placeholder} value=${address[name]} onInput=${event => setAddress(current => ({ ...current, [name]: event.currentTarget.value }))} /></label>
         `)}
-      </div>
-    </div>
+      </div>`}
+    </fieldset>
   `;
 }
 
@@ -388,6 +454,14 @@ function PaymentMethodModal({ onClose, onSaved }) {
 
 function formatAddress(address) {
   return [address.street, address.city, address.province, address.zip].filter(Boolean).join(', ');
+}
+
+function normalizeAddress(address) {
+  return { ...EMPTY_ADDRESS, ...(address || {}) };
+}
+
+function isCompleteAddress(address) {
+  return Boolean(address.street.trim() && address.city.trim() && address.zip.trim());
 }
 
 export default OrderPaymentPage;
