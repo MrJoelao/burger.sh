@@ -1,14 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/preact';
-import { OrderHistoryPage } from './OrderHistoryPage.jsx';
-import { orderService } from '../../services/orderService.js';
+import { OrdersPanel } from './OrdersPanel.jsx';
+import { orderService } from '../../../services/orderService.js';
+import { navigate } from '../../../router/navigate.js';
 
-vi.mock('../../state/authStore.js', () => ({
-  useAuthStore: () => ({ user: { id: 'c1', name: 'Luca', role: 'customer' } })
-}));
+vi.mock('../../../router/navigate.js', () => ({ navigate: vi.fn() }));
 
-vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
-
-vi.mock('../../services/orderService.js', () => ({
+vi.mock('../../../services/orderService.js', () => ({
   orderService: { getUserOrders: vi.fn(), getOrder: vi.fn(), confirmDelivery: vi.fn() }
 }));
 
@@ -26,15 +23,15 @@ function order(overrides = {}) {
   };
 }
 
-describe('OrderHistoryPage', () => {
+describe('OrdersPanel', () => {
   beforeEach(() => {
     orderService.getUserOrders.mockReset();
   });
 
-  test('mostra il codice ordine e il nome della filiale popolata', async () => {
+  test('mostra lo storico con il codice dell ordine', async () => {
     orderService.getUserOrders.mockResolvedValue({ success: true, data: [order()] });
 
-    render(<OrderHistoryPage />);
+    render(<OrdersPanel active />);
 
     expect(await screen.findByText('FF-A1B2C3')).toBeInTheDocument();
     expect(screen.getByText(/Duomo/)).toBeInTheDocument();
@@ -43,28 +40,27 @@ describe('OrderHistoryPage', () => {
   test('chiede al server solo il filtro scelto', async () => {
     orderService.getUserOrders.mockResolvedValue({ success: true, data: [order()] });
 
-    render(<OrderHistoryPage />);
+    render(<OrdersPanel active />);
     await screen.findByText('FF-A1B2C3');
 
-    fireEvent.click(screen.getByRole('button', { name: /in corso/i }));
+    fireEvent.click(screen.getByRole('button', { name: /consegnati/i }));
 
     await screen.findByText('FF-A1B2C3');
-    expect(orderService.getUserOrders).toHaveBeenLastCalledWith('current');
+    expect(orderService.getUserOrders).toHaveBeenLastCalledWith('past');
   });
 
-  test('un carrello in bozza non compare tra gli ordini', async () => {
+  test('senza ordini invita a effettuarne uno', async () => {
     orderService.getUserOrders.mockResolvedValue({ success: true, data: [] });
 
-    render(<OrderHistoryPage />);
+    render(<OrdersPanel active />);
 
     expect(await screen.findByText(/nessun ordine/i)).toBeInTheDocument();
   });
 
   test('dal riquadro di un ordine si apre il dettaglio', async () => {
     orderService.getUserOrders.mockResolvedValue({ success: true, data: [order()] });
-    const { navigate } = await import('../../router/navigate.js');
 
-    render(<OrderHistoryPage />);
+    render(<OrdersPanel active />);
     fireEvent.click(await screen.findByRole('button', { name: /dettagli/i }));
 
     expect(navigate).toHaveBeenCalledWith('/orders/o1');

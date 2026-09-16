@@ -7,10 +7,10 @@ import { html } from '../utils/htm.js';
 import { useState, useEffect } from 'preact/hooks';
 import { HomePage } from '../pages/Home/HomePage.jsx';
 import { AuthLayout } from '../pages/Auth/AuthLayout.jsx';
-import { MenuPage } from '../pages/Menu/MenuPage.jsx';
 import { RestaurantListPage } from '../pages/Restaurants/RestaurantListPage.jsx';
-import { OrderConfirmPage } from '../pages/Order/OrderConfirmPage.jsx';
-import { OrderHistoryPage } from '../pages/Order/OrderHistoryPage.jsx';
+import { RestaurantSelectPage } from '../pages/Order/RestaurantSelectPage.jsx';
+import { OrderMenuPage } from '../pages/Order/OrderMenuPage.jsx';
+import { OrderPaymentPage } from '../pages/Order/OrderPaymentPage.jsx';
 import { OrderDetailPage } from '../pages/Order/OrderDetailPage.jsx';
 import { CustomerDashboard } from '../pages/Dashboard/CustomerDashboard.jsx';
 import { ManagerOverview } from '../pages/Manager/ManagerOverview.jsx';
@@ -22,7 +22,6 @@ import { AdminUsers } from '../pages/Admin/AdminUsers.jsx';
 import { AdminBranches } from '../pages/Admin/AdminBranches.jsx';
 import { AdminStats } from '../pages/Admin/AdminStats.jsx';
 import { ProfilePage } from '../pages/Profile/ProfilePage.jsx';
-import { PaymentMethodsPage } from '../pages/PaymentMethods/PaymentMethodsPage.jsx';
 import { SetupPage } from '../pages/Setup/SetupPage.jsx';
 import { ChangePasswordPage } from '../pages/Setup/ChangePasswordPage.jsx';
 import { CreateFirstRestaurantPage } from '../pages/CreateFirstRestaurant/CreateFirstRestaurantPage.jsx';
@@ -34,6 +33,7 @@ import { useUIStore } from '../state/uiStore.js';
 import { navigate } from './navigate.js';
 import { dashboardPathFor, redirectFor } from '../domain/roles.js';
 import { setupService } from '../services/setupService.js';
+import { entityId } from '../domain/entity.js';
 
 /**
  * Route table: ordered patterns with optional role restrictions.
@@ -42,13 +42,12 @@ import { setupService } from '../services/setupService.js';
 const ROUTES = [
   { path: '/', component: HomePage },
   { path: '/auth', component: AuthLayout, props: { mode: 'login' } },
-  { path: '/menu', component: MenuPage },
-  { path: '/restaurants', component: RestaurantListPage },
-  { path: '/orders/confirm', component: OrderConfirmPage, roles: ['customer'] },
-  { path: '/orders', component: OrderHistoryPage, roles: ['customer'] },
+  { path: '/restaurants', component: RestaurantListPage, props: { onRestaurantSelect: (r) => navigate(`/orders/menu/${entityId(r)}`) } },
+  { path: '/orders', component: RestaurantSelectPage, roles: ['customer'] },
+  { path: '/orders/menu/:restaurantId', component: OrderMenuPage, roles: ['customer'] },
+  { path: '/orders/payment', component: OrderPaymentPage, roles: ['customer'] },
   { path: '/orders/:orderId', component: OrderDetailPage, roles: ['customer', 'manager', 'admin'] },
   { path: '/dashboard', component: CustomerDashboard, roles: ['customer'] },
-  { path: '/payment-methods', component: PaymentMethodsPage, roles: ['customer'] },
   { path: '/dashboard/manager', component: ManagerOverview, roles: ['manager'] },
   { path: '/dashboard/admin', component: AdminOverview, roles: ['admin'] },
   { path: '/profile', component: ProfilePage, roles: ['customer', 'manager', 'admin'] },
@@ -57,10 +56,10 @@ const ROUTES = [
   { path: '/manager/restaurant', component: ManagerRestaurant, roles: ['manager'] },
   { path: '/admin/users', component: AdminUsers, roles: ['admin'] },
   { path: '/admin/branches', component: AdminBranches, roles: ['admin'] },
-  { path: '/admin/stats', component: AdminStats, roles: ['admin'] }
-  ,{ path: '/setup', component: SetupPage }
-  ,{ path: '/change-password', component: ChangePasswordPage, roles: ['admin'] }
-  ,{ path: '/manager/first-restaurant', component: CreateFirstRestaurantPage }
+  { path: '/admin/stats', component: AdminStats, roles: ['admin'] },
+  { path: '/setup', component: SetupPage },
+  { path: '/change-password', component: ChangePasswordPage, roles: ['admin'] },
+  { path: '/manager/first-restaurant', component: CreateFirstRestaurantPage }
 ];
 
 /**

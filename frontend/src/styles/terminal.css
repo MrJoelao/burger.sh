@@ -3769,3 +3769,234 @@
   .error-footer { padding: 14px 16px; }
   .error-content { padding: 40px 20px; }
 }
+
+/* ── Customer console ─────────────────────────────────────────────────────── */
+
+.customer-console {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.customer-screen {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 28px;
+}
+
+/* ── Restaurant search (wizard step 1) ─────────────────────────────────────── */
+
+.restaurant-search {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 20px;
+  color: var(--dirty);
+  font-size: 12px;
+}
+
+.restaurant-search input {
+  flex: 1;
+  background: var(--ink);
+  border: 1px solid var(--line);
+  color: var(--paper);
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.restaurant-search input:focus-visible {
+  outline: none;
+  border-color: var(--amber);
+}
+
+/* ── Menu flow (wizard step 2): menu left / buffer right ───────────────────── */
+
+.menu-flow {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .menu-flow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.menu-section {
+  margin-bottom: 32px;
+}
+
+.dish-rows {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dish-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 13px;
+}
+
+.dish-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dish-row-info b {
+  color: var(--paper);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.qty-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.qty-value {
+  min-width: 28px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--amber);
+}
+
+/* ── Payment options (wizard step 3) ──────────────────────────────────────── */
+
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.payment-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  cursor: pointer;
+}
+
+.payment-choice input[type="radio"] {
+  accent-color: var(--amber);
+}
+
+.payment-choice-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.payment-choice-card {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.saved-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 0;
+  border-top: 1px dashed var(--line);
+}
+
+.payment-hint {
+  color: var(--dirty);
+  font-size: 12px;
+  margin: 0;
+}
+
+.new-card {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.address-fields {
+  margin-top: 18px;
+}
+
+/* ── Order success inline ─────────────────────────────────────────────────── */
+
+.order-success {
+  text-align: center;
+  padding: 40px 32px;
+  border: 1px solid var(--acid);
+  background: rgba(215, 233, 109, 0.06);
+}
+
+.order-code-large {
+  font-family: "Archivo Black", Impact, sans-serif;
+  font-size: clamp(36px, 8vw, 72px);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--acid);
+  margin: 20px 0;
+}
+
+/* ── Wizard step indicator ────────────────────────────────────────────────── */
+
+.wizard-steps {
+  display: flex;
+  gap: 28px;
+  margin: 0 0 28px;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.wizard-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--dirty);
+  font-size: 12px;
+}
+
+.wizard-step.current {
+  color: var(--amber);
+}
+
+.wizard-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  color: var(--dirty);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.wizard-step.current .wizard-step-index {
+  border-color: var(--amber);
+  color: var(--amber);
+}

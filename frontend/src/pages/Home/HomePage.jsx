@@ -52,7 +52,7 @@ export function HomePage() {
             <button class="terminal-button primary" onClick=${() => navigate('/auth')}>
               [ enter ] inizia ora <b>→</b>
             </button>
-            <button class="terminal-button" onClick=${() => navigate('/menu')}>
+            <button class="terminal-button" onClick=${() => navigate('/restaurants')}>
               [ browser ] esplora menu
             </button>
           </div>

@@ -67,8 +67,8 @@ export function passwordErrors({ password = '', confirmPassword = '' } = {}) {
   return errors;
 }
 
-/* le preferenze alimentari riguardano solo il cliente: manager e admin vedono
-   solo i propri dati e la sicurezza */
+/* le sezioni del profilo dipendono dal ruolo: il cliente ha in più le
+   preferenze e l'attività (statistiche, pagamenti e storico) */
 export function profileSections(role) {
   const sections = [
     ['anagrafica', 'anagrafica'],
@@ -76,7 +76,12 @@ export function profileSections(role) {
   ];
 
   if (role === 'customer') {
-    sections.push(['preferenze', 'preferenze']);
+    sections.push(
+      ['preferenze', 'preferenze'],
+      ['attivita', 'attività'],
+      ['pagamenti', 'pagamenti'],
+      ['ordini', 'ordini']
+    );
   }
 
   sections.push(['sicurezza', 'sicurezza'], ['account', 'account']);

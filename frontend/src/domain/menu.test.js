@@ -3,8 +3,10 @@ import {
   dishBranchId,
   dishFormErrors,
   dishPayload,
+  dishTypeLabel,
   isCustomDish,
   menuGroups,
+  menuSections,
   typeComposition
 } from './menu.js';
 
@@ -70,5 +72,39 @@ describe('menu domain', () => {
       { key: 'drink', label: 'drink', value: 1 }
     ]);
     expect(typeComposition()).toEqual([]);
+  });
+
+  test('dishTypeLabel traduce le tipologie note e lascia passare le altre', () => {
+    expect(dishTypeLabel('burger')).toBe('panini');
+    expect(dishTypeLabel('side')).toBe('sides');
+    expect(dishTypeLabel('drink')).toBe('bevande');
+    expect(dishTypeLabel('dessert')).toBe('dessert');
+    expect(dishTypeLabel('')).toBe('altro');
+  });
+
+  test('menuSections raggruppa per tipologia nell ordine canonico', () => {
+    const dishes = [
+      { name: 'Cola', type: 'drink' },
+      { name: 'Patatine', type: 'side' },
+      { name: 'Cheeseburger', type: 'burger' },
+      { name: 'Burger veggie', type: 'burger' },
+      { name: 'Tiramisù', type: 'dessert' }
+    ];
+
+    const sections = menuSections(dishes);
+
+    expect(sections.map(section => section.type)).toEqual(['burger', 'side', 'drink', 'dessert']);
+    expect(sections[0].label).toBe('panini');
+    expect(sections[0].items.map(dish => dish.name)).toEqual(['Cheeseburger', 'Burger veggie']);
+  });
+
+  test('menuSections ordina le tipologie sconosciute in ordine alfabetico', () => {
+    const sections = menuSections([{ name: 'A', type: 'zuppa' }, { name: 'B', type: 'antipasto' }]);
+
+    expect(sections.map(section => section.type)).toEqual(['antipasto', 'zuppa']);
+  });
+
+  test('menuSections con nessun piatto non produce sezioni', () => {
+    expect(menuSections()).toEqual([]);
   });
 });

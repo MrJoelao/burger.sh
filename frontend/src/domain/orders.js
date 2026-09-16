@@ -8,7 +8,7 @@
 import { entityId } from './entity.js';
 import { statusLabels, statusFlowFor } from './orderStatus.js';
 
-/* filtri dello storico: i soli valori accettati da GET /orders/user sono
+/* filtro dei filtri dello storico: i soli valori accettati da GET /orders/user sono
    "current" e "past" (openapi.yaml); il tab senza id chiede tutti gli ordini */
 export const ORDER_FILTER_TABS = [
   { id: '', label: 'tutti' },
@@ -20,6 +20,12 @@ export const modeLabels = { pickup: 'ritiro', delivery: 'domicilio' };
 
 export function modeLabel(mode) {
   return modeLabels[mode] || 'n/d';
+}
+
+/* ordini ancora da consegnare: il blocco in alto della dashboard cliente, così
+   l'ordine in corso resta sotto gli occhi senza cercarlo nello storico */
+export function activeOrders(orders = []) {
+  return orders.filter(order => order?.status !== 'delivered');
 }
 
 /* il codice alfanumerico è quello mostrato al ritiro (requirements.md §6):

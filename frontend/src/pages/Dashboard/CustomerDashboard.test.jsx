@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/preact';
+import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { CustomerDashboard } from './CustomerDashboard.jsx';
 import { orderService } from '../../services/orderService.js';
 
@@ -31,6 +31,21 @@ describe('CustomerDashboard', () => {
     orderService.getUserOrders.mockReset();
   });
 
+  test('mostra in alto gli ordini ancora da consegnare', async () => {
+    orderService.getUserOrders.mockResolvedValue({
+      success: true,
+      data: [
+        order({ status: 'delivered', totalAmount: 20 }),
+        order({ _id: 'o2', orderCode: 'FF-D9E8F7', status: 'preparing', totalAmount: 13 })
+      ]
+    });
+
+    render(<CustomerDashboard />);
+
+    expect(await screen.findByText('FF-D9E8F7')).toBeInTheDocument();
+    expect(screen.getByText('IN PREPARAZIONE')).toBeInTheDocument();
+  });
+
   test('riassume i propri ordini con la spesa dei consegnati', async () => {
     orderService.getUserOrders.mockResolvedValue({
       success: true,
@@ -40,20 +55,20 @@ describe('CustomerDashboard', () => {
     render(<CustomerDashboard />);
 
     expect(await screen.findByText('€ 20.00')).toBeInTheDocument();
-    expect(screen.getByText('FF-A1B2C3')).toBeInTheDocument();
+    expect(screen.getByText('FF-D9E8F7')).toBeInTheDocument();
   });
 
-  test('apre il dettaglio di un ordine recente', async () => {
-    orderService.getUserOrders.mockResolvedValue({ success: true, data: [order()] });
+  test('ordina apre il wizard d ordine', async () => {
+    orderService.getUserOrders.mockResolvedValue({ success: true, data: [] });
     const { navigate } = await import('../../router/navigate.js');
 
     render(<CustomerDashboard />);
-    fireEvent.click(await screen.findByRole('button', { name: /dettagli/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /ordina/i }));
 
-    expect(navigate).toHaveBeenCalledWith('/orders/o1');
+    expect(navigate).toHaveBeenCalledWith('/orders');
   });
 
-  test('senza ordini invita a ordinare dal menu', async () => {
+  test('senza ordini invita a ordinare', async () => {
     orderService.getUserOrders.mockResolvedValue({ success: true, data: [] });
 
     render(<CustomerDashboard />);

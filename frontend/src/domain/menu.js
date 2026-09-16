@@ -74,3 +74,43 @@ export function typeComposition(dishes = []) {
     .sort((a, b) => b[1] - a[1])
     .map(([key, value]) => ({ key, label: key, value }));
 }
+
+/* etichette delle sezioni del menu cliente: i tipi del dataset sono burger,
+   side e drink, ma una filiale può aggiungerne di propri */
+export const dishTypeLabels = {
+  burger: 'panini',
+  side: 'sides',
+  drink: 'bevande'
+};
+
+export function dishTypeLabel(type) {
+  const key = String(type || '').toLowerCase();
+  return dishTypeLabels[key] || key || 'altro';
+}
+
+/* l'ordine con cui si presentano le sezioni: prima le tre canoniche, poi le
+   tipologie della filiale in ordine alfabetico */
+const CANONICAL_TYPES = ['burger', 'side', 'drink'];
+
+export function menuSections(dishes = []) {
+  const byType = new Map();
+
+  dishes.forEach(dish => {
+    const type = String(dish?.type || 'altro').toLowerCase();
+    if (!byType.has(type)) byType.set(type, []);
+    byType.get(type).push(dish);
+  });
+
+  const orderedTypes = [
+    ...CANONICAL_TYPES.filter(type => byType.has(type)),
+    ...[...byType.keys()]
+      .filter(type => !CANONICAL_TYPES.includes(type))
+      .sort()
+  ];
+
+  return orderedTypes.map(type => ({
+    type,
+    label: dishTypeLabel(type),
+    items: byType.get(type)
+  }));
+}

@@ -27,7 +27,7 @@ describe('profile domain', () => {
 
   test('profileSections include preferenze solo per il cliente', () => {
     expect(profileSections('customer').map(section => section.id))
-      .toEqual(['anagrafica', 'indirizzo', 'preferenze', 'sicurezza', 'account']);
+      .toEqual(['anagrafica', 'indirizzo', 'preferenze', 'attivita', 'pagamenti', 'ordini', 'sicurezza', 'account']);
     expect(profileSections('manager').map(section => section.id))
       .toEqual(['anagrafica', 'indirizzo', 'sicurezza', 'account']);
     expect(profileSections('admin').map(section => section.id))
@@ -36,7 +36,7 @@ describe('profile domain', () => {
 
   test('gli indici delle sezioni sono progressivi a due cifre', () => {
     expect(profileSections('customer').map(section => section.index))
-      .toEqual(['01', '02', '03', '04', '05']);
+      .toEqual(['01', '02', '03', '04', '05', '06', '07', '08']);
   });
 
   test('passwordErrors segnala la password mancante', () => {

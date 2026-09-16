@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/preact';
+import { render, screen, within } from '@testing-library/preact';
 import { CustomerShell } from './CustomerShell.jsx';
 
 vi.mock('../../state/authStore.js', () => ({
@@ -8,13 +8,16 @@ vi.mock('../../state/authStore.js', () => ({
 vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
 
 describe('CustomerShell', () => {
-  test('offre la directory dell area cliente, non quella operativa', () => {
+  test('offre solo ordini e profilo come opzioni, senza directory laterale', () => {
     render(<CustomerShell><p>contenuto</p></CustomerShell>);
 
     expect(screen.getByText('contenuto')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /pagamenti/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /ordini/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /profilo/i })).toBeInTheDocument();
+
+    const nav = screen.getByRole('navigation', { name: 'Navigazione principale' });
+    const labels = within(nav).getAllByRole('link').map(link => link.textContent);
+
+    expect(labels).toEqual(['ordini', 'profilo']);
+    expect(document.querySelector('.command-list')).toBeNull();
   });
 
   test('firma la striscia identità con il cliente in sessione', () => {

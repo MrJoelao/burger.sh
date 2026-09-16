@@ -5,12 +5,20 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { ProfilePage } from './ProfilePage.jsx';
 import { useAuthStore } from '../../state/authStore.js';
 import { restaurantService } from '../../services/restaurantService.js';
+import { orderService } from '../../services/orderService.js';
+import { paymentService } from '../../services/paymentService.js';
 import { navigate } from '../../router/navigate.js';
 
 vi.mock('../../state/authStore.js', () => ({ useAuthStore: vi.fn() }));
 vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
 vi.mock('../../services/restaurantService.js', () => ({
   restaurantService: { getRestaurants: vi.fn() }
+}));
+vi.mock('../../services/orderService.js', () => ({
+  orderService: { getUserOrders: vi.fn(), getOrder: vi.fn(), confirmDelivery: vi.fn() }
+}));
+vi.mock('../../services/paymentService.js', () => ({
+  paymentService: { list: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn() }
 }));
 
 function storeWith(user, overrides = {}) {
@@ -57,11 +65,11 @@ describe('ProfilePage', () => {
     expect(screen.getByRole('link', { name: 'burger.sh' })).toBeInTheDocument();
   });
 
-  test('mostra una sezione alla volta, scelta dall’indice', () => {
+  test('mostra una sezione alla volta, scelta dall"indice', () => {
     useAuthStore.mockReturnValue(storeWith(CUSTOMER));
     render(<ProfilePage />);
 
-    expect(screen.getAllByRole('tab')).toHaveLength(5);
+    expect(screen.getAllByRole('tab')).toHaveLength(8);
     expect(screen.getByRole('tab', { name: /anagrafica/i })).toHaveAttribute('aria-selected', 'true');
     expect(sectionPanel('anagrafica')).not.toHaveAttribute('hidden');
     expect(sectionPanel('indirizzo')).toHaveAttribute('hidden');

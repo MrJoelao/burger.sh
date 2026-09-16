@@ -12,7 +12,6 @@ import { roleLabels } from '../../domain/roles.js';
 
 const AREA_LINKS = {
   customer: [
-    { label: 'ordina', path: '/menu' },
     { label: 'ordini', path: '/orders' },
     { label: 'profilo', path: '/profile' }
   ],

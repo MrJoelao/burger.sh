@@ -29,6 +29,19 @@ const SHELLS = {
   admin: AdminShell
 };
 
+/* la destinazione del bottone "indietro" dipende dal ruolo: per il cliente lo
+   storico vive nel profilo, per gli altri ruoli nelle rispettive sezioni */
+const BACK_TARGETS = {
+  customer: '/profile',
+  manager: '/manager/orders',
+  admin: '/dashboard/admin'
+};
+const BACK_LABELS = {
+  customer: '[ esc ] profilo',
+  manager: '[ esc ] indietro',
+  admin: '[ esc ] indietro'
+};
+
 export function OrderDetailPage({ orderId }) {
   const { user } = useAuthStore();
   const Shell = SHELLS[user?.role] || CustomerShell;
@@ -44,7 +57,7 @@ export function OrderDetailPage({ orderId }) {
       <section class="terminal-screen">
         <${AsyncBoundary} loading=${order.loading} error=${order.error} label="ordine">
           ${data
-            ? renderOrder({ order: data, action, orderId, reload: order.reload })
+            ? renderOrder({ order: data, action, orderId, reload: order.reload, userRole: user?.role })
             : html`<p class="queue-empty"><b>_</b> ordine non trovato.</p>`}
         <//>
       </section>
@@ -52,10 +65,12 @@ export function OrderDetailPage({ orderId }) {
   `;
 }
 
-function renderOrder({ order, action, orderId, reload }) {
+function renderOrder({ order, action, orderId, reload, userRole }) {
   const restaurant = restaurantOf(order);
   const delivery = deliveryOf(order);
   const confirmable = canConfirmDelivery(order);
+  const backTarget = BACK_TARGETS[userRole] || BACK_TARGETS.customer;
+  const backLabel = BACK_LABELS[userRole] || BACK_LABELS.customer;
 
   return html`
     <${SectionHeading}
@@ -102,7 +117,7 @@ function renderOrder({ order, action, orderId, reload }) {
     </div>
 
     <div class="shortcut-row panel-block">
-      <${TerminalButton} onClick=${() => navigate('/orders')}>[ esc ] storico ordini<//>
+      <${TerminalButton} onClick=${() => navigate(backTarget)}>${backLabel}<//>
       <${TerminalButton} onClick=${reload}>[ F5 ] aggiorna<//>
       ${confirmable && html`
         <${TerminalButton} primary disabled=${action.busyId === orderId} onClick=${() => action.run(orderId, () => orderService.confirmDelivery(orderId))}>

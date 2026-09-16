@@ -24,11 +24,11 @@ describe('ProfileShell', () => {
     expect(navLabels()).toEqual(['dashboard', 'utenti', 'filiali', 'statistiche', 'profilo']);
   });
 
-  test('il cliente ritrova i collegamenti del negozio', () => {
+  test('il cliente ritrova i collegamenti di ordini e profilo', () => {
     useAuthStore.mockReturnValue(storeWith({ role: 'customer', name: 'Luca' }));
     render(<ProfileShell><p>contenuto</p></ProfileShell>);
 
-    expect(navLabels()).toEqual(['ordina', 'ordini', 'profilo']);
+    expect(navLabels()).toEqual(['ordini', 'profilo']);
   });
 
   test('non espone la directory operativa né la barra access granted', () => {

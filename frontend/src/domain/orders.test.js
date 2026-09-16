@@ -1,5 +1,6 @@
 import {
   ORDER_FILTER_TABS,
+  activeOrders,
   orderReference,
   restaurantOf,
   itemUnits,
@@ -23,6 +24,22 @@ function order(overrides = {}) {
     ...overrides
   };
 }
+
+describe('activeOrders', () => {
+  test('tiene solo gli ordini non ancora consegnati', () => {
+    const orders = [
+      order({ status: 'delivered' }),
+      order({ status: 'preparing' }),
+      order({ status: 'on_delivery' })
+    ];
+
+    expect(activeOrders(orders).map(item => item.status)).toEqual(['preparing', 'on_delivery']);
+  });
+
+  test('nessun ordine produce una lista vuota', () => {
+    expect(activeOrders()).toEqual([]);
+  });
+});
 
 describe('ORDER_FILTER_TABS', () => {
   test('usa solo i valori ammessi da GET /orders/user più il tab senza filtro', () => {

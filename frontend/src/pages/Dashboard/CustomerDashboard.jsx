@@ -1,7 +1,7 @@
 /**
- * CustomerDashboard - plancia del cliente. Riassume i propri ordini (totali, in
- * corso, consegnati, spesa), mostra i più recenti con il codice da esibire al
- * ritiro e apre le scorciatoie verso menu, storico e metodi di pagamento.
+ * CustomerDashboard - plancia del cliente. In alto mostra gli ordini ancora da
+ * consegnare, perché devono essere subito visibili; sotto le metriche complessive
+ * e la scorciatoia per ordinare. Lo storico completo vive nel profilo.
  */
 
 import { useCallback } from 'preact/hooks';
@@ -15,7 +15,7 @@ import { orderService } from '../../services/orderService.js';
 import { useAuthStore } from '../../state/authStore.js';
 import { navigate } from '../../router/navigate.js';
 import { euro } from '../../domain/format.js';
-import { orderStats } from '../../domain/orders.js';
+import { orderStats, activeOrders } from '../../domain/orders.js';
 import { useResource } from '../../hooks/useResource.js';
 import { OrderListItem } from '../Order/components/OrderListItem.jsx';
 
@@ -29,6 +29,7 @@ export function CustomerDashboard() {
 
   const list = orders.response?.data || [];
   const stats = orderStats(list);
+  const active = activeOrders(list);
   const recent = list.slice(0, RECENT_ORDERS_LIMIT);
 
   return html`
@@ -42,25 +43,18 @@ export function CustomerDashboard() {
         />
 
         <${AsyncBoundary} loading=${orders.loading} error=${orders.error} label="ordini">
-          <div class="telemetry-rail">
-            <${StatTile} eyebrow="ordini totali" value=${stats.total} />
-            <${StatTile} eyebrow="in corso" value=${stats.current} caption="ancora da ricevere" />
-            <${StatTile} eyebrow="consegnati" value=${stats.delivered} />
-            <${StatTile} eyebrow="spesa" value=${stats.spent} display=${euro(stats.spent)} caption="sui soli ordini consegnati" />
-          </div>
-
           <div class="panel-block">
-            <${SectionHeading} eyebrow="attività" title="ORDINI_" titleSpan="RECENTI" />
-            ${recent.length === 0
+            <${SectionHeading} eyebrow="in corso" title="I TUOI_" titleSpan="ORDINI" subtitle="ancora da ricevere, facilmente visibili" />
+            ${active.length === 0
               ? html`
                 <div class="queue-empty">
-                  <p><b>_</b> nessun ordine ancora.</p>
-                  <p class="muted">Componi il primo ordine dal menu della filiale che preferisci.</p>
+                  <p><b>_</b> nessun ordine in corso.</p>
+                  <p class="muted">Quando effettui un ordine appare qui.</p>
                 </div>
               `
               : html`
                 <ul class="order-queue">
-                  ${recent.map(order => html`
+                  ${active.map(order => html`
                     <${OrderListItem}
                       key=${order.orderCode || order._id}
                       order=${order}
@@ -73,11 +67,19 @@ export function CustomerDashboard() {
           </div>
 
           <div class="panel-block">
+            <div class="telemetry-rail">
+              <${StatTile} eyebrow="ordini totali" value=${stats.total} />
+              <${StatTile} eyebrow="in corso" value=${stats.current} caption="ancora da ricevere" />
+              <${StatTile} eyebrow="consegnati" value=${stats.delivered} />
+              <${StatTile} eyebrow="spesa" value=${stats.spent} display=${euro(stats.spent)} caption="sui soli ordini consegnati" />
+            </div>
+          </div>
+
+          <div class="panel-block">
             <${SectionHeading} eyebrow="strumenti" title="SCORCIATOIE" />
             <div class="shortcut-row">
-              <${TerminalButton} primary onClick=${() => navigate('/menu')}>[ 1 ] ordina<//>
-              <${TerminalButton} onClick=${() => navigate('/orders')}>[ 2 ] storico ordini<//>
-              <${TerminalButton} onClick=${() => navigate('/payment-methods')}>[ 3 ] pagamenti<//>
+              <${TerminalButton} primary onClick=${() => navigate('/orders')}>[ 1 ] ordina<//>
+              <${TerminalButton} onClick=${() => navigate('/profile')}>[ 2 ] profilo<//>
             </div>
           </div>
         <//>

@@ -17,6 +17,9 @@ import { AddressPanel } from './components/AddressPanel.jsx';
 import { PreferencesPanel } from './components/PreferencesPanel.jsx';
 import { SecurityPanel } from './components/SecurityPanel.jsx';
 import { AccountPanel } from './components/AccountPanel.jsx';
+import { AttivitaPanel } from './components/AttivitaPanel.jsx';
+import { PaymentsPanel } from './components/PaymentsPanel.jsx';
+import { OrdersPanel } from './components/OrdersPanel.jsx';
 
 /* una sezione dell'indice corrisponde a un pannello: la mappa evita di
    decidere in render quali sezioni mostrare per ruolo, lo fa profileSections */
@@ -24,6 +27,9 @@ const PANELS = {
   anagrafica: IdentityPanel,
   indirizzo: AddressPanel,
   preferenze: PreferencesPanel,
+  attivita: AttivitaPanel,
+  pagamenti: PaymentsPanel,
+  ordini: OrdersPanel,
   sicurezza: SecurityPanel,
   account: AccountPanel
 };

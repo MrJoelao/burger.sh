@@ -1,16 +1,15 @@
 /**
  * PaymentMethodList - i metodi salvati dal cliente, con le sole ultime quattro
- * cifre di una carta. Ogni riga apre la modifica o chiede conferma prima di
- * eliminare: nessuna azione distruttiva con un solo clic.
+ * cifre di una carta. Ogni riga chiede conferma prima di eliminare; nessuna
+ * azione distruttiva con un solo clic.
  */
 
-import { html } from '../../../utils/htm.js';
-import { TerminalButton } from '../../../components/Auth/TerminalButton.jsx';
-import { ConfirmAction } from '../../../components/Console/ConfirmAction.jsx';
-import { entityId } from '../../../domain/entity.js';
-import { paymentMethodSummary, paymentTypeLabels } from '../../../domain/payments.js';
+import { html } from '../../utils/htm.js';
+import { ConfirmAction } from '../../components/Console/ConfirmAction.jsx';
+import { entityId } from '../../domain/entity.js';
+import { paymentMethodSummary, paymentTypeLabels } from '../../domain/payments.js';
 
-export function PaymentMethodList({ methods = [], busyId = null, onEdit = () => {}, onDelete = () => {} }) {
+export function PaymentMethodList({ methods = [], busyId = null, onDelete = () => {} }) {
   if (methods.length === 0) {
     return html`
       <div class="queue-empty">
@@ -35,9 +34,6 @@ export function PaymentMethodList({ methods = [], busyId = null, onEdit = () => 
             </header>
             <p class="order-meta"><span>${paymentMethodSummary(method)}</span></p>
             <footer class="order-foot">
-              <${TerminalButton} className="compact" disabled=${busyId === id} onClick=${() => onEdit(method)}>
-                [ m ] modifica
-              <//>
               <${ConfirmAction} label="[ x ] elimina" disabled=${busyId === id} onConfirm=${() => onDelete(id)} />
             </footer>
           </li>

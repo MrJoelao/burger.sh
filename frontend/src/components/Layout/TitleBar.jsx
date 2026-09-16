@@ -19,14 +19,15 @@ export function TitleBar({
   status = 'system ready',
   links = DEFAULT_NAV_LINKS,
   current = window.location.pathname,
-  showClock = false
+  showClock = false,
+  brandPath = '/'
 }) {
   return html`
     <header class="titlebar">
       <div class="titlebar-left">
         <div class="window-controls" aria-hidden="true"><i></i><i></i><i></i></div>
         <p>
-          <a class="titlebar-brand" href="/" onClick=${goHome}><b>burger.sh</b></a>
+          <a class="titlebar-brand" href=${brandPath} onClick=${(event) => goHome(event, brandPath)}><b>burger.sh</b></a>
           <span>/</span> ${section} <span>/</span> ${context}
         </p>
       </div>
@@ -48,9 +49,9 @@ export function TitleBar({
   `;
 }
 
-function goHome(event) {
+function goHome(event, path) {
   event.preventDefault();
-  navigate('/');
+  navigate(path);
 }
 
 function goTo(event, path) {
