@@ -27,9 +27,7 @@ import { ChangePasswordPage } from '../pages/Setup/ChangePasswordPage.jsx';
 import { CreateFirstRestaurantPage } from '../pages/CreateFirstRestaurant/CreateFirstRestaurantPage.jsx';
 import { FullScreenError } from '../pages/Error/FullScreenError.jsx';
 import { TerminalWindow } from '../components/Layout/TerminalWindow.jsx';
-import { TerminalButton } from '../components/Auth/TerminalButton.jsx';
 import { useAuthStore } from '../state/authStore.js';
-import { useUIStore } from '../state/uiStore.js';
 import { navigate } from './navigate.js';
 import { dashboardPathFor, redirectFor } from '../domain/roles.js';
 import { setupService } from '../services/setupService.js';
@@ -144,7 +142,6 @@ export function AppRouter() {
 
 function RouteGuard({ component: Component, roles, routeProps = {} }) {
   const { isAuthenticated, loading, user } = useAuthStore();
-  const { showToast } = useUIStore();
 
   if (loading) {
     return html`
@@ -248,25 +245,17 @@ function RouteGuard({ component: Component, roles, routeProps = {} }) {
 }
 
 function AuthRequired() {
-  return html`
-    <${TerminalWindow} title="identity-gate" subtitle="redirect">
-      <section class="terminal-screen" style=${{ textAlign: 'center', padding: '48px' }}>
-        <p class="eyebrow">authentication required</p>
-        <h2 style=${{ font: '38px/.9 "Archivo Black", Impact, sans-serif', letterSpacing: '-0.07em', color: 'var(--amber)', margin: '12px 0' }}>
-          ACCEDI_<span style=${{ color: 'var(--acid)' }}>PER</span> PROCEDERE
-        </h2>
-        <p style=${{ color: 'var(--paper)', marginBottom: '24px' }}>Questa sezione richiede un'identità verificata.</p>
-        <div style=${{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <${TerminalButton} primary onClick=${() => navigate('/auth')}>
-            [ enter ] accedi <b>→</b>
-          <//>
-          <${TerminalButton} onClick=${() => navigate('/')}>
-            [ esc ] home
-          <//>
-        </div>
-      </section>
-    <//>
-  `;
+  return html`<${FullScreenError}
+    statusCode=${401}
+    title="ACCEDI_PER PROCEDERE"
+    subtitle="identity checkpoint"
+    message="Questa sezione richiede un'identità verificata. Accedi per continuare nel flusso corretto."
+    primaryLabel="accedi"
+    primaryAction=${() => navigate('/auth')}
+    secondaryLabel="home"
+    secondaryAction=${() => navigate('/')}
+    easterEggLabel="il percorso resta in attesa. premi enter per autenticarti."
+  />`;
 }
 
 function NotFoundPage() {

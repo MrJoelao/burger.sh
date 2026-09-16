@@ -1,6 +1,7 @@
 import { html } from '../../utils/htm.js';
 import { useEffect, useState } from 'preact/hooks';
 import { navigate } from '../../router/navigate.js';
+import { TitleBar } from '../../components/Layout/TitleBar.jsx';
 
 export function FullScreenError({
   statusCode = 404,
@@ -14,6 +15,8 @@ export function FullScreenError({
   easterEggLabel = 'digita burger sulla tastiera per aprire il canale segreto'
 }) {
   const [secretOpen, setSecretOpen] = useState(false);
+  const errorKind = statusCode === 401 ? 'auth' : statusCode === 403 ? 'denied' : 'not-found';
+  const statusLabel = statusCode === 401 ? 'identity required' : statusCode === 403 ? 'access denied' : 'route missing';
 
   useEffect(() => {
     let buffer = '';
@@ -28,16 +31,17 @@ export function FullScreenError({
   }, []);
 
   return html`
-    <main class="error-fullscreen" aria-labelledby="error-title">
+    <main class="error-fullscreen" data-error-kind=${errorKind} aria-labelledby="error-title">
       <div class="error-noise" aria-hidden="true"></div>
       <div class="error-shell">
-        <header class="error-header">
-          <a class="error-wordmark" href="/" onClick=${(event) => {
-            event.preventDefault();
-            navigate('/');
-          }}>burger<span>.sh</span></a>
-          <span class="error-live"><i></i> system signal lost</span>
-        </header>
+        <${TitleBar}
+          section="system"
+          context=${statusLabel}
+          status="grill online"
+          links=${[]}
+          current=${window.location.pathname}
+          showClock
+        />
 
         <section class="error-content">
           <div class="error-code-block" aria-hidden="true">
@@ -66,9 +70,11 @@ export function FullScreenError({
           <p class="error-hint">${secretOpen ? 'segnale ripristinato. puoi rientrare.' : easterEggLabel}</p>
         </section>
 
-        <footer class="error-footer">
-          <span>burger.sh / emergency console</span>
-          <span>trace ${statusCode}-${String(statusCode * 17).padStart(3, '0')}</span>
+        <footer class="footer-status">
+          <span><b>enter</b> ${statusCode === 401 ? 'accedi' : 'torna alla home'}</span>
+          <span><b>esc</b> indietro</span>
+          <span>http ${statusCode}</span>
+          <span class="live-command">guest@burger:~$ <i></i></span>
         </footer>
       </div>
     </main>
