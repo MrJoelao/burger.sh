@@ -25,6 +25,7 @@ const STATUS_OPTIONS = ['', 'pending', 'approved'];
 export function AdminUsers() {
   const { user: currentUser } = useAuthStore();
   const [filters, setFilters] = useState({ role: '', managerStatus: '' });
+  const [search, setSearch] = useState('');
   const { role, managerStatus } = filters;
 
   const load = useCallback(
@@ -52,6 +53,9 @@ export function AdminUsers() {
         `}
 
         <div class="filter-row">
+          <label class="search-field">cerca utente
+            <input type="search" value=${search} placeholder="nome o email..." onInput=${event => setSearch(event.currentTarget.value)} />
+          </label>
           <label class="filter-field">ruolo
             <select
               value=${role}
@@ -76,11 +80,19 @@ export function AdminUsers() {
         </div>
 
         <${AsyncBoundary} loading=${users.loading} error=${users.error} label="utenti">
-          ${renderUsers(users.response?.data || [], action.busyId, userId(currentUser), decide, remove)}
+          ${renderUsers(filterUsers(users.response?.data || [], search), action.busyId, userId(currentUser), decide, remove)}
         <//>
       </section>
     <//>
   `;
+}
+
+function filterUsers(users, search) {
+  const query = search.trim().toLowerCase();
+  if (!query) return users;
+  return users.filter(user => [user.name, user.surname, user.email, user.role]
+    .filter(Boolean)
+    .some(value => value.toLowerCase().includes(query)));
 }
 
 function renderUsers(users, busyId, selfId, decide, remove) {

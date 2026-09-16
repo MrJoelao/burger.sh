@@ -18,7 +18,12 @@ import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
 import { ConfirmAction } from '../../components/Console/ConfirmAction.jsx';
 
 export function AdminBranches() {
-  const branches = useAdminResource(useCallback(() => restaurantService.getRestaurants({ limit: 50 }), []));
+  const [showCreate, setShowCreate] = useState(true);
+  const [search, setSearch] = useState('');
+  const branches = useAdminResource(useCallback(
+    () => restaurantService.getRestaurants({ limit: 50, name: search }),
+    [search]
+  ));
   const managers = useAdminResource(
     useCallback(() => managerAdminService.getAllUsers({ role: 'manager', managerStatus: 'approved', limit: 100 }), [])
   );
@@ -30,6 +35,7 @@ export function AdminBranches() {
   const createBranch = (form) => action.run('create', async () => {
     await restaurantService.createRestaurant(form);
     setFormEpoch(epoch => epoch + 1);
+    setShowCreate(false);
   });
   const transferBranch = (id, newManagerId) => action.run(id, () => restaurantService.deleteRestaurant(id, { newManagerId }));
   const closeBranch = (id) => action.run(id, () => restaurantService.deleteRestaurant(id));
@@ -49,19 +55,39 @@ export function AdminBranches() {
         `}
 
         <div class="panel-block">
-          <${SectionHeading} eyebrow="nuova" title="APRI_" titleSpan="FILIALE" />
-          ${approvedManagers.length === 0
-            ? html`<p class="queue-empty"><b>_</b> serve almeno un manager approvato per aprire una filiale.</p>`
-            : html`<${BranchForm} key=${formEpoch} managers=${approvedManagers} busy=${action.busyId === 'create'} onCreate=${createBranch} />`}
+          <div class="list-toolbar">
+            <div>
+              <${SectionHeading} eyebrow="elenco" title="FILIALI_" titleSpan="ATTIVE" />
+              <p class="toolbar-copy">cerca per nome e controlla il manager assegnato.</p>
+            </div>
+            <div class="toolbar-actions">
+              <label class="search-field">cerca filiale
+                <input type="search" value=${search} placeholder="nome filiale..." onInput=${event => setSearch(event.currentTarget.value)} />
+              </label>
+              <${TerminalButton} primary onClick=${() => setShowCreate(true)}>[ + ] nuova filiale<//>
+            </div>
+          </div>
         </div>
 
         <div class="panel-block">
-          <${SectionHeading} eyebrow="elenco" title="FILIALI_" titleSpan="ATTIVE" />
           <${AsyncBoundary} loading=${branches.loading} error=${branches.error} label="filiali">
             ${renderBranches(branches.response?.data || [], approvedManagers, action.busyId, transferBranch, closeBranch)}
           <//>
         </div>
       </section>
+      ${showCreate && html`
+        <div class="manager-modal-backdrop" role="presentation" onClick=${event => event.target === event.currentTarget && setShowCreate(false)}>
+          <section class="manager-modal" role="dialog" aria-modal="true" aria-labelledby="branch-modal-title">
+            <div class="manager-modal-header">
+              <div><p class="eyebrow">nuova filiale</p><h2 id="branch-modal-title">APRI_<span> FILIALE</span></h2></div>
+              <button type="button" class="modal-close" aria-label="chiudi" onClick=${() => setShowCreate(false)}>×</button>
+            </div>
+            ${approvedManagers.length === 0
+              ? html`<p class="queue-empty modal-content"><b>_</b> serve almeno un manager approvato per aprire una filiale.</p>`
+              : html`<${BranchForm} key=${formEpoch} managers=${approvedManagers} busy=${action.busyId === 'create'} onCreate=${createBranch} />`}
+          </section>
+        </div>
+      `}
     <//>
   `;
 }

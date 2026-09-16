@@ -2441,6 +2441,91 @@
   background: var(--ink);
 }
 
+.executive-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.executive-kpi-grid .telemetry-card {
+  background: rgba(33, 30, 23, .72);
+  backdrop-filter: blur(8px);
+}
+
+.stats-insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.stats-insight {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(33, 30, 23, .58);
+  backdrop-filter: blur(8px);
+}
+
+.stats-insight strong {
+  color: var(--amber);
+  font: 28px/.95 "Archivo Black", Impact, sans-serif;
+}
+
+.stats-insight span {
+  color: var(--dirty);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.stats-bar-chart {
+  display: grid;
+  gap: 13px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: rgba(33, 30, 23, .58);
+  backdrop-filter: blur(8px);
+}
+
+.stats-bar-row {
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 12px;
+}
+
+.stats-bar-label {
+  overflow: hidden;
+  color: var(--paper);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.stats-bar-track {
+  height: 14px;
+  border: 1px solid var(--line);
+  background: var(--ink);
+}
+
+.stats-bar-fill {
+  display: block;
+  width: var(--bar-size, 0%);
+  height: 100%;
+  background: var(--tone, var(--amber));
+  transition: width 300ms ease;
+}
+
+.stats-bar-row > b {
+  color: var(--white);
+  font-size: 12px;
+  text-align: right;
+}
+
 .telemetry-value {
   margin: 4px 0 0;
   color: var(--white);
@@ -2595,6 +2680,58 @@
   margin-bottom: 18px;
 }
 
+.list-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(33, 30, 23, .62);
+  backdrop-filter: blur(8px);
+}
+
+.list-toolbar .section-heading {
+  margin: 0;
+}
+
+.toolbar-copy {
+  margin: 5px 0 0;
+  color: var(--dirty);
+  font-size: 11px;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.search-field {
+  display: grid;
+  gap: 6px;
+  color: var(--dirty);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.search-field input {
+  min-width: 220px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 9px 10px;
+  background: rgba(16, 15, 12, .72);
+  color: var(--white);
+  font: inherit;
+}
+
+.search-field input:focus {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
 /* ── Checkout wizard ── */
 .customer-console .payment-form {
   max-width: 800px;
@@ -2647,6 +2784,8 @@
   border: 1px solid var(--line);
   border-collapse: collapse;
   text-align: left;
+  background: rgba(33, 30, 23, .58);
+  backdrop-filter: blur(8px);
 }
 
 .directory-table th,
@@ -2738,7 +2877,9 @@
   gap: 14px;
   padding: 16px;
   border: 1px solid var(--line);
-  background: var(--panel);
+  background: rgba(33, 30, 23, .58);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 18px rgba(242, 189, 78, .06);
 }
 
 .branch-head {
@@ -4838,6 +4979,15 @@
   }
 
   @media (max-width: 620px) {
+    .executive-kpi-grid,
+    .stats-insight-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .stats-bar-row {
+      grid-template-columns: 86px minmax(0, 1fr) 32px;
+      gap: 8px;
+    }
     .delivery-intro {
       display: block;
     }
@@ -5294,6 +5444,16 @@
   padding: 22px;
 }
 
+.manager-modal .profile-form {
+  max-width: none;
+  margin: 0;
+  padding: 22px;
+}
+
+.modal-content {
+  margin: 22px;
+}
+
 .ingredient-workspace {
   display: grid;
   gap: 22px;
@@ -5426,6 +5586,20 @@
 }
 
 @media (max-width: 620px) {
+  .list-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-field input {
+    min-width: 0;
+  }
+
   .menu-command-bar,
   .catalog-heading {
     align-items: flex-start;

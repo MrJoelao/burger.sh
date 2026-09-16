@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
-import { AdminStats } from './AdminStats.jsx';
+import { AdminStats, executiveMetrics } from './AdminStats.jsx';
 import { managerAdminService } from '../../services/managerAdminService.js';
 
 vi.mock('../../state/authStore.js', () => ({
@@ -28,5 +28,19 @@ describe('AdminStats', () => {
     expect(await screen.findByText('10')).toBeInTheDocument();
     expect(screen.getByText('80%')).toBeInTheDocument();
     expect(screen.getByText('20%')).toBeInTheDocument();
+  });
+
+  test('calcola KPI operativi senza inventare dati non presenti nell API', () => {
+    expect(executiveMetrics({
+      users: { total: 100, byRole: { customer: 80, manager: 15, admin: 5 } },
+      restaurants: { total: 4 },
+      orders: { total: 200, byStatus: { ordered: 10, preparing: 20, delivered: 170 } }
+    })).toEqual({
+      activeManagers: 15,
+      openOrders: 30,
+      deliveredRate: 85,
+      ordersPerUser: 2,
+      ordersPerBranch: 50
+    });
   });
 });
