@@ -14,7 +14,7 @@ const links = [
   { label: 'profilo', path: '/profile' }
 ];
 
-export function CustomerShell({ children, title = 'customer-ops', subtitle = 'account personale' }) {
+export function CustomerShell({ children, title = 'customer-ops', subtitle = 'account personale', wizardMode = false }) {
   const { user } = useAuthStore();
   const fullName = [user?.name, user?.surname].filter(Boolean).join(' ') || 'cliente';
 
@@ -23,11 +23,13 @@ export function CustomerShell({ children, title = 'customer-ops', subtitle = 'ac
     <main class="console customer-console" aria-label="Customer console">
       <${TitleBar} section=${title} context=${subtitle} status="customer online" links=${links} brandPath="/dashboard" showClock=${false} />
 
-      <section class="identity-strip">
-        <div class="brand-block"><span class="prompt">guest@burger:~$</span><h1>BURGER<br /><em>.SH</em></h1></div>
-        <div class="system-copy"><p class="eyebrow">customer area / ordini e profilo</p><p>Ordina dalle filiali della catena e segui i tuoi acquisti.</p></div>
-        <div class="shift-stamp"><span>CLIENTE</span><b>${fullName}</b><small>customer / verified</small></div>
-      </section>
+      ${!wizardMode && html`
+        <section class="identity-strip">
+          <div class="brand-block"><span class="prompt">guest@burger:~$</span><h1>BURGER<br /><em>.SH</em></h1></div>
+          <div class="system-copy"><p class="eyebrow">customer area / ordini e profilo</p><p>Ordina dalle filiali della catena e segui i tuoi acquisti.</p></div>
+          <div class="shift-stamp"><span>CLIENTE</span><b>${fullName}</b><small>customer / verified</small></div>
+        </section>
+      `}
 
       <section class="customer-screen">${children}</section>
 

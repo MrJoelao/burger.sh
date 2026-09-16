@@ -21,7 +21,7 @@ vi.mock('../../state/orderStore.js', () => ({ useOrderStore: vi.fn() }));
 const RESTAURANT = { _id: 'r1', name: 'Burger Duomo', city: 'Milano' };
 
 const DISHES = [
-  { _id: 'd1', name: 'Cheeseburger', type: 'burger', price: 6.5 },
+  { _id: 'd1', name: 'Cheeseburger', type: 'burger', price: 6.5, photoUrl: 'https://images.example.test/cheeseburger.jpg' },
   { _id: 'd2', name: 'Burger veggie', type: 'burger', price: 7 },
   { _id: 'd3', name: 'Patatine', type: 'side', price: 3 },
   { _id: 'd4', name: 'Cola', type: 'drink', price: 2.5 }
@@ -59,6 +59,8 @@ describe('OrderMenuPage', () => {
     expect(screen.getAllByText('PANINI')).not.toHaveLength(0);
     expect(screen.getByText('SIDES')).toBeInTheDocument();
     expect(screen.getByText('BEVANDE')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Cheeseburger' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Cheeseburger' })).toHaveAttribute('src', DISHES[0].photoUrl);
   });
 
   test('aggiunge un piatto al carrello con filiale e piatto', async () => {

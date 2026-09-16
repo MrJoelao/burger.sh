@@ -25,4 +25,11 @@ describe('CustomerShell', () => {
 
     expect(screen.getByText('Luca')).toBeInTheDocument();
   });
+
+  test('nasconde la striscia identità durante il wizard d ordine', () => {
+    render(<CustomerShell wizardMode><p>contenuto</p></CustomerShell>);
+
+    expect(document.querySelector('.identity-strip')).toBeNull();
+    expect(screen.queryByText(/ordina dalle filiali/i)).not.toBeInTheDocument();
+  });
 });

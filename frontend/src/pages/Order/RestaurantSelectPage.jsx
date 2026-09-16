@@ -42,7 +42,7 @@ export function RestaurantSelectPage() {
   };
 
   return html`
-    <${CustomerShell} title="ordina" subtitle="passo 1 · filiale">
+    <${CustomerShell} title="ordina" subtitle="passo 1 · filiale" wizardMode>
       <section class="terminal-screen">
         <${WizardSteps} current="restaurant" />
 
@@ -80,8 +80,10 @@ export function RestaurantSelectPage() {
                     type="button"
                     onClick=${() => selectRestaurant(candidate)}
                   >
+                    <span class="restaurant-choice-index" aria-hidden="true">filiale</span>
                     <strong>${candidate.name}</strong>
                     <span>${candidate.city || candidate.address || 'filiale'}</span>
+                    <span class="restaurant-choice-action">apri il menu <b aria-hidden="true">→</b></span>
                   </button>
                 `)}
               </div>

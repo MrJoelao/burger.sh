@@ -4099,3 +4099,257 @@
   border-color: var(--amber);
   color: var(--amber);
 }
+
+.customer-console:has(.wizard-steps) .customer-screen {
+  padding-top: 20px;
+}
+
+.wizard-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 180px));
+  gap: 0;
+  width: min(100%, 540px);
+  margin-bottom: 24px;
+  border-bottom: 0;
+}
+
+.wizard-step {
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding-right: 20px;
+  text-transform: uppercase;
+}
+
+.wizard-step:not(:last-child)::after {
+  position: absolute;
+  right: 0;
+  left: 38px;
+  bottom: 0;
+  height: 1px;
+  content: "";
+  background: var(--line);
+}
+
+.wizard-step.current::after {
+  background: var(--amber);
+}
+
+.wizard-step-index {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  background: var(--ink);
+}
+
+.wizard-step-label {
+  letter-spacing: 0.08em;
+}
+
+.restaurant-picker-grid {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.restaurant-choice {
+  min-height: 160px;
+  align-content: start;
+  gap: 9px;
+  padding: 18px;
+  background: linear-gradient(135deg, rgba(242, 189, 78, 0.07), transparent 52%), var(--panel);
+  transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.restaurant-choice-index,
+.restaurant-choice-action {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.restaurant-choice-index {
+  color: var(--dirty);
+}
+
+.restaurant-choice strong {
+  color: var(--white);
+  font: 18px/1 "Archivo Black", Impact, sans-serif;
+  letter-spacing: -0.04em;
+}
+
+.restaurant-choice-action {
+  align-self: end;
+  margin-top: auto;
+  color: var(--amber);
+}
+
+.restaurant-choice-action b {
+  margin-left: 5px;
+  font-size: 15px;
+}
+
+.restaurant-choice:hover,
+.restaurant-choice:focus-visible {
+  transform: translateY(-3px);
+  background: var(--amber);
+}
+
+.restaurant-choice:hover *,
+.restaurant-choice:focus-visible * {
+  color: var(--ink);
+}
+
+.menu-flow {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 310px);
+  gap: 28px;
+}
+
+.menu-flow > .order-buffer {
+  position: sticky;
+  top: 0;
+  grid-column: auto;
+  grid-row: auto;
+  max-height: calc(100dvh - 92px);
+  min-height: 360px;
+  border: 1px solid var(--line);
+  box-shadow: -6px 6px 0 rgba(102, 85, 50, 0.22);
+}
+
+.dish-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dish-card-item {
+  min-width: 0;
+  animation: order-card-in 280ms ease-out both;
+}
+
+.dish-card {
+  display: grid;
+  grid-template-rows: 132px 1fr auto;
+  min-height: 270px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.dish-card:hover,
+.dish-card:focus-within {
+  transform: translateY(-3px);
+  border-color: var(--amber);
+  box-shadow: 0 0 10px rgba(242, 189, 78, 0.18);
+}
+
+.dish-card-media {
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  border-bottom: 1px solid var(--line);
+  background: radial-gradient(circle at 50% 20%, rgba(242, 189, 78, 0.27), transparent 48%), #18150f;
+}
+
+.dish-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dish-card-media span {
+  color: var(--dirty);
+  font: 16px/1 "Archivo Black", Impact, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dish-card-body {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+}
+
+.dish-card-body .eyebrow {
+  margin: 0 0 6px;
+}
+
+.dish-card h3 {
+  margin: 0;
+  color: var(--white);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.dish-card-price {
+  margin: 0;
+  color: var(--acid);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.dish-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 48px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.dish-card-actions .terminal-button {
+  width: 100%;
+}
+
+.dish-card-actions .qty-control {
+  width: 100%;
+  justify-content: space-between;
+}
+
+@keyframes order-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .menu-flow > .order-buffer {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .wizard-steps {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .wizard-step {
+    padding: 0 0 6px;
+  }
+
+  .wizard-step:not(:last-child)::after {
+    right: 0;
+    left: 0;
+  }
+
+  .dish-card-grid {
+    grid-template-columns: 1fr;
+  }
+}

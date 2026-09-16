@@ -117,7 +117,7 @@ export function OrderMenuPage({ restaurantId }) {
   };
 
   return html`
-    <${CustomerShell} title="ordina" subtitle="passo 2 · menu">
+    <${CustomerShell} title="ordina" subtitle="passo 2 · menu" wizardMode>
       <section class="terminal-screen">
         <${WizardSteps} current="menu" />
 
@@ -142,9 +142,9 @@ export function OrderMenuPage({ restaurantId }) {
                   ${sections.map(section => html`
                     <div class="menu-section" key=${section.type}>
                       <${SectionHeading} eyebrow="sezione" title=${section.label.toUpperCase()} />
-                      <ul class="dish-rows">
+                      <ul class="dish-card-grid">
                         ${section.items.map(dish => html`
-                          <${DishRow}
+                          <${DishCard}
                             key=${entityId(dish)}
                             dish=${dish}
                             quantity=${quantityOf(entityId(dish))}
@@ -177,31 +177,38 @@ export function OrderMenuPage({ restaurantId }) {
   `;
 }
 
-/* una riga di piatto con il controllo quantità: finché non è nel carrello si
-   propone solo l'aggiunta, poi − e + aggiustano le quantità */
-function DishRow({ dish, quantity, onAdd, onIncrease, onDecrease }) {
-  const id = entityId(dish);
-
+function DishCard({ dish, quantity, onAdd, onIncrease, onDecrease }) {
   return html`
-    <li class="dish-row">
-      <div class="dish-row-info">
-        <b>${dish.name}</b>
-        <span class="muted">${euro(dish.price)}</span>
-      </div>
-
-      ${quantity === 0
-        ? html`
-          <button class="terminal-button compact" type="button" aria-label=${`aggiungi ${dish.name}`} onClick=${onAdd}>
-            [ + ] aggiungi
-          </button>
-        `
-        : html`
-          <div class="qty-control" aria-label=${`quantità ${dish.name}`}>
-            <button class="terminal-button compact" type="button" aria-label=${`meno ${dish.name}`} onClick=${onDecrease}>[ − ]</button>
-            <b class="qty-value">${quantity}×</b>
-            <button class="terminal-button compact" type="button" aria-label=${`più ${dish.name}`} onClick=${onIncrease}>[ + ]</button>
+    <li class="dish-card-item">
+      <article class="dish-card" aria-label=${dish.name}>
+        <div class="dish-card-media">
+          ${dish.photoUrl
+            ? html`<img src=${dish.photoUrl} alt=${dish.name} />`
+            : html`<span aria-hidden="true">${dish.type || 'menu'}</span>`}
+        </div>
+        <div class="dish-card-body">
+          <div>
+            <p class="eyebrow">${dish.type || 'specialità'}</p>
+            <h3>${dish.name}</h3>
           </div>
-        `}
+          <p class="dish-card-price">${euro(dish.price)}</p>
+        </div>
+        <footer class="dish-card-actions">
+          ${quantity === 0
+            ? html`
+              <button class="terminal-button compact" type="button" aria-label=${`aggiungi ${dish.name}`} onClick=${onAdd}>
+                [ + ] aggiungi
+              </button>
+            `
+            : html`
+              <div class="qty-control" aria-label=${`quantità ${dish.name}`}>
+                <button class="terminal-button compact" type="button" aria-label=${`meno ${dish.name}`} onClick=${onDecrease}>[ − ]</button>
+                <b class="qty-value">${quantity}×</b>
+                <button class="terminal-button compact" type="button" aria-label=${`più ${dish.name}`} onClick=${onIncrease}>[ + ]</button>
+              </div>
+            `}
+        </footer>
+      </article>
     </li>
   `;
 }
