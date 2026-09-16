@@ -1507,9 +1507,35 @@
   font: 13px "IBM Plex Mono", Consolas, monospace;
 }
 
+.auth-form select {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: #100e0a;
+  color: var(--white);
+  font: 13px "IBM Plex Mono", Consolas, monospace;
+}
+
 .auth-form input:focus {
   border-color: var(--amber);
   outline: 1px solid var(--amber);
+}
+
+.auth-form select:focus {
+  border-color: var(--amber);
+  outline: 1px solid var(--amber);
+}
+
+.auth-form input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.auth-form input[type="number"]::-webkit-inner-spin-button,
+.auth-form input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
 }
 
 .auth-form input::placeholder {
@@ -1828,7 +1854,78 @@
 }
 
 .dish-add-form .wizard-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 12px;
+}
+
+.dish-schema-hint {
+  margin: -4px 0 14px;
+}
+
+.ingredient-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ingredient-create {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.ingredient-create input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ingredient-create-button {
+  border: 1px solid var(--amber);
+  background: transparent;
+  color: var(--amber);
+  padding: 0 10px;
+  font: 10px "IBM Plex Mono", Consolas, monospace;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.ingredient-create-button:hover,
+.ingredient-create-button:focus-visible {
+  background: var(--amber);
+  color: var(--ink);
+}
+
+.ingredient-create-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.ingredient-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 46px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: var(--ink);
+  color: var(--paper);
+  font: 11px "IBM Plex Mono", Consolas, monospace;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ingredient-card:hover,
+.ingredient-card.selected {
+  border-color: var(--amber);
+  background: rgba(242, 191, 78, 0.08);
+  color: var(--white);
+}
+
+.ingredient-card b {
+  color: var(--acid);
+  font-size: 16px;
 }
 
 .dish-add-actions {
@@ -1839,6 +1936,20 @@
 
 .dish-add-actions .terminal-button {
   flex: 1;
+}
+
+@media (max-width: 575px) {
+  .dish-add-form .wizard-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .ingredient-create {
+    flex-direction: column;
+  }
+
+  .ingredient-create-button {
+    min-height: 38px;
+  }
 }
 
 .dish-empty {

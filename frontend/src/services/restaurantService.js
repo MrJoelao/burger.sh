@@ -37,6 +37,15 @@ export const restaurantService = {
     return api.get(`/dishes${query}`);
   },
 
+  async getIngredients(params = {}) {
+    const query = buildQuery(params);
+    return api.get(`/ingredients${query}`);
+  },
+
+  async createIngredient(name) {
+    return api.post('/ingredients', { name });
+  },
+
   /**
    * Create restaurant (admin only)
    * POST /restaurants

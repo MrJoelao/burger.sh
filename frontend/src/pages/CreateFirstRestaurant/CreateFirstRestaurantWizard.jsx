@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef } from 'preact/hooks';
 import { html } from '../../utils/htm.js';
 import { TerminalButton } from '../../components/Auth/TerminalButton.jsx';
+import { restaurantService } from '../../services/restaurantService.js';
 import '../../styles/address-suggestions.css';
 
 const STEPS = [
@@ -25,15 +26,6 @@ const INITIAL_VALUES = {
   zip: '',
   phone: '',
   vatNumber: ''
-};
-
-const DISH_TYPES = ['burger', 'pizza', 'side', 'drink', 'dessert'];
-const DISH_TYPE_LABELS = {
-  burger: 'Burger',
-  pizza: 'Pizza',
-  side: 'Contorno',
-  drink: 'Bevanda',
-  dessert: 'Dessert'
 };
 
 function validateStep(step, values, dishes) {
@@ -65,10 +57,21 @@ function validateStep(step, values, dishes) {
       if (!dish.price || isNaN(dish.price) || parseFloat(dish.price) <= 0) {
         errors[`dish_${index}_price`] = 'Prezzo valido richiesto';
       }
+      if (dish.photoUrl && !isValidUrl(dish.photoUrl)) {
+        errors[`dish_${index}_photoUrl`] = 'Inserisci un URL valido';
+      }
     });
   }
 
   return errors;
+}
+
+function isValidUrl(value) {
+  try {
+    return ['http:', 'https:'].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
 }
 
 function Field({ label, name, value, onInput, error, type = 'text', placeholder, wide = false, autocomplete }) {
@@ -108,7 +111,14 @@ export function CreateFirstRestaurantWizard({
   const [suggestLoading, setSuggestLoading] = useState(false);
   const debounceRef = useRef(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newDish, setNewDish] = useState({ name: '', description: '', price: '', type: 'burger' });
+  const [newDish, setNewDish] = useState({ name: '', price: '', type: '', photoUrl: '', ingredientIds: [] });
+  const [ingredients, setIngredients] = useState([]);
+  const [ingredientsLoading, setIngredientsLoading] = useState(false);
+  const [ingredientsError, setIngredientsError] = useState('');
+  const [ingredientsLoaded, setIngredientsLoaded] = useState(false);
+  const [newIngredientName, setNewIngredientName] = useState('');
+  const [newIngredientError, setNewIngredientError] = useState('');
+  const [creatingIngredient, setCreatingIngredient] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -119,6 +129,8 @@ export function CreateFirstRestaurantWizard({
 
   const handleStreetChange = (event) => {
     const v = event.target.value;
+    setLat(null);
+    setLng(null);
     update('street', v);
     if (v.length > 3) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -141,6 +153,19 @@ export function CreateFirstRestaurantWizard({
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (step !== 2 || ingredientsLoaded || ingredientsLoading) return;
+
+    setIngredientsLoading(true);
+    restaurantService.getIngredients({ limit: 100 })
+      .then(result => setIngredients(result.data || []))
+      .catch(() => setIngredientsError('Impossibile caricare gli ingredienti disponibili.'))
+      .finally(() => {
+        setIngredientsLoading(false);
+        setIngredientsLoaded(true);
+      });
+  }, [step, ingredientsLoaded, ingredientsLoading]);
 
   function selectSuggestion(item) {
     setSuggestions([]);
@@ -166,17 +191,53 @@ export function CreateFirstRestaurantWizard({
     }
   };
 
+  const createIngredient = async () => {
+    const name = newIngredientName.trim();
+    if (name.length < 2) {
+      setNewIngredientError('Inserisci almeno 2 caratteri');
+      return;
+    }
+
+    setCreatingIngredient(true);
+    setNewIngredientError('');
+    try {
+      const result = await restaurantService.createIngredient(name);
+      const ingredient = result.data;
+      setIngredients(previous => [...previous.filter(item => item._id !== ingredient._id), ingredient]
+        .sort((a, b) => a.name.localeCompare(b.name)));
+      setNewDish(previous => ({
+        ...previous,
+        ingredientIds: previous.ingredientIds.includes(ingredient._id)
+          ? previous.ingredientIds
+          : [...previous.ingredientIds, ingredient._id]
+      }));
+      setNewIngredientName('');
+    } catch (creationError) {
+      setNewIngredientError(creationError.message || 'Impossibile aggiungere l\'ingrediente');
+    } finally {
+      setCreatingIngredient(false);
+    }
+  };
+
   const addDish = () => {
-    if (!newDish.name.trim() || !newDish.price || parseFloat(newDish.price) <= 0) return;
+    const dishErrors = {};
+
+    if (!newDish.name.trim()) dishErrors.dish_new_name = 'Nome richiesto';
+    if (!newDish.type.trim()) dishErrors.dish_new_type = 'Tipologia richiesta';
+    if (!newDish.price || parseFloat(newDish.price) <= 0) dishErrors.dish_new_price = 'Prezzo valido richiesto';
+    if (newDish.photoUrl && !isValidUrl(newDish.photoUrl.trim())) dishErrors.dish_new_photoUrl = 'Inserisci un URL valido';
+    setErrors(dishErrors);
+    if (Object.keys(dishErrors).length > 0) return;
 
     setDishes(previous => [...previous, {
       name: newDish.name.trim(),
-      description: newDish.description.trim(),
       price: parseFloat(newDish.price),
-      type: newDish.type
+      type: newDish.type.trim(),
+      photoUrl: newDish.photoUrl.trim(),
+      ingredientIds: newDish.ingredientIds
     }]);
 
-    setNewDish({ name: '', description: '', price: '', type: 'burger' });
+    setNewDish({ name: '', price: '', type: '', photoUrl: '', ingredientIds: [] });
     setShowAddForm(false);
     setErrors({});
   };
@@ -200,7 +261,7 @@ export function CreateFirstRestaurantWizard({
       // Submit fase - gestito interamente dal wizard
       setSubmitting(true);
       try {
-        const payload = buildPayload(values, dishes);
+        const payload = buildPayload(values, dishes, lat, lng);
         await onSubmit(payload);
         setStep(3);
       } catch (e) {
@@ -272,9 +333,10 @@ export function CreateFirstRestaurantWizard({
                 ${dishes.map((dish, index) => html`
                   <div class="dish-item" key=${index}>
                     <div class="dish-info">
-                      <span class="dish-type badge">${DISH_TYPE_LABELS[dish.type] || dish.type}</span>
+                      <span class="dish-type badge">${dish.type}</span>
                       <span class="dish-name"><b>${dish.name}</b></span>
-                      ${dish.description && html`<span class="dish-desc">${dish.description}</span>`}
+                      ${dish.photoUrl && html`<span class="dish-desc">foto configurata</span>`}
+                      ${dish.ingredientIds.length > 0 && html`<span class="dish-desc">${dish.ingredientIds.length} ingredienti collegati</span>`}
                       <span class="dish-price">${dish.price.toFixed(2)} €</span>
                     </div>
                     <button type="button" class="dish-remove" onClick=${() => removeDish(index)} aria-label="rimuovi piatto">[ X ]</button>
@@ -286,16 +348,55 @@ export function CreateFirstRestaurantWizard({
             ${showAddForm && html`
               <div class="dish-add-form">
                 <p class="eyebrow">AGGIUNGI NUOVO PIATTO</p>
+                <p class="wizard-hint dish-schema-hint">Il piatto sarà salvato come custom della filiale. Foto e ingredienti sono opzionali.</p>
                 <div class="wizard-fields">
                   <${Field} label="nome piatto" name="dishName" placeholder="es. Burger Classico" value=${newDish.name} error=${errors.dish_new_name} onInput=${event => updateNewDish('name', event.target.value)} wide />
-                  <${Field} label="descrizione" name="dishDesc" placeholder="Breve descrizione (opzionale)" value=${newDish.description} onInput=${event => updateNewDish('description', event.target.value)} wide />
-                  <${Field} label="prezzo (€)" name="dishPrice" type="number" step="0.5" min="0.5" placeholder="8.50" value=${newDish.price} error=${errors.dish_new_price} onInput=${event => updateNewDish('price', event.target.value)} />
-                  <label class="wizard-field">
-                    <span>tipo piatto</span>
-                    <select value=${newDish.type} onChange=${event => updateNewDish('type', event.target.value)}>
-                      ${DISH_TYPES.map(type => html`<option value=${type}>${DISH_TYPE_LABELS[type]}</option>`)}
-                    </select>
-                  </label>
+                  <${Field} label="prezzo (€)" name="dishPrice" type="number" inputmode="decimal" placeholder="8.50" value=${newDish.price} error=${errors.dish_new_price} onInput=${event => updateNewDish('price', event.target.value)} />
+                  <${Field} label="tipologia" name="dishType" placeholder="es. burger, pizza, bevanda" value=${newDish.type} error=${errors.dish_new_type} onInput=${event => updateNewDish('type', event.target.value)} />
+                  <${Field} label="foto (URL, opzionale)" name="dishPhotoUrl" type="url" placeholder="https://..." value=${newDish.photoUrl} error=${errors.dish_new_photoUrl} onInput=${event => updateNewDish('photoUrl', event.target.value)} wide />
+                  <div class="wizard-field wide">
+                    <span>ingredienti (opzionale)</span>
+                    <div class="ingredient-create">
+                      <input
+                        type="text"
+                        name="newIngredient"
+                        placeholder="es. cipolla rossa"
+                        value=${newIngredientName}
+                        onInput=${event => {
+                          setNewIngredientName(event.target.value);
+                          setNewIngredientError('');
+                        }}
+                        aria-label="nome nuovo ingrediente"
+                      />
+                      <button type="button" class="ingredient-create-button" onClick=${createIngredient} disabled=${creatingIngredient}>
+                        ${creatingIngredient ? '[ ... ]' : '[ + ]'} nuovo ingrediente
+                      </button>
+                    </div>
+                    ${newIngredientError && html`<span class="form-message">${newIngredientError}</span>`}
+                    ${ingredientsLoading && html`<p class="wizard-hint">Caricamento ingredienti...</p>`}
+                    ${ingredientsError && html`<p class="form-message">${ingredientsError}</p>`}
+                    ${!ingredientsLoading && !ingredientsError && ingredients.length === 0 && html`<p class="wizard-hint">Nessun ingrediente disponibile.</p>`}
+                    ${ingredients.length > 0 && html`
+                      <div class="ingredient-picker" aria-label="Ingredienti disponibili">
+                        ${ingredients.map(ingredient => {
+                          const selected = newDish.ingredientIds.includes(ingredient._id);
+                          return html`
+                            <button
+                              type="button"
+                              class=${`ingredient-card ${selected ? 'selected' : ''}`}
+                              aria-pressed=${selected}
+                              onClick=${() => updateNewDish('ingredientIds', selected
+                                ? newDish.ingredientIds.filter(id => id !== ingredient._id)
+                                : [...newDish.ingredientIds, ingredient._id])}
+                            >
+                              <span>${ingredient.name}</span>
+                              <b>${selected ? '✓' : '+'}</b>
+                            </button>
+                          `;
+                        })}
+                      </div>
+                    `}
+                  </div>
                 </div>
                 <div class="dish-add-actions">
                   <${TerminalButton} type="button" onClick=${() => { setShowAddForm(false); setErrors({}); }}>[ anulla ]</${TerminalButton}>
@@ -357,7 +458,7 @@ export function CreateFirstRestaurantWizard({
   `;
 }
 
-function buildPayload(values, dishes) {
+function buildPayload(values, dishes, lat, lng) {
   const payload = {
     name: values.name.trim(),
     address: values.street.trim(),
@@ -374,9 +475,10 @@ function buildPayload(values, dishes) {
   if (dishes.length > 0) {
     payload.dishes = dishes.map(d => ({
       name: d.name,
-      description: d.description,
       price: d.price,
-      type: d.type
+      type: d.type,
+      ...(d.photoUrl ? { photoUrl: d.photoUrl } : {}),
+      ...(d.ingredientIds.length > 0 ? { ingredientIds: d.ingredientIds } : {})
     }));
   }
 

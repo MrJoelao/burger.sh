@@ -1,5 +1,10 @@
 const Joi = require('joi');
 
+const locationSchema = Joi.object({
+  lat: Joi.number().min(-90).max(90).required(),
+  lng: Joi.number().min(-180).max(180).required()
+});
+
 const createRestaurantSchema = Joi.object({
   name: Joi.string().min(2).required(),
   address: Joi.string().min(5).required(),
@@ -7,7 +12,8 @@ const createRestaurantSchema = Joi.object({
   zip: Joi.string().pattern(/^\d{5}$/).optional(),
   phone: Joi.string().pattern(/^\+?[0-9\s\-()]+$/).required(),
   vatNumber: Joi.string().required(),
-  managerId: Joi.string().hex().length(24).required()
+  managerId: Joi.string().hex().length(24).required(),
+  location: locationSchema.optional()
 });
 
 const createFirstRestaurantSchema = Joi.object({
@@ -16,7 +22,8 @@ const createFirstRestaurantSchema = Joi.object({
   city: Joi.string().min(2).required(),
   zip: Joi.string().pattern(/^\d{5}$/).optional(),
   phone: Joi.string().pattern(/^\+?[0-9\s\-()]+$/).required(),
-  vatNumber: Joi.string().required()
+  vatNumber: Joi.string().required(),
+  location: locationSchema.optional()
 });
 
 const updateRestaurantSchema = Joi.object({
@@ -26,7 +33,8 @@ const updateRestaurantSchema = Joi.object({
   zip: Joi.string().pattern(/^\d{5}$/).optional(),
   phone: Joi.string().pattern(/^\+?[0-9\s\-()]+$/).optional(),
   vatNumber: Joi.string().optional(),
-  managerId: Joi.string().hex().length(24).optional()
+  managerId: Joi.string().hex().length(24).optional(),
+  location: locationSchema.optional()
 });
 
 module.exports = { createRestaurantSchema, createFirstRestaurantSchema, updateRestaurantSchema };

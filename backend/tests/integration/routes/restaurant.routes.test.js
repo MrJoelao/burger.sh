@@ -444,6 +444,26 @@ describe('POST /api/restaurants/first', () => {
     expect(updatedUser.restaurantId).toBeDefined();
   });
 
+  test('salva le coordinate inviate dal wizard', async () => {
+    const manager = await createManager();
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `******
+      .send({
+        name: 'Burger House Milano',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        zip: '20100',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001',
+        location: { lat: 45.4642, lng: 9.19 }
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.location).toEqual({ lat: 45.4642, lng: 9.19 });
+  });
+
   test('un manager che ha già un ristorante riceve errore 400', async () => {
     const manager = await createManager();
     await createRestaurant({ managerId: manager._id });
