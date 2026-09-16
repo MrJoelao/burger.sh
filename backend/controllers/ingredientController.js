@@ -21,11 +21,11 @@ async function getAllIngredients(req, res, next) {
 
 async function createIngredient(req, res, next) {
   try {
-    const name = req.validated.name;
+    const { name, allergens } = req.validated;
     const existing = await Ingredient.findOne({ name: new RegExp(`^${escapeRegExp(name)}$`, 'i') });
     if (existing) return jsonOk(res, 200, existing);
 
-    const ingredient = await Ingredient.create({ name });
+    const ingredient = await Ingredient.create({ name, allergens });
     return jsonOk(res, 201, ingredient);
   } catch (error) {
     return next(error);

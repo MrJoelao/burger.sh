@@ -18,10 +18,12 @@ import { navigate } from '../../router/navigate.js';
 import { entityId } from '../../domain/entity.js';
 import { euro } from '../../domain/format.js';
 import { menuSections } from '../../domain/menu.js';
+import { filterDishes } from '../../domain/menuSearch.js';
 import { addGuestCartItem, changeGuestCartQuantity, guestCartFor, saveGuestCart } from '../../domain/guestCart.js';
 import { useResource } from '../../hooks/useResource.js';
 import { useAuthStore } from '../../state/authStore.js';
 import { AuthRequiredModal } from '../../components/Auth/AuthRequiredModal.jsx';
+import { MenuSearch } from '../../components/Menu/MenuSearch.jsx';
 
 const LIMIT = 100;
 
@@ -30,6 +32,7 @@ export function OrderMenuPage({ restaurantId }) {
   const { isAuthenticated } = useAuthStore();
   const [guestItems, setGuestItems] = useState(() => guestCartFor(restaurantId));
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [searchFilters, setSearchFilters] = useState({});
 
   const loadRestaurant = useCallback(() => restaurantService.getRestaurant(restaurantId), [restaurantId]);
   const loadDishes = useCallback(() => restaurantService.getDishesByRestaurant(restaurantId, { limit: LIMIT }), [restaurantId]);
@@ -38,7 +41,8 @@ export function OrderMenuPage({ restaurantId }) {
   const dishes = useResource(loadDishes);
 
   const data = restaurant.response?.data;
-  const sections = menuSections(dishes.response?.data || []);
+  const allDishes = dishes.response?.data || [];
+  const sections = menuSections(filterDishes(allDishes, searchFilters));
 
   /* il carrello in bozza arriva dal backend: sincronizza lo store al montaggio */
   useEffect(() => {
@@ -131,13 +135,16 @@ export function OrderMenuPage({ restaurantId }) {
                 subtitle="Scegli i piatti. Il carrello resta visibile mentre componi l’ordine."
               />
             </div>
+            ${allDishes.length > 0 && html`<${MenuSearch} dishes=${allDishes} onChange=${setSearchFilters} />`}
 
             <${AsyncBoundary} loading=${dishes.loading} error=${dishes.error} label="menu">
               ${sections.length === 0
                 ? html`
                   <div class="queue-empty">
-                    <p><b>_</b> nessun piatto disponibile in questa filiale.</p>
-                    <p class="muted">Torna alla scelta della filiale o riprova più tardi.</p>
+                    <p><b>_</b> ${allDishes.length === 0 ? 'nessun piatto disponibile in questa filiale.' : 'nessun piatto corrisponde ai filtri.'}</p>
+                    <p class="muted">${allDishes.length === 0
+                      ? 'Torna alla scelta della filiale o riprova più tardi.'
+                      : 'Modifica la ricerca o azzera i filtri per vedere tutto il menu.'}</p>
                   </div>
                 `
                 : html`

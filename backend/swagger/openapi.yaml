@@ -358,6 +358,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngredientListEnvelope'
+    post:
+      tags: [Dishes]
+      summary: crea un ingrediente riutilizzabile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                allergens:
+                  type: array
+                  items:
+                    type: string
+                  description: allergeni presenti nell'ingrediente
+      responses:
+        '201':
+          description: ingrediente creato
+        '200':
+          description: ingrediente già esistente
 
   /dishes:
     get:

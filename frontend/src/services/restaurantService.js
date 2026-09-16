@@ -42,8 +42,8 @@ export const restaurantService = {
     return api.get(`/ingredients${query}`);
   },
 
-  async createIngredient(name) {
-    return api.post('/ingredients', { name });
+  async createIngredient(name, allergens = []) {
+    return api.post('/ingredients', { name, allergens });
   },
 
   /**

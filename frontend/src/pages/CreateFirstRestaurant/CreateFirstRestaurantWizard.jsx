@@ -117,6 +117,7 @@ export function CreateFirstRestaurantWizard({
   const [ingredientsError, setIngredientsError] = useState('');
   const [ingredientsLoaded, setIngredientsLoaded] = useState(false);
   const [newIngredientName, setNewIngredientName] = useState('');
+  const [newIngredientAllergens, setNewIngredientAllergens] = useState('');
   const [newIngredientError, setNewIngredientError] = useState('');
   const [creatingIngredient, setCreatingIngredient] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -201,7 +202,8 @@ export function CreateFirstRestaurantWizard({
     setCreatingIngredient(true);
     setNewIngredientError('');
     try {
-      const result = await restaurantService.createIngredient(name);
+      const allergens = newIngredientAllergens.split(',').map(item => item.trim()).filter(Boolean);
+      const result = await restaurantService.createIngredient(name, allergens);
       const ingredient = result.data;
       setIngredients(previous => [...previous.filter(item => item._id !== ingredient._id), ingredient]
         .sort((a, b) => a.name.localeCompare(b.name)));
@@ -212,6 +214,7 @@ export function CreateFirstRestaurantWizard({
           : [...previous.ingredientIds, ingredient._id]
       }));
       setNewIngredientName('');
+      setNewIngredientAllergens('');
     } catch (creationError) {
       setNewIngredientError(creationError.message || 'Impossibile aggiungere l\'ingrediente');
     } finally {
@@ -367,6 +370,14 @@ export function CreateFirstRestaurantWizard({
                           setNewIngredientError('');
                         }}
                         aria-label="nome nuovo ingrediente"
+                      />
+                      <input
+                        type="text"
+                        name="newIngredientAllergens"
+                        placeholder="allergeni: glutine, lattosio"
+                        value=${newIngredientAllergens}
+                        onInput=${event => setNewIngredientAllergens(event.target.value)}
+                        aria-label="allergeni nuovo ingrediente"
                       />
                       <button type="button" class="ingredient-create-button" onClick=${createIngredient} disabled=${creatingIngredient}>
                         ${creatingIngredient ? '[ ... ]' : '[ + ]'} nuovo ingrediente

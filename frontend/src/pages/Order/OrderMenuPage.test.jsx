@@ -63,6 +63,28 @@ describe('OrderMenuPage', () => {
     expect(screen.getByRole('img', { name: 'Cheeseburger' })).toHaveAttribute('src', DISHES[0].photoUrl);
   });
 
+  test('filtra il menu per testo e allergene escluso', async () => {
+    const dishes = [
+      { ...DISHES[0], ingredientIds: [{ name: 'pane', allergens: ['glutine'] }] },
+      { ...DISHES[1], ingredientIds: [{ name: 'lattuga', allergens: [] }] }
+    ];
+    restaurantService.getRestaurant.mockResolvedValue({ success: true, data: RESTAURANT });
+    restaurantService.getDishesByRestaurant.mockResolvedValue({ success: true, data: dishes });
+    useOrderStore.mockReturnValue(storeWith());
+
+    render(<OrderMenuPage restaurantId="r1" />);
+
+    const search = await screen.findByPlaceholderText('nome o ingrediente');
+    fireEvent.input(search, { target: { value: 'veggie' } });
+    expect(screen.getByText('Burger veggie')).toBeInTheDocument();
+    expect(screen.queryByText('Cheeseburger')).not.toBeInTheDocument();
+
+    fireEvent.input(search, { target: { value: '' } });
+    fireEvent.click(screen.getByLabelText('glutine'));
+    expect(screen.queryByText('Cheeseburger')).not.toBeInTheDocument();
+    expect(screen.getByText('Burger veggie')).toBeInTheDocument();
+  });
+
   test('aggiunge un piatto al carrello con filiale e piatto', async () => {
     const store = storeWith();
     useAuthStore.mockReturnValue({ user: { id: 'c1' }, isAuthenticated: true });
