@@ -2557,10 +2557,17 @@
   color: var(--dirty);
 }
 
-.shortcut-row {
+	.shortcut-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: center;
+  width: 100%;
+  justify-content: center;
+}
+
+.shortcut-row.mt-lg {
+  margin-top: 20px;
 }
 
 /* Filtri */
@@ -2569,6 +2576,12 @@
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 18px;
+}
+
+/* ── Checkout wizard ── */
+.customer-console .payment-form {
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .filter-field {
@@ -4402,30 +4415,45 @@
 .payment-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
+  max-width: 900px;
 }
 
 .payment-options {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .payment-choice {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 14px 16px;
+  min-height: 92px;
+  padding: 16px;
   border: 1px solid var(--line);
-  background: var(--panel);
+  background: linear-gradient(135deg, rgba(242, 189, 78, 0.05), transparent 62%), var(--panel);
   cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+
+.payment-choice:hover,
+.payment-choice:focus-within,
+.payment-choice:has(input:checked) {
+  border-color: var(--amber);
+  background: rgba(242, 189, 78, 0.1);
 }
 
 .payment-choice input[type="radio"] {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   accent-color: var(--amber);
 }
 
 .payment-choice-label {
+  padding-right: 26px;
   font-size: 15px;
   font-weight: 600;
   color: var(--paper);
@@ -4433,16 +4461,22 @@
 
 .payment-choice-card {
   flex-direction: row;
+  min-height: auto;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--ink);
 }
 
 .saved-methods {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 8px;
-  padding: 8px 0;
+  margin: -2px 0 2px;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  background: rgba(0, 0, 0, 0.14);
   border-top: 1px dashed var(--line);
 }
 
@@ -4464,7 +4498,18 @@
 }
 
 .checkout-stage {
+  padding: 22px;
+  border: 1px solid var(--line);
+  background: rgba(33, 30, 23, 0.72);
   animation: checkout-stage-in 220ms ease both;
+}
+
+.checkout-stage .panel-block {
+  margin-top: 0;
+}
+
+.checkout-stage .section-heading {
+  margin-bottom: 20px;
 }
 
 .stage-actions {
@@ -4477,6 +4522,10 @@
   gap: 0;
   margin-bottom: 18px;
   border: 1px solid var(--line);
+}
+
+.checkout-review + .order-queue {
+  margin-top: 18px;
 }
 
 .checkout-review p {

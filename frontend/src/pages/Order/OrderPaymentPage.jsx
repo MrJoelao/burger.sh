@@ -32,12 +32,6 @@ import '../../styles/address-suggestions.css';
 const ESTIMATED_DELIVERY_FEE = 3.5;
 
 const EMPTY_ADDRESS = { street: '', city: '', province: '', zip: '', notes: '' };
-const CHECKOUT_STEPS = [
-  { id: 'delivery', label: 'consegna' },
-  { id: 'payment', label: 'pagamento' },
-  { id: 'summary', label: 'riepilogo' }
-];
-
 export function OrderPaymentPage() {
   const order = useOrderStore();
   const { isAuthenticated } = useAuthStore();
@@ -63,7 +57,7 @@ export function OrderPaymentPage() {
 
   if (!isAuthenticated) {
     return html`
-      <${CustomerShell} title="ordina" subtitle="passo 3 · pagamento">
+      <${CustomerShell} title="ordina" subtitle="passo 3 · pagamento" wizardMode>
         <section class="terminal-screen">
           <${WizardSteps} current="payment" />
           <div class="queue-empty">
@@ -127,17 +121,16 @@ export function OrderPaymentPage() {
 
   if (done) {
     return html`
-      <${CustomerShell} title="ordina" subtitle="ordine confermato">
+      <${CustomerShell} title="ordina" subtitle="ordine confermato" wizardMode>
         <section class="terminal-screen">
           <${WizardSteps} current="payment" />
           <div class="queue-empty order-success">
             <p><b>✓</b> ordine confermato.</p>
             <h2 class="order-code-large">${orderReference(done)}</h2>
-            <p class="muted">pagamento simulato: non è stato addebitato nulla.</p>
-            <div class="shortcut-row">
-              <button class="terminal-button primary" type="button" onClick=${() => navigate(`/orders/${entityId(done)}`)}>[ enter ] segui l'ordine</button>
-              <button class="terminal-button" type="button" onClick=${() => navigate('/profile')}>[ esc ] profilo</button>
-            </div>
+          </div>
+          <div class="shortcut-row mt-lg">
+            <button class="terminal-button primary" type="button" onClick=${() => navigate(`/orders/${entityId(done)}`)}>[ enter ] segui l'ordine</button>
+            <button class="terminal-button" type="button" onClick=${() => navigate('/profile')}>[ esc ] profilo</button>
           </div>
         </section>
       <//>
@@ -147,7 +140,7 @@ export function OrderPaymentPage() {
   const displayLoading = (order.loading || methods.loading) && items.length === 0 && !subtotal;
 
   return html`
-    <${CustomerShell} title="ordina" subtitle="passo 3 · pagamento">
+    <${CustomerShell} title="ordina" subtitle="passo 3 · pagamento" wizardMode>
       <section class="terminal-screen">
         <${WizardSteps} current="payment" />
         ${displayLoading
@@ -190,6 +183,7 @@ function renderPayment(props) {
   } = props;
 
   return html`
+    <div class="checkpoint-center">
     <${SectionHeading}
       eyebrow="checkout guidato"
       title="CHIUDI L'ORDINE_"
@@ -199,7 +193,6 @@ function renderPayment(props) {
     ${error && html`<${FormMessage} message=${error} type="error" />`}
 
     <form class="payment-form" onSubmit=${handleConfirm}>
-      <${WizardSteps} current=${phase} steps=${CHECKOUT_STEPS} />
       <div class="checkout-stage" key=${phase}>
         ${phase === 'delivery' && renderDelivery(address, setAddress, mode, setMode, moveTo)}
         ${phase === 'payment' && renderPaymentChoice({
@@ -212,6 +205,7 @@ function renderPayment(props) {
         })}
       </div>
     </form>
+    </div>
   `;
 }
 

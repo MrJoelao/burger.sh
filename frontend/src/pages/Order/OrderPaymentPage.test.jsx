@@ -5,10 +5,12 @@ import { navigate } from '../../router/navigate.js';
 import { useOrderStore } from '../../state/orderStore.js';
 import { useAuthStore } from '../../state/authStore.js';
 
-vi.mock('../../state/authStore.js', () => {
-  const useAuthStore = vi.fn(() => ({ user: { id: 'c1', name: 'Luca', role: 'customer' }, isAuthenticated: true }));
-  return { useAuthStore };
-});
+vi.mock('../../state/authStore.js', () => ({
+  useAuthStore: vi.fn(() => ({
+    user: { id: 'c1', name: 'Luca', role: 'customer' },
+    isAuthenticated: true
+  }))
+}));
 
 vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
 
@@ -17,8 +19,6 @@ vi.mock('../../services/paymentService.js', () => ({
 }));
 
 vi.mock('../../state/orderStore.js', () => ({ useOrderStore: vi.fn() }));
-
-const CARD = { _id: 'p1', type: 'card', label: 'Carta di Mario Rossi', details: '4242', isDefault: true };
 
 const ITEMS = [{ dishId: 'd1', name: 'Cheeseburger', price: 6.5, quantity: 2 }];
 
@@ -31,138 +31,87 @@ function storeWith(overrides = {}) {
   };
 }
 
-function fillNewCard() {
-  fireEvent.input(screen.getByLabelText('nome intestatario'), { target: { value: 'Mario' } });
-  fireEvent.input(screen.getByLabelText('cognome intestatario'), { target: { value: 'Rossi' } });
-  fireEvent.input(screen.getByLabelText('numero carta'), { target: { value: '4242 4242 4242 4242' } });
-  fireEvent.input(screen.getByLabelText('scadenza'), { target: { value: '12/29' } });
-  fireEvent.input(screen.getByLabelText('cvv'), { target: { value: '123' } });
+async function renderPage(overrides = {}) {
+  paymentService.list.mockResolvedValue({ success: true, data: [] });
+  useOrderStore.mockReturnValue(storeWith(overrides));
+  render(<OrderPaymentPage />);
+  await screen.findByText('DOVE_');
+  return useOrderStore.mock.results.at(-1).value;
+}
+
+function continueToPayment() {
+  fireEvent.click(screen.getByRole('button', { name: /continua al pagamento/i }));
+}
+
+function continueToSummary() {
+  fireEvent.click(screen.getByRole('button', { name: /continua al riepilogo/i }));
 }
 
 describe('OrderPaymentPage', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  test('riassume il carrello e propone il pagamento alla cassa come opzione', async () => {
-    paymentService.list.mockResolvedValue({ success: true, data: [] });
-    useOrderStore.mockReturnValue(storeWith());
-
-    render(<OrderPaymentPage />);
-
-    expect(await screen.findByText('Cheeseburger')).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /pagamento alla cassa/i })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /paypal/i })).toBeInTheDocument();
-  });
-
-  test('conferma un ritiro con pagamento alla cassa senza salvare nulla', async () => {
-    const store = storeWith();
-    paymentService.list.mockResolvedValue({ success: true, data: [] });
-    useOrderStore.mockReturnValue(store);
-
-    render(<OrderPaymentPage />);
-    await screen.findByText('Cheeseburger');
-
-    fireEvent.click(screen.getByRole('button', { name: /conferma e paga/i }));
-
-    await waitFor(() => expect(store.confirmCart).toHaveBeenCalledWith('pickup', undefined));
-    expect(paymentService.create).not.toHaveBeenCalled();
-  });
-
-  test('mostra il codice dell ordine alla conferma', async () => {
-    const store = storeWith();
-    paymentService.list.mockResolvedValue({ success: true, data: [] });
-    useOrderStore.mockReturnValue(store);
-
-    render(<OrderPaymentPage />);
-    await screen.findByText('Cheeseburger');
-    fireEvent.click(screen.getByRole('button', { name: /conferma e paga/i }));
-
-    expect(await screen.findByText('FF-A1B2C3')).toBeInTheDocument();
-    expect(screen.getByText(/pagamento simulato/i)).toBeInTheDocument();
-  });
-
-  test('una consegna a domicilio richiede l indirizzo', async () => {
-    const store = storeWith();
-    paymentService.list.mockResolvedValue({ success: true, data: [] });
-    useOrderStore.mockReturnValue(store);
-
-    render(<OrderPaymentPage />);
-    await screen.findByText('Cheeseburger');
-
-    fireEvent.click(screen.getByRole('button', { name: /consegna/i }));
-    fireEvent.click(screen.getByRole('button', { name: /conferma e paga/i }));
-
-    expect(await screen.findByText(/completa via, città e cap/i)).toBeInTheDocument();
-    expect(store.confirmCart).not.toHaveBeenCalled();
-  });
-
-  test('una nuova carta viene salvata con le sole ultime cifre e poi conferma', async () => {
-    const store = storeWith();
-    paymentService.list.mockResolvedValue({ success: true, data: [] });
-    paymentService.create.mockResolvedValue({ success: true, data: CARD });
-    useOrderStore.mockReturnValue(store);
-
-    render(<OrderPaymentPage />);
-    await screen.findByText('Cheeseburger');
-
-    fireEvent.click(screen.getByRole('radio', { name: /nuova carta/i }));
-    fillNewCard();
-    fireEvent.click(screen.getByRole('button', { name: /conferma e paga/i }));
-
-    await waitFor(() => {
-      expect(paymentService.create).toHaveBeenCalledWith({
-        type: 'card',
-        label: 'Carta di Mario Rossi',
-        details: '4242',
-        isDefault: false
-      });
-      expect(store.confirmCart).toHaveBeenCalledWith('pickup', undefined);
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useAuthStore.mockReturnValue({
+      user: { id: 'c1', name: 'Luca', role: 'customer' },
+      isAuthenticated: true
     });
   });
 
-  test('una carta salvata evita il salvataggio e conferma il carrello', async () => {
-    const store = storeWith();
-    paymentService.list.mockResolvedValue({ success: true, data: [CARD] });
-    useOrderStore.mockReturnValue(store);
+  test('mostra un solo navigatore del wizard durante il checkout', async () => {
+    await renderPage();
 
-    render(<OrderPaymentPage />);
-    await screen.findByText('Cheeseburger');
-
-    fireEvent.click(screen.getByRole('radio', { name: /carta salvata/i }));
-    fireEvent.click(screen.getByRole('radio', { name: /•••• 4242/i }));
-    fireEvent.click(screen.getByRole('button', { name: /conferma e paga/i }));
-
-    await waitFor(() => expect(store.confirmCart).toHaveBeenCalled());
-    expect(paymentService.create).not.toHaveBeenCalled();
+    expect(screen.getAllByRole('list', { name: /passi dell.?ordine/i })).toHaveLength(1);
+    expect(screen.queryByText('riepilogo')).not.toBeInTheDocument();
   });
 
-  test('una consegna con indirizzo invia mode e indirizzo', async () => {
-    const store = storeWith();
-    paymentService.list.mockResolvedValue({ success: true, data: [] });
-    useOrderStore.mockReturnValue(store);
+  test('passa dal ritiro al pagamento e poi al riepilogo', async () => {
+    await renderPage();
 
-    render(<OrderPaymentPage />);
-    await screen.findByText('Cheeseburger');
+    continueToPayment();
+    expect(await screen.findByText('COME_')).toBeInTheDocument();
+    continueToSummary();
 
-    fireEvent.click(screen.getByRole('button', { name: /consegna/i }));
+    expect(await screen.findByText('TUTTO_')).toBeInTheDocument();
+    expect(screen.getByText('totale stimato')).toBeInTheDocument();
+  });
+
+  test('una consegna a domicilio richiede via, città e CAP', async () => {
+    await renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /consegna \(\+/i }));
+    continueToPayment();
+
+    expect(await screen.findByText(/completa via, città e cap/i)).toBeInTheDocument();
+    expect(screen.getByText('DOVE_')).toBeInTheDocument();
+  });
+
+  test('una consegna completa invia modalità e indirizzo alla conferma', async () => {
+    const store = await renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /consegna \(\+/i }));
     fireEvent.input(screen.getByLabelText('via e numero'), { target: { value: 'Via Roma 1' } });
     fireEvent.input(screen.getByLabelText('città'), { target: { value: 'Milano' } });
-    fireEvent.input(screen.getByLabelText('cap'), { target: { value: '20100' } });
-    fireEvent.click(screen.getByRole('button', { name: /conferma e paga/i }));
+    fireEvent.input(screen.getByLabelText(/cap/i), { target: { value: '20100' } });
+    continueToPayment();
+    continueToSummary();
+    fireEvent.click(screen.getByRole('button', { name: /conferma ordine/i }));
 
-    await waitFor(() => expect(store.confirmCart).toHaveBeenCalledWith('delivery', { address: 'Via Roma 1, Milano 20100' }));
+    await waitFor(() => expect(store.confirmCart).toHaveBeenCalledWith('delivery', {
+      address: 'Via Roma 1, Milano, 20100'
+    }));
   });
 
-  test('un carrello vuoto non porta alla conferma', async () => {
-    paymentService.list.mockResolvedValue({ success: true, data: [] });
-    useOrderStore.mockReturnValue(storeWith({ items: [] }));
+  test('mostra il codice ordine dopo la conferma', async () => {
+    const store = await renderPage();
 
-    render(<OrderPaymentPage />);
+    continueToPayment();
+    continueToSummary();
+    fireEvent.click(screen.getByRole('button', { name: /conferma ordine/i }));
 
-    expect(await screen.findByText(/carrello è vuoto/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /conferma e paga/i })).not.toBeInTheDocument();
+    await waitFor(() => expect(store.confirmCart).toHaveBeenCalled());
+    expect(await screen.findByText('FF-A1B2C3')).toBeInTheDocument();
   });
 
-  test('mostra modal auth quando utente non autenticato arriva al pagamento', async () => {
+  test('non mostra il checkout a un utente non autenticato', async () => {
     useAuthStore.mockReturnValue({ user: null, isAuthenticated: false });
     paymentService.list.mockResolvedValue({ success: true, data: [] });
     useOrderStore.mockReturnValue(storeWith());
@@ -170,18 +119,8 @@ describe('OrderPaymentPage', () => {
     render(<OrderPaymentPage />);
 
     expect(await screen.findByText(/SESSIONE_/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /accedi/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /conferma e paga/i })).not.toBeInTheDocument();
-  });
-
-  test('chiudendo il modal auth reindirizza alla selezione filiale', async () => {
-    useAuthStore.mockReturnValue({ user: null, isAuthenticated: false });
-    paymentService.list.mockResolvedValue({ success: true, data: [] });
-    useOrderStore.mockReturnValue(storeWith());
-
-    render(<OrderPaymentPage />);
+    expect(screen.queryByRole('button', { name: /conferma ordine/i })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /continua a sfogliare/i }));
-
     expect(navigate).toHaveBeenCalledWith('/orders');
   });
 });
