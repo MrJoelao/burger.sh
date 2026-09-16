@@ -124,14 +124,18 @@ La collezione `dishes` memorizza sia i piatti standard della catena sia quelli p
 
 La collezione `ingredients` memorizza gli ingredienti utilizzati per comporre i piatti.
 
-- Ogni ingrediente può essere associato a più piatti.
+- Un ingrediente pubblico ha `restaurantId: null` e può essere usato dai piatti comuni.
+- Un ingrediente creato da un Manager ha `restaurantId` valorizzato con la filiale proprietaria e può essere usato dai suoi piatti custom.
+- Durante il wizard di apertura, prima della creazione della filiale, l'ingrediente resta associato al Manager tramite `managerId` e viene collegato alla nuova filiale al termine del wizard.
+- Gli ingredienti privati vengono eliminati quando viene chiusa la filiale. Gli ingredienti pubblici restano disponibili.
 - La relazione è gestita tramite riferimenti anziché tramite embedding completo.
 
 ```json
 {
   "_id": "ObjectId",
   "name": "Formaggio cheddar",
-  "allergens": ["lattosio"]
+  "allergens": ["lattosio"],
+  "restaurantId": null
 }
 ```
 

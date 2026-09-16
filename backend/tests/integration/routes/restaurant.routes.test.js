@@ -308,7 +308,7 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(admin)}`);
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
 
     expect(response.status).toBe(200);
   });
@@ -319,7 +319,7 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
 
     expect(response.status).toBe(200);
 
@@ -371,7 +371,7 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
 
     expect(response.status).toBe(200);
 
@@ -387,7 +387,7 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${closing._id}`)
-      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
 
     expect(response.status).toBe(200);
 
@@ -401,7 +401,7 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
 
     expect(response.status).toBe(403);
   });
@@ -412,7 +412,7 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(customer)}`);
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
 
     expect(response.status).toBe(403);
   });
@@ -449,7 +449,7 @@ describe('POST /api/restaurants/first', () => {
 
     const response = await request(app)
       .post('/api/restaurants/first')
-      .set('Authorization', `******
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
       .send({
         name: 'Burger House Milano',
         address: 'Via Roma 1',

@@ -8,7 +8,7 @@ const { getAllIngredients, createIngredient } = require('../controllers/ingredie
 
 const router = express.Router();
 
-router.get('/', paginationMiddleware, getAllIngredients);
+router.get('/', authMiddleware, requireApprovedManagerOnly, paginationMiddleware, getAllIngredients);
 router.post('/', authMiddleware, requireApprovedManagerOnly, validate(createIngredientSchema), createIngredient);
 
 module.exports = router;

@@ -16,40 +16,36 @@ export function DishTable({ dishes = [], busyId = null, canManage, onEdit, onDel
   }
 
   return html`
-    <div class="table-scroll">
-      <table class="directory-table">
-        <thead>
-          <tr>
-            <th>piatto</th>
-            <th>tipologia</th>
-            <th class="num">prezzo</th>
-            <th>origine</th>
-            <th>azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${dishes.map(dish => renderRow(dish, busyId, canManage, onEdit, onDelete))}
-        </tbody>
-      </table>
+    <div class="dish-card-grid manager-dish-grid">
+      ${dishes.map(dish => renderCard(dish, busyId, canManage, onEdit, onDelete))}
     </div>
   `;
 }
 
-function renderRow(dish, busyId, canManage, onEdit, onDelete) {
+function renderCard(dish, busyId, canManage, onEdit, onDelete) {
   const id = entityId(dish);
   const manageable = canManage(dish);
 
   return html`
-    <tr key=${id}>
-      <td class="cell-identity"><b>${dish.name}</b></td>
-      <td>${dish.type || 'n/d'}</td>
-      <td class="num">${euro(dish.price)}</td>
-      <td>
+    <article class="dish-card manager-dish-card" key=${id}>
+      <div class="dish-card-media">
+        ${dish.photoUrl
+          ? html`<img src=${dish.photoUrl} alt=${dish.name} />`
+          : html`<span aria-hidden="true">${dish.type || 'menu'}</span>`}
+      </div>
+      <div class="dish-card-body">
+        <div>
+          <p class="eyebrow">${dish.type || 'specialità'}</p>
+          <h3>${dish.name}</h3>
+        </div>
+        <p class="dish-card-price">${euro(dish.price)}</p>
+      </div>
+      <footer class="dish-card-actions manager-dish-actions">
+        <span>
         ${isCustomDish(dish)
           ? html`<span class="tag tone-amber">custom</span>`
           : html`<span class="tag tone-dirty">comune</span>`}
-      </td>
-      <td class="cell-actions">
+        </span>
         ${manageable
           ? html`
             <${TerminalButton} className="compact" disabled=${busyId === id} onClick=${() => onEdit(dish)}>
@@ -63,8 +59,8 @@ function renderRow(dish, busyId, canManage, onEdit, onDelete) {
             />
           `
           : html`<span class="muted">sola lettura</span>`}
-      </td>
-    </tr>
+      </footer>
+    </article>
   `;
 }
 

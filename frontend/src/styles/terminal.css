@@ -4742,6 +4742,36 @@
   justify-content: space-between;
 }
 
+.manager-dish-card {
+  min-height: 292px;
+}
+
+.manager-dish-actions {
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.manager-dish-actions > span:first-child {
+  flex: 1;
+}
+
+.manager-dish-actions .terminal-button {
+  width: auto;
+}
+
+.ingredient-manager-field {
+  margin: 16px 0 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+}
+
+.ingredient-manager-field legend {
+  padding: 0 6px;
+  color: var(--amber);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
 @keyframes order-card-in {
   from {
     opacity: 0;

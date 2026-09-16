@@ -135,6 +135,8 @@ Per ogni piatto devono essere gestite informazioni quali:
 - foto illustrativa
 
 Oltre ai piatti comuni caricati inizialmente, il Manager può inserire piatti personalizzati specifici del proprio ristorante.
+Il Manager può creare ingredienti privati della propria filiale e associarli ai piatti custom.
+Alla chiusura di una filiale vengono eliminati i suoi piatti custom e gli ingredienti privati associati; gli elementi pubblici condivisi non vengono eliminati.
 
 ### Dashboard del Manager
 

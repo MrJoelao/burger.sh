@@ -145,6 +145,14 @@ I flussi descrivono l'interazione tra utente, frontend, backend, database e serv
 3. Il backend aggiorna lo stato dell'utente/ristorante coinvolto e rende disponibili le relative funzionalità.
 4. Il Manager proprietario può chiudere o trasferire la propria filiale in autonomia, senza l'intervento dell'Admin e senza dover eliminare il proprio account: se indica un altro manager approvato, la filiale viene trasferita a quest'ultimo, altrimenti viene chiusa insieme ai suoi piatti custom.
 
+### 8.7 Gestione del menu e degli ingredienti del Manager
+
+1. Il Manager apre la schermata Menu e visualizza il menu comune in sola lettura e i piatti custom della propria filiale come card.
+2. Il Manager crea o modifica un piatto custom, selezionando ingredienti pubblici oppure ingredienti privati della filiale.
+3. Se serve un nuovo ingrediente, il Manager lo crea dalla stessa schermata e lo associa subito al piatto.
+4. Gli ingredienti creati durante il wizard iniziale restano associati al Manager fino alla creazione della filiale, poi vengono collegati alla filiale.
+5. Quando la filiale viene chiusa, il backend elimina i piatti custom e gli ingredienti privati della filiale. Gli ingredienti pubblici condivisi restano disponibili.
+
 ---
 
 ## 9. Diagrammi di riferimento

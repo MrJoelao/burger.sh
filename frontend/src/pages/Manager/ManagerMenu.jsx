@@ -32,7 +32,14 @@ export function ManagerMenu() {
     [branchId]
   );
   const dishes = useResource(load);
+  const ingredients = useResource(
+    useCallback(
+      () => (branchId ? restaurantService.getIngredients({ limit: 100 }) : Promise.resolve(EMPTY_LIST)),
+      [branchId]
+    )
+  );
   const action = useAction({ onSuccess: dishes.reload });
+  const ingredientAction = useAction({ onSuccess: ingredients.reload });
 
   const list = dishes.response?.data || [];
   const { custom, common } = menuGroups(list);
@@ -52,6 +59,9 @@ export function ManagerMenu() {
   });
 
   const removeDish = id => action.run(id, () => restaurantService.deleteDish(id));
+  const createIngredient = (name, allergens) => ingredientAction.run('ingredient-create', () =>
+    restaurantService.createIngredient(name, allergens)
+  );
 
   return html`
     <${ManagerShell} title="menu" subtitle="branch menu">
@@ -65,6 +75,9 @@ export function ManagerMenu() {
 
         ${action.actionError && html`
           <div class="alert alert-danger" role="alert"><strong>errore:</strong> ${action.actionError}</div>
+        `}
+        ${ingredientAction.actionError && html`
+          <div class="alert alert-danger" role="alert"><strong>errore ingrediente:</strong> ${ingredientAction.actionError}</div>
         `}
 
         <${BranchGate}
@@ -85,6 +98,10 @@ export function ManagerMenu() {
               initial=${editing}
               busy=${action.busyId === busyKey}
               onSubmit=${submitDish}
+              ingredients=${ingredients.response?.data || []}
+              ingredientsLoading=${ingredients.loading}
+              ingredientsError=${ingredients.error}
+              onCreateIngredient=${createIngredient}
               onCancel=${editing ? () => setEditing(null) : null}
             />
           </div>

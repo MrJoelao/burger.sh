@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
 const Dish = require('../models/Dish');
+const Ingredient = require('../models/Ingredient');
 const { applyPasswordUpdate } = require('../utils/password');
 const { jsonOk, jsonMessage, badRequest } = require('../utils/httpResponses');
 const { findOrThrow } = require('../utils/authorization');
@@ -56,6 +57,7 @@ async function closeRestaurants(restaurants) {
   const previousManagerIds = restaurants.map(restaurant => restaurant.managerId);
 
   await Dish.deleteMany({ restaurantId: { $in: restaurantIds } });
+  await Ingredient.deleteMany({ restaurantId: { $in: restaurantIds } });
   await Restaurant.deleteMany({ _id: { $in: restaurantIds } });
 
   await syncManagerRestaurants(previousManagerIds);
@@ -137,6 +139,7 @@ async function deleteMe(req, res, next) {
     if (user.role === 'manager') {
       const { newManagerId } = req.validated;
       await resolveManagerRestaurants(user._id, newManagerId);
+      await Ingredient.deleteMany({ managerId: user._id, restaurantId: null });
     }
 
     await User.findByIdAndDelete(user._id);

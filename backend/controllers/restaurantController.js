@@ -1,6 +1,7 @@
 const Restaurant = require('../models/Restaurant');
 const User = require('../models/User');
 const Dish = require('../models/Dish');
+const Ingredient = require('../models/Ingredient');
 const { isAdmin, isOwner, unauthorized, findOrThrow } = require('../utils/authorization');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
 const { containsFilter, combineFilters } = require('../utils/searchFilters');
@@ -128,6 +129,10 @@ async function createRestaurant(req, res, next) {
        manager resterebbe senza restaurantId finché non passa da /restaurants/first,
        che però risponde 400 perché la filiale esiste già */
     await syncManagerRestaurant(managerId);
+    await Ingredient.updateMany(
+      { managerId, restaurantId: null },
+      { $set: { restaurantId: restaurant._id }, $unset: { managerId: 1 } }
+    );
 
     return jsonOk(res, 201, populatedRestaurant);
   } catch (err) {
@@ -160,6 +165,10 @@ async function createFirstRestaurant(req, res, next) {
 
     // aggiorna l'utente con il restaurantId
     await User.findByIdAndUpdate(managerId, { restaurantId: restaurant._id });
+    await Ingredient.updateMany(
+      { managerId, restaurantId: null },
+      { $set: { restaurantId: restaurant._id }, $unset: { managerId: 1 } }
+    );
 
     const populatedRestaurant = await restaurant.populate('managerId', 'name surname email');
 
