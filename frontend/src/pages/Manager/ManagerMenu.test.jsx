@@ -43,10 +43,13 @@ describe('ManagerMenu', () => {
     render(<ManagerMenu />);
     await screen.findAllByText(/nessun piatto/i);
 
-    fireEvent.input(screen.getByLabelText('nome'), { target: { value: 'Veggie' } });
-    fireEvent.input(screen.getByLabelText('tipologia'), { target: { value: 'burger' } });
-    fireEvent.input(screen.getByLabelText(/prezzo/i), { target: { value: '7.5' } });
-    fireEvent.submit(screen.getByLabelText('nome').closest('form'));
+    fireEvent.click(screen.getByRole('button', { name: /nuovo piatto custom/i }));
+    const form = screen.getByLabelText('nome').closest('form');
+    const inputs = form.querySelectorAll('input');
+    fireEvent.input(inputs[0], { target: { value: 'Veggie' } });
+    fireEvent.input(inputs[1], { target: { value: 'burger' } });
+    fireEvent.input(inputs[2], { target: { value: '7.5' } });
+    fireEvent.submit(form);
 
     await waitFor(() => {
       expect(restaurantService.createDish).toHaveBeenCalledWith('r1', {
@@ -78,7 +81,20 @@ describe('ManagerMenu', () => {
         type: 'burger',
         price: 8.9
       });
+
     });
+  });
+
+  test('filtra custom e comuni con la ricerca del menu cliente', async () => {
+    restaurantService.getDishesByRestaurant.mockResolvedValue({ success: true, data: dishes });
+
+    render(<ManagerMenu />);
+    await screen.findByText('Del Duomo');
+
+    fireEvent.input(screen.getByPlaceholderText('nome o ingrediente'), { target: { value: 'cheese' } });
+
+    expect(screen.getByText('Cheeseburger')).toBeInTheDocument();
+    expect(screen.queryByText('Del Duomo')).not.toBeInTheDocument();
   });
 
   test('elimina un piatto custom solo dopo la conferma', async () => {

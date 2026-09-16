@@ -7,14 +7,13 @@
  * passa da POST /cart/confirm, che è il server a calcolare i totali.
  */
 
-import { useCallback, useState } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 import { html } from '../../utils/htm.js';
 import { CustomerShell } from '../../components/Layout/CustomerShell.jsx';
 import { SectionHeading } from '../../components/UI/SectionHeading.jsx';
 import { FormMessage } from '../../components/UI/FormMessage.jsx';
 import { AsyncBoundary } from '../../components/Console/AsyncBoundary.jsx';
 import { WizardSteps } from '../../components/Order/WizardSteps.jsx';
-import { CardFields } from '../../components/PaymentMethods/CardFields.jsx';
 import { Loading } from '../../components/UI/Loading.jsx';
 import { paymentService } from '../../services/paymentService.js';
 import { useOrderStore } from '../../state/orderStore.js';
@@ -22,22 +21,46 @@ import { navigate } from '../../router/navigate.js';
 import { euro } from '../../domain/format.js';
 import { entityId } from '../../domain/entity.js';
 import { orderReference } from '../../domain/orders.js';
-import { cardFormErrors, cardMethodPayload, paymentMethodSummary } from '../../domain/payments.js';
+import { paymentMethodSummary } from '../../domain/payments.js';
 import { useResource } from '../../hooks/useResource.js';
 import { useAuthStore } from '../../state/authStore.js';
 import { AuthRequiredModal } from '../../components/Auth/AuthRequiredModal.jsx';
+import { PaymentMethodForm } from '../../components/PaymentMethods/PaymentMethodForm.jsx';
+import '../../styles/address-suggestions.css';
 
 /* tariffa solo indicativa: il totale definitivo arriva dal server alla conferma */
 const ESTIMATED_DELIVERY_FEE = 3.5;
 
-const EMPTY_ADDRESS = { street: '', city: '', zip: '', notes: '' };
-const EMPTY_CARD = { name: '', surname: '', number: '', expiry: '', cvv: '' };
+const EMPTY_ADDRESS = { street: '', city: '', province: '', zip: '', notes: '' };
+const CHECKOUT_STEPS = [
+  { id: 'delivery', label: 'consegna' },
+  { id: 'payment', label: 'pagamento' },
+  { id: 'summary', label: 'riepilogo' }
+];
 
 export function OrderPaymentPage() {
   const order = useOrderStore();
   const { isAuthenticated } = useAuthStore();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  // Se non autenticato, mostra il modal di login
+  const [mode, setMode] = useState('pickup');
+  const [address, setAddress] = useState(EMPTY_ADDRESS);
+  const [phase, setPhase] = useState('delivery');
+  const [choice, setChoice] = useState('cash');
+  const [savedMethodId, setSavedMethodId] = useState('');
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(null);
+
+  const loadMethods = useCallback(() => paymentService.list(), []);
+  const methods = useResource(loadMethods);
+  const savedMethods = methods.response?.data || [];
+
+  const items = order.items;
+  const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+  const estimatedTotal = subtotal + (mode === 'delivery' ? ESTIMATED_DELIVERY_FEE : 0);
+  const addressComplete = address.street.trim() && address.city.trim() && address.zip.trim();
+
   if (!isAuthenticated) {
     return html`
       <${CustomerShell} title="ordina" subtitle="passo 3 · pagamento">
@@ -53,24 +76,20 @@ export function OrderPaymentPage() {
     `;
   }
 
-  const [mode, setMode] = useState('pickup');
-  const [address, setAddress] = useState(EMPTY_ADDRESS);
-  const [choice, setChoice] = useState('cash');
-  const [savedMethodId, setSavedMethodId] = useState('');
-  const [newCard, setNewCard] = useState(EMPTY_CARD);
-  const [cardErrors, setCardErrors] = useState({});
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(null);
-
-  const loadMethods = useCallback(() => paymentService.list(), []);
-  const methods = useResource(loadMethods);
-  const savedMethods = methods.response?.data || [];
-
-  const items = order.items;
-  const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
-  const estimatedTotal = subtotal + (mode === 'delivery' ? ESTIMATED_DELIVERY_FEE : 0);
-  const addressComplete = address.street.trim() && address.city.trim() && address.zip.trim();
+  const moveTo = (nextPhase) => {
+    setError('');
+    if (nextPhase !== 'delivery' && mode === 'delivery' && !addressComplete) {
+      setError('Completa via, città e CAP per la consegna a domicilio.');
+      setPhase('delivery');
+      return;
+    }
+    if (nextPhase === 'summary' && choice === 'saved' && !savedMethodId) {
+      setError('Scegli quale carta salvata usare.');
+      setPhase('payment');
+      return;
+    }
+    setPhase(nextPhase);
+  };
 
   const handleConfirm = async (event) => {
     event.preventDefault();
@@ -86,24 +105,10 @@ export function OrderPaymentPage() {
       return;
     }
 
-    if (choice === 'new') {
-      const found = cardFormErrors(newCard);
-      setCardErrors(found);
-      if (Object.keys(found).length > 0) return;
-    }
-
     setBusy(true);
     try {
-      if (choice === 'new') {
-        const created = await paymentService.create(cardMethodPayload(newCard));
-        if (!created?.success) {
-          setError(created?.message || 'Impossibile salvare la carta. Riprova.');
-          return;
-        }
-      }
-
       const delivery = mode === 'delivery'
-        ? { address: `${address.street}, ${address.city} ${address.zip}` }
+        ? { address: formatAddress(address) }
         : undefined;
 
       const response = await order.confirmCart(mode, delivery);
@@ -145,7 +150,6 @@ export function OrderPaymentPage() {
     <${CustomerShell} title="ordina" subtitle="passo 3 · pagamento">
       <section class="terminal-screen">
         <${WizardSteps} current="payment" />
-
         ${displayLoading
           ? html`<${Loading} message="caricamento carrello..." />`
           : items.length === 0
@@ -162,12 +166,12 @@ export function OrderPaymentPage() {
                 address, setAddress,
                 choice, setChoice,
                 savedMethodId, setSavedMethodId,
-                savedMethods, methodsError: methods.error,
-                newCard, setNewCard, cardErrors, setCardErrors,
+                savedMethods, methodsError: methods.error, reloadMethods: methods.reload,
+                showPaymentForm, setShowPaymentForm,
                 error, busy,
                 items, subtotal, estimatedTotal,
                 addressComplete,
-                handleConfirm
+                phase, moveTo, handleConfirm
               })
         }
       </section>
@@ -177,155 +181,120 @@ export function OrderPaymentPage() {
 
 function renderPayment(props) {
   const {
-    items, subtotal, estimatedTotal, mode, error, busy, choice,
-    savedMethods, methodsError,
+    items, subtotal, estimatedTotal, mode, error, busy, choice, phase,
+    savedMethods, methodsError, reloadMethods,
     address, setAddress, setMode, setChoice,
     savedMethodId, setSavedMethodId,
-    newCard, setNewCard, cardErrors, setCardErrors,
-    handleConfirm
+    showPaymentForm, setShowPaymentForm,
+    moveTo, handleConfirm
   } = props;
 
   return html`
     <${SectionHeading}
-      eyebrow="pagamento"
-      title="CONFERMA_"
-      titleSpan="E PAGA"
-      subtitle="scegli come ricevere l'ordine e come pagare: il pagamento è simulato"
+      eyebrow="checkout guidato"
+      title="CHIUDI L'ORDINE_"
+      subtitle="un passo alla volta. puoi tornare indietro senza perdere le scelte."
     />
 
     ${error && html`<${FormMessage} message=${error} type="error" />`}
 
     <form class="payment-form" onSubmit=${handleConfirm}>
-      <div class="panel-block">
-        <${SectionHeading} eyebrow="modalità" title="RITIRO_" titleSpan="O CONSEGNA" />
-        <div class="shortcut-row">
-          <${ModeChoice} value="pickup" current=${mode} onSelect=${setMode} label="RITIRO IN SEDE" />
-          <${ModeChoice} value="delivery" current=${mode} onSelect=${setMode} label=${`CONSEGNA (+€ ${ESTIMATED_DELIVERY_FEE.toFixed(2)})`} />
-        </div>
-
-        ${mode === 'delivery' && html`
-          <div class="address-fields">
-            ${addressFields(address, setAddress)}
-          </div>
-        `}
-      </div>
-
-      <div class="panel-block">
-        <${SectionHeading} eyebrow="opzioni" title="COME_" titleSpan="PAGHI" subtitle="il pagamento è una simulazione: nessun addebito reale" />
-
-        <div class="payment-options" role="radiogroup" aria-label="opzioni di pagamento">
-          <${PaymentChoice}
-            name="payment"
-            value="cash"
-            current=${choice}
-            onSelect=${setChoice}
-            label="pagamento alla cassa"
-            detail="contanti al ritiro o alla consegna, nulla da salvare"
-          />
-          <${PaymentChoice}
-            name="payment"
-            value="paypal"
-            current=${choice}
-            onSelect=${setChoice}
-            label="paypal"
-            detail="simulato, nessun conto collegato"
-          />
-          <${PaymentChoice}
-            name="payment"
-            value="saved"
-            current=${choice}
-            onSelect=${setChoice}
-            label="carta salvata"
-            detail=${savedMethods.length ? 'scegli una delle tue carte' : 'nessuna carta salvata'}
-          />
-
-          ${choice === 'saved' && html`
-            <${AsyncBoundary} loading=${false} error=${methodsError} label="carte salvate">
-              <div class="saved-methods" role="radiogroup" aria-label="carte salvate">
-                ${savedMethods.length === 0
-                  ? html`<p class="muted payment-hint">Salva una carta dal profilo per ritrovarla qui.</p>`
-                  : savedMethods.map(method => html`
-                    <label class="payment-choice payment-choice-card" key=${entityId(method)}>
-                      <input
-                        type="radio"
-                        name="savedMethod"
-                        checked=${savedMethodId === entityId(method)}
-                        onChange=${() => setSavedMethodId(entityId(method))}
-                      />
-                      <span>${method.label}</span>
-                      <b class="tag tone-amber">${paymentMethodSummary(method)}</b>
-                    </label>
-                  `)}
-              </div>
-            <//>
-          `}
-
-          <${PaymentChoice}
-            name="payment"
-            value="new"
-            current=${choice}
-            onSelect=${setChoice}
-            label="nuova carta"
-            detail="viene salvata con le sole ultime quattro cifre"
-          />
-
-          ${choice === 'new' && html`
-            <div class="new-card">
-              <${CardFields}
-                values=${newCard}
-                errors=${cardErrors}
-                onChange=${changes => setNewCard(current => ({ ...current, ...changes }))}
-              />
-            </div>
-          `}
-        </div>
-      </div>
-
-      <div class="panel-block">
-        <${SectionHeading} eyebrow="riepilogo" title="CARRELLO" subtitle="il totale finale è calcolato dal server" />
-        <ul class="order-queue">
-          ${items.map((item, index) => html`
-            <li class="order-item" key=${item.dishId || index}>
-              <header class="order-head">
-                <b class="order-code">${item.name || 'piatto'}</b>
-                <span class="tag tone-amber">${item.quantity}×</span>
-              </header>
-              <p class="order-meta"><span>${euro(item.price)} cad.</span></p>
-              <footer class="order-foot"><b>${euro((item.price || 0) * (item.quantity || 1))}</b></footer>
-            </li>
-          `)}
-        </ul>
-
-        <div class="checkout-totals">
-          <p><span>subtotale</span><b>${euro(subtotal)}</b></p>
-          ${mode === 'delivery' && html`<p><span>consegna (stima)</span><b>${euro(ESTIMATED_DELIVERY_FEE)}</b></p>`}
-          <p class="checkout-grand-total"><span>totale stimato</span><strong>${euro(estimatedTotal)}</strong></p>
-        </div>
-      </div>
-
-      <div class="shortcut-row">
-        <button class="terminal-button primary" type="submit" disabled=${busy}>
-          ${busy ? '[ ... ] attendi' : '[ enter ] conferma e paga'}
-        </button>
-        <button class="terminal-button" type="button" onClick=${() => navigate('/orders')}>[ esc ] indietro</button>
+      <${WizardSteps} current=${phase} steps=${CHECKOUT_STEPS} />
+      <div class="checkout-stage" key=${phase}>
+        ${phase === 'delivery' && renderDelivery(address, setAddress, mode, setMode, moveTo)}
+        ${phase === 'payment' && renderPaymentChoice({
+          choice, setChoice, savedMethods, methodsError, savedMethodId,
+          setSavedMethodId, showPaymentForm, setShowPaymentForm, reloadMethods, moveTo
+        })}
+        ${phase === 'summary' && renderSummary({
+          items, subtotal, estimatedTotal, mode, address, choice, savedMethods,
+          savedMethodId, moveTo, busy
+        })}
       </div>
     </form>
   `;
 }
 
-function ModeChoice({ value, current, onSelect, label }) {
-  const active = current === value;
-
+function renderDelivery(address, setAddress, mode, setMode, moveTo) {
   return html`
-    <button
-      class=${`terminal-button ${active ? 'primary' : ''}`}
-      type="button"
-      aria-pressed=${active}
-      onClick=${() => onSelect(value)}
-    >
-      ${label}
-    </button>
+    <section class="panel-block">
+      <${SectionHeading} eyebrow="01 / consegna" title="DOVE_" titleSpan="LO VUOI" subtitle="scegli ritiro in sede o consegna a domicilio" />
+      <div class="shortcut-row">
+        <${ModeChoice} value="pickup" current=${mode} onSelect=${setMode} label="RITIRO IN SEDE" />
+        <${ModeChoice} value="delivery" current=${mode} onSelect=${setMode} label=${`CONSEGNA (+€ ${ESTIMATED_DELIVERY_FEE.toFixed(2)})`} />
+      </div>
+      ${mode === 'delivery' && html`<${AddressFields} address=${address} setAddress=${setAddress} />`}
+      <div class="shortcut-row stage-actions">
+        <button class="terminal-button primary" type="button" onClick=${() => moveTo('payment')}>[ enter ] continua al pagamento</button>
+      </div>
+    </section>
   `;
+}
+
+function renderPaymentChoice({ choice, setChoice, savedMethods, methodsError, savedMethodId, setSavedMethodId, showPaymentForm, setShowPaymentForm, reloadMethods, moveTo }) {
+  return html`
+    <section class="panel-block">
+      <${SectionHeading} eyebrow="02 / pagamento" title="COME_" titleSpan="PAGHI" subtitle="pagamento simulato: nessun addebito reale" />
+      <div class="payment-options" role="radiogroup" aria-label="opzioni di pagamento">
+        <${PaymentChoice} name="payment" value="cash" current=${choice} onSelect=${setChoice} label="pagamento in negozio" detail="paghi alla cassa al momento del ritiro o della consegna" />
+        <${PaymentChoice} name="payment" value="saved" current=${choice} onSelect=${setChoice} label="carta salvata" detail=${savedMethods.length ? 'scegli una delle tue carte' : 'nessuna carta salvata'} />
+        ${choice === 'saved' && html`
+          <${AsyncBoundary} loading=${false} error=${methodsError} label="carte salvate">
+            <div class="saved-methods" role="radiogroup" aria-label="carte salvate">
+              ${savedMethods.length === 0 ? html`<p class="muted payment-hint">Aggiungi una carta qui sotto per usarla al prossimo ordine.</p>` : savedMethods.map(method => html`
+                <label class="payment-choice payment-choice-card" key=${entityId(method)}>
+                  <input type="radio" name="savedMethod" checked=${savedMethodId === entityId(method)} onChange=${() => setSavedMethodId(entityId(method))} />
+                  <span>${method.label}</span>
+                  <b class="tag tone-amber">${paymentMethodSummary(method)}</b>
+                </label>
+              `)}
+            </div>
+          <//>
+        `}
+        <button class="terminal-button" type="button" onClick=${() => setShowPaymentForm(true)}>[ + ] aggiungi metodo</button>
+      </div>
+      <div class="shortcut-row stage-actions">
+        <button class="terminal-button" type="button" onClick=${() => moveTo('delivery')}>[ ← ] consegna</button>
+        <button class="terminal-button primary" type="button" onClick=${() => moveTo('summary')}>[ enter ] continua al riepilogo</button>
+      </div>
+    </section>
+    ${showPaymentForm && html`<${PaymentMethodModal} onClose=${() => setShowPaymentForm(false)} onSaved=${async () => { await reloadMethods(); setShowPaymentForm(false); }} />`}
+  `;
+}
+
+function renderSummary({ items, subtotal, estimatedTotal, mode, address, choice, savedMethods, savedMethodId, moveTo, busy }) {
+  const selected = savedMethods.find(method => entityId(method) === savedMethodId);
+  return html`
+    <section class="panel-block">
+      <${SectionHeading} eyebrow="03 / riepilogo" title="TUTTO_" titleSpan="PRONTO" subtitle="controlla l'ordine prima di inviarlo alla cucina" />
+      <div class="checkout-review">
+        <p><span>consegna</span><b>${mode === 'delivery' ? formatAddress(address) : 'ritiro in sede'}</b></p>
+        <p><span>pagamento</span><b>${choice === 'cash' ? 'in negozio' : selected?.label || paymentMethodSummary(selected) || 'carta salvata'}</b></p>
+      </div>
+      <ul class="order-queue">
+        ${items.map((item, index) => html`
+          <li class="order-item" key=${item.dishId || index}>
+            <header class="order-head"><b class="order-code">${item.name || 'piatto'}</b><span class="tag tone-amber">${item.quantity}×</span></header>
+            <p class="order-meta"><span>${euro(item.price)} cad.</span></p>
+            <footer class="order-foot"><b>${euro((item.price || 0) * (item.quantity || 1))}</b></footer>
+          </li>
+        `)}
+      </ul>
+      <div class="checkout-totals">
+        <p><span>subtotale</span><b>${euro(subtotal)}</b></p>
+        ${mode === 'delivery' && html`<p><span>consegna (stima)</span><b>${euro(ESTIMATED_DELIVERY_FEE)}</b></p>`}
+        <p class="checkout-grand-total"><span>totale stimato</span><strong>${euro(estimatedTotal)}</strong></p>
+      </div>
+      <div class="shortcut-row stage-actions">
+        <button class="terminal-button" type="button" onClick=${() => moveTo('payment')}>[ ← ] pagamento</button>
+        <button class="terminal-button primary" type="submit" disabled=${busy}>${busy ? '[ ... ] invio' : '[ enter ] conferma ordine'}</button>
+      </div>
+    </section>
+  `;
+}
+
+function ModeChoice({ value, current, onSelect, label }) {
+  return html`<button class=${`terminal-button ${current === value ? 'primary' : ''}`} type="button" aria-pressed=${current === value} onClick=${() => onSelect(value)}>${label}</button>`;
 }
 
 function PaymentChoice({ name, value, current, onSelect, label, detail }) {
@@ -345,29 +314,86 @@ function PaymentChoice({ name, value, current, onSelect, label, detail }) {
   `;
 }
 
-function addressFields(address, setAddress) {
-  const fields = [
-    { name: 'street', label: 'via e numero', placeholder: 'Via Roma 1' },
-    { name: 'city', label: 'città', placeholder: 'Milano' },
-    { name: 'zip', label: 'cap', placeholder: '20100' },
-    { name: 'notes', label: 'note (opzionale)', placeholder: 'Citofono, piano...' }
-  ];
+function AddressFields({ address, setAddress }) {
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const query = address.street.trim();
+    if (query.length < 3) {
+      setSuggestions([]);
+      return undefined;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=jsonv2&addressdetails=1&limit=5`, { signal: controller.signal });
+        if (!response.ok) throw new Error('impossibile cercare l’indirizzo');
+        setSuggestions(await response.json());
+      } catch (error) {
+        if (error.name !== 'AbortError') setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 280);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [address.street]);
+
+  const selectSuggestion = suggestion => {
+    const details = suggestion.address || {};
+    setAddress(current => ({
+      ...current,
+      street: [details.road, details.house_number].filter(Boolean).join(' ') || suggestion.display_name,
+      city: details.city || details.town || details.village || current.city,
+      province: details.state || details.county || current.province,
+      zip: details.postcode || current.zip
+    }));
+    setSuggestions([]);
+  };
 
   return html`
-    <div class="profile-grid">
-      ${fields.map(field => html`
-        <label class="profile-field" key=${field.name}>
-          ${field.label}
-          <input
-            type="text"
-            placeholder=${field.placeholder}
-            value=${address[field.name]}
-            onInput=${(event) => setAddress(current => ({ ...current, [field.name]: event.currentTarget.value }))}
-          />
+    <div class="address-fields">
+      <div class="profile-grid">
+        <label class="profile-field address-field-wrapper">
+          via e numero
+          <input type="text" autocomplete="street-address" placeholder="Via Roma 1" value=${address.street} onInput=${event => setAddress(current => ({ ...current, street: event.currentTarget.value }))} />
+          ${loading && html`<small class="address-search-status">cerco indirizzi...</small>`}
+          ${suggestions.length > 0 && html`<ul class="address-suggestions" role="listbox">${suggestions.map((suggestion, index) => html`<li key=${index} role="option" tabIndex="0" onClick=${() => selectSuggestion(suggestion)} onKeyDown=${event => event.key === 'Enter' && selectSuggestion(suggestion)}>${suggestion.display_name}</li>`)}</ul>`}
         </label>
-      `)}
+        ${[['city', 'città', 'Milano', 'address-level2'], ['province', 'provincia', 'Milano', 'address-level1'], ['zip', 'CAP', '20100', 'postal-code'], ['notes', 'note (opzionale)', 'Citofono, piano...', undefined]].map(([name, label, placeholder, autocomplete]) => html`
+          <label class="profile-field" key=${name}>${label}<input type="text" autocomplete=${autocomplete} placeholder=${placeholder} value=${address[name]} onInput=${event => setAddress(current => ({ ...current, [name]: event.currentTarget.value }))} /></label>
+        `)}
+      </div>
     </div>
   `;
+}
+
+function PaymentMethodModal({ onClose, onSaved }) {
+  const [busy, setBusy] = useState(false);
+  const submit = async payload => {
+    setBusy(true);
+    const result = await paymentService.create(payload);
+    setBusy(false);
+    if (!result?.success) return false;
+    onSaved();
+    return true;
+  };
+  return html`
+    <div class="checkout-modal-backdrop" role="presentation" onClick=${event => event.target === event.currentTarget && onClose()}>
+      <section class="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="payment-dialog-title">
+        <div class="modal-heading"><h2 id="payment-dialog-title">AGGIUNGI METODO_</h2><button class="terminal-button" type="button" onClick=${onClose}>[ x ] chiudi</button></div>
+        <${PaymentMethodForm} busy=${busy} onSubmit=${submit} />
+      </section>
+    </div>
+  `;
+}
+
+function formatAddress(address) {
+  return [address.street, address.city, address.province, address.zip].filter(Boolean).join(', ');
 }
 
 export default OrderPaymentPage;

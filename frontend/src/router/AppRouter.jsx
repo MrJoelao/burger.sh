@@ -15,6 +15,7 @@ import { CustomerDashboard } from '../pages/Dashboard/CustomerDashboard.jsx';
 import { ManagerOverview } from '../pages/Manager/ManagerOverview.jsx';
 import { ManagerOrders } from '../pages/Manager/ManagerOrders.jsx';
 import { ManagerMenu } from '../pages/Manager/ManagerMenu.jsx';
+import { ManagerIngredients } from '../pages/Manager/ManagerIngredients.jsx';
 import { ManagerRestaurant } from '../pages/Manager/ManagerRestaurant.jsx';
 import { AdminOverview } from '../pages/Admin/AdminOverview.jsx';
 import { AdminUsers } from '../pages/Admin/AdminUsers.jsx';
@@ -51,6 +52,7 @@ const ROUTES = [
   { path: '/profile', component: ProfilePage, roles: ['customer', 'manager', 'admin'] },
   { path: '/manager/orders', component: ManagerOrders, roles: ['manager'] },
   { path: '/manager/menu', component: ManagerMenu, roles: ['manager'] },
+  { path: '/manager/ingredients', component: ManagerIngredients, roles: ['manager'] },
   { path: '/manager/restaurant', component: ManagerRestaurant, roles: ['manager'] },
   { path: '/admin/users', component: AdminUsers, roles: ['admin'] },
   { path: '/admin/branches', component: AdminBranches, roles: ['admin'] },

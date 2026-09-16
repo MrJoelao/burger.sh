@@ -11,10 +11,10 @@ import { TerminalButton } from '../../../components/Auth/TerminalButton.jsx';
 import { dishFormErrors, dishPayload } from '../../../domain/menu.js';
 
 const FIELD_DEFS = [
-  { name: 'name', label: 'nome' },
-  { name: 'type', label: 'tipologia' },
-  { name: 'price', label: 'prezzo (€)', inputmode: 'decimal' },
-  { name: 'photoUrl', label: 'foto (url, opzionale)' }
+  { name: 'name', label: 'nome', placeholder: 'es. Burger Classico' },
+  { name: 'type', label: 'tipologia', placeholder: 'es. burger, pizza, bevanda' },
+  { name: 'price', label: 'prezzo (€)', type: 'number', inputmode: 'decimal', placeholder: '8.50' },
+  { name: 'photoUrl', label: 'foto (URL, opzionale)', type: 'url', placeholder: 'https://...' }
 ];
 
 function toForm(dish) {
@@ -31,16 +31,10 @@ export function DishForm({
   initial = null,
   busy = false,
   onSubmit,
-  onCancel,
-  ingredients = [],
-  ingredientsLoading = false,
-  ingredientsError = null,
-  onCreateIngredient
+  onCancel
 }) {
   const [form, setForm] = useState(() => toForm(initial));
   const [errors, setErrors] = useState({});
-  const [newIngredient, setNewIngredient] = useState({ name: '', allergens: '' });
-  const [creatingIngredient, setCreatingIngredient] = useState(false);
 
   const setField = (name, value) => setForm(previous => ({ ...previous, [name]: value }));
 
@@ -56,42 +50,19 @@ export function DishForm({
     onSubmit(payload);
   };
 
-  const toggleIngredient = id => setForm(previous => ({
-    ...previous,
-    ingredientIds: previous.ingredientIds.includes(id)
-      ? previous.ingredientIds.filter(item => item !== id)
-      : [...previous.ingredientIds, id]
-  }));
-
-  const addIngredient = async () => {
-    if (!newIngredient.name.trim() || !onCreateIngredient) return;
-    setCreatingIngredient(true);
-    try {
-      const result = await onCreateIngredient(
-        newIngredient.name.trim(),
-        newIngredient.allergens.split(',').map(item => item.trim()).filter(Boolean)
-      );
-      const id = result?.data?._id;
-      if (id) {
-        setForm(previous => ({ ...previous, ingredientIds: [...new Set([...previous.ingredientIds, id])] }));
-        setNewIngredient({ name: '', allergens: '' });
-      }
-    } finally {
-      setCreatingIngredient(false);
-    }
-  };
-
   return html`
-    <form class="profile-form" onSubmit=${submit} novalidate>
-      <div class="profile-grid">
+    <form class="profile-form dish-manager-form" onSubmit=${submit} novalidate>
+      <p class="wizard-hint dish-schema-hint">Il piatto sarà salvato come custom della filiale. Foto e ingredienti sono opzionali.</p>
+      <div class="wizard-fields">
         ${FIELD_DEFS.map(field => html`
-          <div class="profile-field" key=${field.name}>
+          <div class=${`wizard-field ${field.name === 'name' || field.name === 'photoUrl' ? 'wide' : ''}`} key=${field.name}>
             <label>
               ${field.label}
               <input
-                type="text"
+              type=${field.type || 'text'}
                 inputmode=${field.inputmode || 'text'}
-                value=${form[field.name]}
+              placeholder=${field.placeholder || ''}
+              value=${form[field.name]}
                 onInput=${event => setField(field.name, event.currentTarget.value)}
               />
             </label>
@@ -99,48 +70,6 @@ export function DishForm({
           </div>
         `)}
       </div>
-
-      <fieldset class="ingredient-manager-field">
-        <legend>ingredienti</legend>
-        <div class="ingredient-create">
-          <input
-            type="text"
-            placeholder="nuovo ingrediente"
-            value=${newIngredient.name}
-            onInput=${event => setNewIngredient(previous => ({ ...previous, name: event.currentTarget.value }))}
-            aria-label="nome nuovo ingrediente"
-          />
-          <input
-            type="text"
-            placeholder="allergeni, separati da virgola"
-            value=${newIngredient.allergens}
-            onInput=${event => setNewIngredient(previous => ({ ...previous, allergens: event.currentTarget.value }))}
-            aria-label="allergeni nuovo ingrediente"
-          />
-          <button type="button" class="ingredient-create-button" onClick=${addIngredient} disabled=${creatingIngredient}>
-            ${creatingIngredient ? '[ ... ]' : '[ + ]'} crea ingrediente
-          </button>
-        </div>
-        ${ingredientsLoading && html`<p class="wizard-hint">caricamento ingredienti...</p>`}
-        ${ingredientsError && html`<p class="form-message">impossibile caricare gli ingredienti.</p>`}
-        ${!ingredientsLoading && !ingredientsError && ingredients.length > 0 && html`
-          <div class="ingredient-picker" aria-label="Ingredienti disponibili">
-            ${ingredients.map(ingredient => {
-              const selected = form.ingredientIds.includes(ingredient._id);
-              return html`
-                <button
-                  type="button"
-                  class=${`ingredient-card ${selected ? 'selected' : ''}`}
-                  aria-pressed=${selected}
-                  onClick=${() => toggleIngredient(ingredient._id)}
-                >
-                  <span>${ingredient.name}</span><b>${selected ? '✓' : '+'}</b>
-                </button>
-              `;
-            })}
-          </div>
-        `}
-      </fieldset>
 
       <div class="form-actions">
         <${TerminalButton} primary type="submit" disabled=${busy}>

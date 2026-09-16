@@ -46,6 +46,14 @@ export const restaurantService = {
     return api.post('/ingredients', { name, allergens });
   },
 
+  async updateIngredient(id, name, allergens = []) {
+    return api.put(`/ingredients/${id}`, { name, allergens });
+  },
+
+  async deleteIngredient(id) {
+    return api.delete(`/ingredients/${id}`);
+  },
+
   /**
    * Create restaurant (admin only)
    * POST /restaurants

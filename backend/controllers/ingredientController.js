@@ -1,6 +1,7 @@
 const Ingredient = require('../models/Ingredient');
 const Restaurant = require('../models/Restaurant');
-const { jsonOk, jsonPaginated } = require('../utils/httpResponses');
+const { jsonOk, jsonPaginated, jsonMessage, handleAuth } = require('../utils/httpResponses');
+const { findOrThrow } = require('../utils/authorization');
 
 async function getAllIngredients(req, res, next) {
   try {
@@ -15,7 +16,7 @@ async function getAllIngredients(req, res, next) {
       : { restaurantId: null };
     const [total, ingredients] = await Promise.all([
       Ingredient.countDocuments(filter),
-      Ingredient.find({}, '_id name allergens')
+      Ingredient.find({}, '_id name allergens restaurantId managerId')
         .find(filter)
         .sort({ name: 1 })
         .skip(pagination.skip)
@@ -49,8 +50,47 @@ async function createIngredient(req, res, next) {
   }
 }
 
+async function updateIngredient(req, res, next) {
+    try {
+      const ingredient = await findOrThrow(Ingredient.findById(req.params.id), 'Ingredient not found');
+      const authorization = await ingredientAuthorization(req.user, ingredient);
+      if (!authorization.authorized) return handleAuth(res, authorization);
+
+      const updated = await Ingredient.findByIdAndUpdate(
+        req.params.id,
+        req.validated,
+        { returnDocument: 'after', runValidators: true }
+      ).lean();
+      return jsonOk(res, 200, updated);
+    } catch (error) {
+      return next(error);
+    }
+}
+
+async function deleteIngredient(req, res, next) {
+    try {
+      const ingredient = await findOrThrow(Ingredient.findById(req.params.id), 'Ingredient not found');
+      const authorization = await ingredientAuthorization(req.user, ingredient);
+      if (!authorization.authorized) return handleAuth(res, authorization);
+
+      await Ingredient.deleteOne({ _id: ingredient._id });
+      return jsonMessage(res, 200, 'Ingredient deleted successfully');
+    } catch (error) {
+      return next(error);
+    }
+}
+
+async function ingredientAuthorization(user, ingredient) {
+    const restaurant = await Restaurant.findOne({ managerId: user.id }).select('_id').lean();
+    const ownsIngredient = ingredient.managerId?.toString() === user.id.toString()
+      || (restaurant && ingredient.restaurantId?.toString() === restaurant._id.toString());
+    return ownsIngredient
+      ? { authorized: true }
+      : { authorized: false, statusCode: 403, message: 'You cannot manage this ingredient' };
+}
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-module.exports = { getAllIngredients, createIngredient };
+module.exports = { getAllIngredients, createIngredient, updateIngredient, deleteIngredient };

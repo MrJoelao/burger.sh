@@ -51,11 +51,11 @@ export function MenuSearch({ dishes = [], onChange }) {
         </label>
         <label>
           <span>prezzo da</span>
-          <input type="number" min="0" step="0.01" value=${filters.minPrice} placeholder="0,00" onInput=${event => update('minPrice', event.target.value)} />
+          <input class="price-filter" type="number" min="0" step="0.01" value=${filters.minPrice} placeholder="0,00" onInput=${event => update('minPrice', event.target.value)} />
         </label>
         <label>
           <span>prezzo a</span>
-          <input type="number" min="0" step="0.01" value=${filters.maxPrice} placeholder="∞" onInput=${event => update('maxPrice', event.target.value)} />
+          <input class="price-filter" type="number" min="0" step="0.01" value=${filters.maxPrice} placeholder="∞" onInput=${event => update('maxPrice', event.target.value)} />
         </label>
       </div>
       ${allergens.length > 0 && html`

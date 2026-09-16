@@ -275,8 +275,10 @@
 .terminal-window {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .management-grid,
@@ -288,6 +290,15 @@
 .management-shell .workspace,
 .terminal-window .workspace {
   overflow-y: auto;
+  min-height: 0;
+}
+
+.management-shell .workspace > div {
+  min-height: 100%;
+}
+
+.manager-screen {
+  min-height: 100%;
 }
 
 .profile-form {
@@ -4452,6 +4463,110 @@
   margin-top: 18px;
 }
 
+.checkout-stage {
+  animation: checkout-stage-in 220ms ease both;
+}
+
+.stage-actions {
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.checkout-review {
+  display: grid;
+  gap: 0;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+}
+
+.checkout-review p {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0;
+  padding: 12px 14px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.checkout-review p:last-child {
+  border-bottom: 0;
+}
+
+.checkout-review span {
+  color: var(--dirty);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.checkout-review b {
+  text-align: right;
+}
+
+.address-search-status {
+  display: block;
+  margin-top: 5px;
+  color: var(--dirty);
+}
+
+.checkout-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(16, 15, 12, 0.84);
+  animation: checkout-fade-in 160ms ease both;
+}
+
+.checkout-modal {
+  width: min(680px, 100%);
+  max-height: min(860px, 92vh);
+  overflow: auto;
+  padding: 22px;
+  border: 1px solid var(--amber);
+  background: var(--ink);
+  box-shadow: 0 0 28px rgba(242, 189, 78, 0.18);
+  animation: checkout-modal-in 200ms ease both;
+}
+
+.modal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+
+.modal-heading h2 {
+  margin: 0;
+}
+
+@keyframes checkout-stage-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes checkout-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes checkout-modal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-stage,
+  .checkout-modal-backdrop,
+  .checkout-modal {
+    animation: none;
+  }
+}
+
 /* ── Order success inline ─────────────────────────────────────────────────── */
 
 .order-success {
@@ -4577,6 +4692,7 @@
   letter-spacing: 0.08em;
 }
 
+
 .restaurant-picker-grid {
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 14px;
@@ -4664,7 +4780,7 @@
   display: grid;
   grid-template-rows: 132px 1fr auto;
   min-height: 270px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--line);
   background: var(--panel);
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
@@ -4683,6 +4799,10 @@
   place-items: center;
   border-bottom: 1px solid var(--line);
   background: radial-gradient(circle at 50% 20%, rgba(242, 189, 78, 0.27), transparent 48%), #18150f;
+}
+
+.dish-card-media {
+  overflow: hidden;
 }
 
 .dish-card-media img {
@@ -4748,7 +4868,9 @@
 
 .manager-dish-actions {
   gap: 10px;
-  justify-content: space-between;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .manager-dish-actions > span:first-child {
@@ -4757,6 +4879,225 @@
 
 .manager-dish-actions .terminal-button {
   width: auto;
+}
+
+.manager-dish-actions .confirm-action {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ingredient-record-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.ingredient-actions {
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.ingredient-card-record:hover .ingredient-actions,
+.ingredient-card-record:focus-within .ingredient-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ingredient-actions .terminal-button {
+  width: auto;
+}
+
+.menu-search-fields input.price-filter::-webkit-inner-spin-button,
+.menu-search-fields input.price-filter::-webkit-outer-spin-button,
+.menu-search-fields input.price-filter {
+  appearance: textfield;
+}
+
+.manager-menu-catalog {
+  display: grid;
+  gap: 30px;
+}
+
+.manager-menu-group-common {
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.menu-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, .12);
+}
+
+.menu-command-bar p:last-child {
+  margin: 5px 0 0;
+  color: var(--dirty);
+  font-size: 11px;
+}
+
+.manager-modal-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  overflow: auto;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 15, 12, .86);
+}
+
+.manager-modal {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid var(--amber);
+  background: var(--panel);
+  box-shadow: 0 0 30px rgba(242, 189, 78, .18);
+}
+
+.manager-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.manager-modal-header h2 {
+  margin: 5px 0 0;
+  color: var(--amber);
+  font: 25px/.9 "Archivo Black", Impact, sans-serif;
+}
+
+.manager-modal-header h2 span { color: var(--acid); }
+
+.modal-close {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--paper);
+  font: 24px/1 "IBM Plex Mono", monospace;
+  cursor: pointer;
+}
+
+.modal-close:hover,
+.modal-close:focus-visible {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.manager-modal .dish-manager-form {
+  margin: 0;
+  padding: 22px;
+}
+
+.ingredient-workspace {
+  display: grid;
+  gap: 22px;
+}
+
+.ingredient-create-panel {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(2, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, .12);
+}
+
+.ingredient-create-panel h3 {
+  margin: 5px 0 0;
+  color: var(--amber);
+  font-size: 16px;
+}
+
+.ingredient-create-panel .wizard-hint { margin: 5px 0 0; }
+
+.ingredient-create-panel label {
+  display: grid;
+  gap: 6px;
+  color: var(--dirty);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.ingredient-create-panel input {
+  min-height: 42px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+}
+
+.ingredient-create-panel input:focus {
+  border-color: var(--amber);
+  outline: 1px solid var(--amber);
+}
+
+.catalog-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.catalog-heading span { color: var(--dirty); font-size: 10px; }
+
+.ingredient-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ingredient-card-record {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.ingredient-card-record h3 { margin: 0; color: var(--white); font-size: 13px; }
+.ingredient-card-record p { margin: 6px 0 0; color: var(--dirty); font-size: 10px; }
+
+.dish-manager-form .wizard-field > label {
+  display: grid;
+  gap: 6px;
+  color: var(--dirty);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.dish-manager-form .wizard-field input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+}
+
+.dish-manager-form .wizard-field input:focus {
+  border-color: var(--amber);
+  outline: 1px solid var(--amber);
 }
 
 .ingredient-manager-field {
@@ -4792,6 +5133,25 @@
 }
 
 @media (max-width: 620px) {
+  .menu-command-bar,
+  .catalog-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .menu-command-bar .terminal-button {
+    width: 100%;
+  }
+
+  .ingredient-create-panel,
+  .ingredient-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-modal-backdrop {
+    padding: 10px;
+  }
+
   .wizard-steps {
     grid-template-columns: 1fr;
     gap: 6px;

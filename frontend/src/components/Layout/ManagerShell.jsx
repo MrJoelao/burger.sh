@@ -7,13 +7,15 @@ const links = [
   { label: 'dashboard', path: '/dashboard/manager' },
   { label: 'ordini', path: '/manager/orders' },
   { label: 'menu', path: '/manager/menu' },
+  { label: 'ingredienti', path: '/manager/ingredients' },
   { label: 'sede', path: '/manager/restaurant' },
   { label: 'profilo', path: '/profile' }
 ];
 
 /* le sezioni operative stanno nella directory laterale, il profilo resta solo
    nella barra in alto */
-const directoryLinks = links.slice(0, 4);
+const topLinks = links.filter(link => ['dashboard', 'profilo'].includes(link.label));
+const directoryLinks = links.filter(link => !topLinks.includes(link));
 
 export function ManagerShell({ children, title = 'manager-ops', subtitle = 'restaurant control' }) {
   const { user } = useAuthStore();
@@ -21,7 +23,7 @@ export function ManagerShell({ children, title = 'manager-ops', subtitle = 'rest
   return html`
     <div class="crt-noise" aria-hidden="true"></div>
     <main class="console management-shell" aria-label="Manager operations console">
-      <${TitleBar} section=${title} context=${subtitle} status="manager online" links=${links} showClock=${false} />
+      <${TitleBar} section=${title} context=${subtitle} status="manager online" links=${topLinks} showClock=${false} />
       <section class="identity-strip">
         <div class="brand-block"><span class="prompt">manager@burger:~$</span><h1>BURGER<br /><em>.SH</em></h1></div>
         <div class="system-copy"><p class="eyebrow">restaurant operations / 01</p><p>Controlla ordini, menu e attività della tua filiale.</p></div>
