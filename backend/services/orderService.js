@@ -171,10 +171,26 @@ async function listUserOrders(customerId, { statusFilter, skip, limit }) {
   return { total, orders };
 }
 
-/* ordini di una filiale, paginati (solo manager proprietario o admin). i
-   carrelli in bozza dei clienti non sono ancora ordini reali e restano esclusi */
-async function listRestaurantOrders(restaurantId, { skip, limit }) {
+/* filtro della coda ordini di una filiale. il carrello in bozza dei clienti
+   non è ancora un ordine reale e resta sempre escluso, anche quando si filtra
+   per stato: nessuno stato filtrabile coincide con 'draft'. lo stato arriva già
+   validato dallo schema della query (validations/orderValidation.js), quindi qui
+   può essere applicato direttamente */
+function buildRestaurantOrdersFilter(restaurantId, statusFilter) {
   const filter = { restaurantId, status: { $ne: DRAFT_STATUS } };
+
+  if (statusFilter) {
+    filter.status = statusFilter;
+  }
+
+  return filter;
+}
+
+/* ordini di una filiale, paginati e opzionalmente filtrati per stato (solo
+   manager proprietario o admin). i carrelli in bozza dei clienti non sono
+   ancora ordini reali e restano esclusi */
+async function listRestaurantOrders(restaurantId, { statusFilter, skip, limit }) {
+  const filter = buildRestaurantOrdersFilter(restaurantId, statusFilter);
 
   const [total, orders] = await Promise.all([
     Order.countDocuments(filter),
@@ -230,6 +246,7 @@ module.exports = {
   checkRestaurantOrdersAccess,
   createOrder,
   listUserOrders,
+  buildRestaurantOrdersFilter,
   listRestaurantOrders,
   buildRestaurantDashboard
 };

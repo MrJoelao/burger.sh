@@ -1,0 +1,127 @@
+/**
+ * Restaurant Service
+ * Handles restaurant listing, detail, and dish queries
+ */
+
+import { api } from './api.js';
+
+export const restaurantService = {
+  /**
+   * Get paginated restaurant list with filters
+   * GET /restaurants
+   */
+  async getRestaurants(params = {}) {
+    const query = buildQuery(params);
+    return api.get(`/restaurants${query}`);
+  },
+
+  /**
+   * Get restaurant detail by ID
+   * GET /restaurants/{id}
+   */
+  async getRestaurant(id) {
+    return api.get(`/restaurants/${id}`);
+  },
+
+  /**
+   * Get dishes for a specific restaurant
+   * GET /dishes/restaurant/{restaurantId}
+   */
+  async getDishesByRestaurant(restaurantId, params = {}) {
+    const query = buildQuery(params);
+    return api.get(`/dishes/restaurant/${restaurantId}${query}`);
+  },
+
+  async getDishes(params = {}) {
+    const query = buildQuery(params);
+    return api.get(`/dishes${query}`);
+  },
+
+  async getIngredients(params = {}) {
+    const query = buildQuery(params);
+    return api.get(`/ingredients${query}`);
+  },
+
+  async createIngredient(name, allergens = []) {
+    return api.post('/ingredients', { name, allergens });
+  },
+
+  async updateIngredient(id, name, allergens = []) {
+    return api.put(`/ingredients/${id}`, { name, allergens });
+  },
+
+  async deleteIngredient(id) {
+    return api.delete(`/ingredients/${id}`);
+  },
+
+  /**
+   * Create restaurant (admin only)
+   * POST /restaurants
+   */
+  async createRestaurant(data) {
+    return api.post('/restaurants', data);
+  },
+
+  /**
+   * Create first restaurant for an approved manager
+   * POST /restaurants/first
+   */
+  async createFirstRestaurant(data) {
+    return api.post('/restaurants/first', data);
+  },
+
+  /**
+   * Update restaurant (admin or manager)
+   * PUT /restaurants/{id}
+   */
+  async updateRestaurant(id, data) {
+    return api.put(`/restaurants/${id}`, data);
+  },
+
+  /**
+   * Delete or transfer restaurant (admin or manager)
+   * DELETE /restaurants/{id}
+   */
+  async deleteRestaurant(id, options = {}) {
+    const config = {};
+    if (options.newManagerId) {
+      config.body = JSON.stringify({ newManagerId: options.newManagerId });
+    }
+    return api.delete(`/restaurants/${id}`, config);
+  },
+
+  /**
+   * Create a custom dish for a restaurant
+   * POST /dishes
+   */
+  async createDish(restaurantId, dishData) {
+    return api.post('/dishes', { ...dishData, restaurantId, isCustom: true });
+  },
+
+  /**
+   * Update a dish (admin, o manager proprietario di un piatto custom)
+   * PUT /dishes/{id}
+   */
+  async updateDish(dishId, dishData) {
+    return api.put(`/dishes/${dishId}`, dishData);
+  },
+
+  /**
+   * Delete a dish (admin, o manager proprietario di un piatto custom)
+   * DELETE /dishes/{id}
+   */
+  async deleteDish(dishId) {
+    return api.delete(`/dishes/${dishId}`);
+  }
+};
+
+function buildQuery(params) {
+  const filtered = Object.entries(params)
+    .filter(([_, value]) => value !== undefined && value !== null && value !== '');
+
+  if (filtered.length === 0) return '';
+
+  return '?' + new URLSearchParams(Object.fromEntries(filtered)).toString();
+}
+
+export default restaurantService;

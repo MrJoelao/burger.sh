@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
 const Dish = require('../models/Dish');
+const Ingredient = require('../models/Ingredient');
 const { applyPasswordUpdate } = require('../utils/password');
 const { jsonOk, jsonMessage, badRequest } = require('../utils/httpResponses');
 const { findOrThrow } = require('../utils/authorization');
@@ -17,16 +18,49 @@ async function assertApprovedManager(newManagerId) {
   }
 }
 
+/* User.restaurantId è solo una denormalizzazione della relazione espressa da
+   Restaurant.managerId, tenuta per evitare una query in più in GET /users/me.
+   va quindi ricalcolata dalla fonte di verità dopo ogni cambio di proprietà:
+   un puntatore stantio darebbe al manager uscente accesso alla filiale ceduta
+   e lascerebbe quello entrante senza filiale. */
+async function syncManagerRestaurant(managerId) {
+  const ownedRestaurant = await Restaurant.findOne({ managerId }).select('_id').sort({ _id: 1 });
+
+  await User.findByIdAndUpdate(managerId, {
+    restaurantId: ownedRestaurant ? ownedRestaurant._id : null
+  });
+}
+
+/* riallinea più manager in una volta, senza ripetere la query per gli id
+   duplicati che il trasferimento di più filiali allo stesso manager produce */
+async function syncManagerRestaurants(managerIds) {
+  const uniqueIds = [...new Set(managerIds.map(String))];
+
+  await Promise.all(uniqueIds.map(syncManagerRestaurant));
+}
+
 // riassegna le filiali indicate a un nuovo manager approvato
-async function transferRestaurants(restaurantIds, newManagerId) {
+async function transferRestaurants(restaurants, newManagerId) {
   await assertApprovedManager(newManagerId);
+
+  const restaurantIds = restaurants.map(restaurant => restaurant._id);
+  const previousManagerIds = restaurants.map(restaurant => restaurant.managerId);
+
   await Restaurant.updateMany({ _id: { $in: restaurantIds } }, { managerId: newManagerId });
+
+  await syncManagerRestaurants([...previousManagerIds, newManagerId]);
 }
 
 // chiude le filiali indicate, eliminandole insieme ai loro piatti custom
-async function closeRestaurants(restaurantIds) {
+async function closeRestaurants(restaurants) {
+  const restaurantIds = restaurants.map(restaurant => restaurant._id);
+  const previousManagerIds = restaurants.map(restaurant => restaurant.managerId);
+
   await Dish.deleteMany({ restaurantId: { $in: restaurantIds } });
+  await Ingredient.deleteMany({ restaurantId: { $in: restaurantIds } });
   await Restaurant.deleteMany({ _id: { $in: restaurantIds } });
+
+  await syncManagerRestaurants(previousManagerIds);
 }
 
 /* trasferisce le filiali indicate a un altro manager approvato, oppure le
@@ -39,13 +73,11 @@ async function settleRestaurants(restaurants, newManagerId) {
     return;
   }
 
-  const restaurantIds = restaurants.map(restaurant => restaurant._id);
-
   if (newManagerId) {
-    return transferRestaurants(restaurantIds, newManagerId);
+    return transferRestaurants(restaurants, newManagerId);
   }
 
-  return closeRestaurants(restaurantIds);
+  return closeRestaurants(restaurants);
 }
 
 /* trasferisce o chiude tutte le filiali di un manager, usata quando il manager
@@ -61,7 +93,20 @@ async function getMe(req, res, next) {
   try {
     const user = await findOrThrow(User.findById(req.user.id).select('-passwordHash'), 'User not found');
 
-    return jsonOk(res, 200, user);
+    // includi restaurantId se presente
+    const userData = user.toObject();
+    if (userData.restaurantId) {
+      // popola il ristorante per avere i dettagli completi
+      const restaurant = await Restaurant.findById(userData.restaurantId);
+      if (restaurant) {
+        userData.restaurant = restaurant;
+      } else {
+        // evita che un riferimento obsoleto lasci il manager fuori dal wizard
+        userData.restaurantId = null;
+      }
+    }
+
+    return jsonOk(res, 200, userData);
   } catch (err) {
     next(err);
   }
@@ -94,6 +139,7 @@ async function deleteMe(req, res, next) {
     if (user.role === 'manager') {
       const { newManagerId } = req.validated;
       await resolveManagerRestaurants(user._id, newManagerId);
+      await Ingredient.deleteMany({ managerId: user._id, restaurantId: null });
     }
 
     await User.findByIdAndDelete(user._id);
@@ -109,5 +155,6 @@ module.exports = {
   updateMe,
   deleteMe,
   resolveManagerRestaurants,
-  settleRestaurants
+  settleRestaurants,
+  syncManagerRestaurant
 };

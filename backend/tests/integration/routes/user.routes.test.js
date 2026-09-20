@@ -38,6 +38,18 @@ describe('GET /api/users/me', () => {
     expect(response.body.data.name).toBe('Luigi');
     expect(response.body.data.passwordHash).toBeUndefined();
   });
+
+  test('azzera un restaurantId che punta a una filiale inesistente', async () => {
+    const manager = await createManager({ restaurantId: new Restaurant()._id });
+
+    const response = await request(app)
+      .get('/api/users/me')
+      .set('Authorization', 'Bearer ' + tokenFor(manager));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.restaurantId).toBeNull();
+    expect(response.body.data.restaurant).toBeUndefined();
+  });
 });
 
 describe('PUT /api/users/me', () => {

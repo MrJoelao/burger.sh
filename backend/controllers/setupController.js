@@ -87,8 +87,7 @@ async function executeSetup(req, res) {
     // 3. Verifica PIN se necessario
     const isLocal = isLocalRequest(req);
     if (!isLocal) {
-      const body = req.body || {};
-      const { pin } = body;
+      const { pin } = req.validated;
       if (!pin) {
         return res.status(400).json({
           success: false,
@@ -109,12 +108,27 @@ async function executeSetup(req, res) {
       PinService.removePinForIp(ip);
     }
 
-    // 4. Generazione credenziali admin
-    const adminEmail = AdminCredentialsService.generateAdminEmail();
-    const adminPassword = AdminCredentialsService.generateRandomPassword();
-    const admin = await AdminCredentialsService.createAdminUser(adminEmail, adminPassword);
+    // 4. Dati admin dall'utente, password generata dal backend
+    const { email, name, surname, address } = req.validated;
 
-    console.log(`\n[SETUP] Admin creato: ${adminEmail}`);
+    const emailTaken = await User.exists({ email });
+    if (emailTaken) {
+      return res.status(409).json({
+        success: false,
+        message: 'Email gia associata a un account esistente.',
+      });
+    }
+
+    const adminPassword = AdminCredentialsService.generateRandomPassword();
+    await AdminCredentialsService.createAdminUser({
+      email,
+      password: adminPassword,
+      name,
+      surname,
+      address,
+    });
+
+    console.log(`\n[SETUP] Admin creato: ${email}`);
     console.log(`[SETUP] Password provvisoria: ${adminPassword}`);
     console.log('[SETUP] IMPORTANT: Cambia subito la password al primo accesso!\n');
 
@@ -123,13 +137,13 @@ async function executeSetup(req, res) {
 
     // Log audit event
     const auditLogger = require('../utils/logging/auditLogger');
-    auditLogger.logSetupExecuted(req, adminEmail);
+    auditLogger.logSetupExecuted(req, email);
 
     // 6. Restituisci credenziali (una sola volta)
     res.status(201).json({
       success: true,
       message: 'Setup completato con successo.',
-      data: { adminEmail, adminPassword, mustChangePassword: true, redirectUrl: '/change-password' },
+      data: { adminEmail: email, adminPassword, mustChangePassword: true, redirectUrl: '/change-password' },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

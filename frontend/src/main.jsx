@@ -1,0 +1,34 @@
+/**
+ * Main Entry Point - burger.sh Frontend
+ * Initializes Preact app with global styles, providers, and error boundary
+ */
+
+import { render, h } from 'preact';
+import './index.css';
+import { html } from './utils/htm.js';
+import { ErrorBoundary } from './components/ErrorBoundary.jsx';
+import { AuthStoreProvider } from './state/authStore.js';
+import { OrderStoreProvider } from './state/orderStore.js';
+import { RestaurantStoreProvider } from './state/restaurantStore.js';
+import { UIStoreProvider } from './state/uiStore.js';
+import { AppRouter } from './router/AppRouter.jsx';
+import { installRenderDebug } from './debug/renderDebug.js';
+
+installRenderDebug();
+
+render(
+  html`
+    <${ErrorBoundary}>
+      <${UIStoreProvider}>
+        <${AuthStoreProvider}>
+          <${RestaurantStoreProvider}>
+            <${OrderStoreProvider}>
+              <${AppRouter} />
+            <//>
+          <//>
+        <//>
+      <//>
+    <//>
+  `,
+  document.getElementById('app')
+);

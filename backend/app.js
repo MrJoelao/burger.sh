@@ -22,6 +22,10 @@ var swaggerUi = require('swagger-ui-express');
 var YAML = require('yamljs');
 var path = require('path');
 
+var frontendRoot = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, '../frontend/dist')
+  : path.join(__dirname, '../frontend');
+
 var notFound = require('./middlewares/notFound');
 var errorHandler = require('./middlewares/errorHandler');
 
@@ -32,7 +36,7 @@ var app = express();
 app.set('trust proxy', true);
 
 // Serve frontend static files (HTML, CSS, JS)
-app.use(express.static(path.join(__dirname, '../frontend')));
+app.use(express.static(frontendRoot));
 
 /* imposta gli header http di sicurezza di base (X-Content-Type-Options,
    Strict-Transport-Security, niente X-Powered-By, ecc.), mancanti finora */
@@ -75,6 +79,7 @@ app.get('/api/health', function(req, res) {
 const authRoutes = require('./routes/authRoutes');
 const restaurantRoutes = require('./routes/restaurantRoutes');
 const dishRoutes = require('./routes/dishRoutes');
+const ingredientRoutes = require('./routes/ingredientRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -86,6 +91,7 @@ const requirePasswordChange = require('./middlewares/requirePasswordChange');
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/dishes', dishRoutes);
+app.use('/api/ingredients', ingredientRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', userRoutes);
@@ -106,7 +112,7 @@ app.use(function spaFallback(req, res, next) {
   }
   
   // Check if the requested file exists in frontend directory
-  const filePath = path.join(__dirname, '../frontend', req.path);
+  const filePath = path.join(frontendRoot, req.path);
   const fs = require('fs');
   
   try {
@@ -118,7 +124,7 @@ app.use(function spaFallback(req, res, next) {
   }
   
   // Fall back to index.html for SPA routing
-  return res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+  return res.sendFile(path.join(frontendRoot, 'index.html'));
 });
 
 /* gestisce le richieste che non corrispondono a nessuna rotta definita. va registrato

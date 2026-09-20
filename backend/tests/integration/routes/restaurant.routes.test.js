@@ -9,6 +9,7 @@ const {
   createDish,
   tokenFor
 } = require('../../helpers/factories');
+const User = require('../../../models/User');
 
 /* test di integrazione delle rotte dei ristoranti: lettura pubblica
    (lista e dettaglio) e scrittura riservata ad admin/manager proprietario. */
@@ -133,6 +134,28 @@ describe('POST /api/restaurants', () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data.name).toBe('Burger House');
+  });
+
+  test('allinea il restaurantId del manager alla filiale appena creata', async () => {
+    const admin = await createAdmin();
+    const manager = await createManager();
+
+    const response = await request(app)
+      .post('/api/restaurants')
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
+      .send({
+        name: 'Burger House',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001',
+        managerId: manager._id.toString()
+      });
+
+    expect(response.status).toBe(201);
+
+    const updatedManager = await User.findById(manager._id);
+    expect(updatedManager.restaurantId.toString()).toBe(response.body.data._id.toString());
   });
 
   test('un non admin riceve 403 nel creare un ristorante', async () => {
@@ -285,7 +308,7 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(admin)}`);
+      .set('Authorization', `Bearer ${tokenFor(admin)}`)
 
     expect(response.status).toBe(200);
   });
@@ -296,7 +319,7 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
 
     expect(response.status).toBe(200);
 
@@ -322,13 +345,63 @@ describe('DELETE /api/restaurants/:id', () => {
     expect(transferred.managerId.toString()).toBe(newManager._id.toString());
   });
 
+  test('trasferendo la filiale sposta il restaurantId dal vecchio al nuovo manager', async () => {
+    const manager = await createManager();
+    const newManager = await createManager({ managerStatus: 'approved' });
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    await User.findByIdAndUpdate(manager._id, { restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({ newManagerId: newManager._id.toString() });
+
+    expect(response.status).toBe(200);
+
+    const previousManager = await User.findById(manager._id);
+    const successor = await User.findById(newManager._id);
+    expect(previousManager.restaurantId).toBeNull();
+    expect(successor.restaurantId.toString()).toBe(restaurant._id.toString());
+  });
+
+  test('chiudendo la filiale azzera il restaurantId del manager', async () => {
+    const manager = await createManager();
+    const restaurant = await createRestaurant({ managerId: manager._id });
+    await User.findByIdAndUpdate(manager._id, { restaurantId: restaurant._id });
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${restaurant._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+
+    expect(response.status).toBe(200);
+
+    const updatedManager = await User.findById(manager._id);
+    expect(updatedManager.restaurantId).toBeNull();
+  });
+
+  test('chiudendo una filiale il restaurantId resta sulla filiale superstite', async () => {
+    const manager = await createManager();
+    const closing = await createRestaurant({ managerId: manager._id });
+    const surviving = await createRestaurant({ managerId: manager._id });
+    await User.findByIdAndUpdate(manager._id, { restaurantId: surviving._id });
+
+    const response = await request(app)
+      .delete(`/api/restaurants/${closing._id}`)
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+
+    expect(response.status).toBe(200);
+
+    const updatedManager = await User.findById(manager._id);
+    expect(updatedManager.restaurantId.toString()).toBe(surviving._id.toString());
+  });
+
   test('un manager non proprietario riceve 403 nell\'eliminare un ristorante altrui', async () => {
     const manager = await createManager();
     const restaurant = await createRestaurant();
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(manager)}`);
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
 
     expect(response.status).toBe(403);
   });
@@ -339,8 +412,122 @@ describe('DELETE /api/restaurants/:id', () => {
 
     const response = await request(app)
       .delete(`/api/restaurants/${restaurant._id}`)
-      .set('Authorization', `Bearer ${tokenFor(customer)}`);
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
 
     expect(response.status).toBe(403);
+  });
+});
+
+describe('POST /api/restaurants/first', () => {
+  test('un manager approvato può creare il proprio primo ristorante', async () => {
+    const manager = await createManager();
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Burger House Milano',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        zip: '20100',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001'
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.name).toBe('Burger House Milano');
+    expect(response.body.data.zip).toBe('20100');
+    expect(response.body.data.managerId._id).toBe(manager._id.toString());
+
+    // verifica che il manager abbia ora un restaurantId
+    const updatedUser = await User.findById(manager._id);
+    expect(updatedUser.restaurantId).toBeDefined();
+  });
+
+  test('salva le coordinate inviate dal wizard', async () => {
+    const manager = await createManager();
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Burger House Milano',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        zip: '20100',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001',
+        location: { lat: 45.4642, lng: 9.19 }
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data.location).toEqual({ lat: 45.4642, lng: 9.19 });
+  });
+
+  test('un manager che ha già un ristorante riceve errore 400', async () => {
+    const manager = await createManager();
+    await createRestaurant({ managerId: manager._id });
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Secondo Ristorante',
+        address: 'Via Napoli 2',
+        city: 'Roma',
+        phone: '+39 06 7654321',
+        vatNumber: 'IT00000002'
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.title.toLowerCase()).toContain('hai già un ristorante');
+  });
+
+  test('un customer riceve 403 nel creare un ristorante', async () => {
+    const customer = await createUser();
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(customer)}`)
+      .send({
+        name: 'Burger House',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001'
+      });
+
+    expect(response.status).toBe(403);
+  });
+
+  test('un manager pending riceve 403 nel creare un ristorante', async () => {
+    const manager = await createManager({ managerStatus: 'pending' });
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Burger House',
+        address: 'Via Roma 1',
+        city: 'Milano',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT00000001'
+      });
+
+    expect(response.status).toBe(403);
+  });
+
+  test('rifiuta con 400 se mancano campi obbligatori', async () => {
+    const manager = await createManager();
+
+    const response = await request(app)
+      .post('/api/restaurants/first')
+      .set('Authorization', `Bearer ${tokenFor(manager)}`)
+      .send({
+        name: 'Burger House',
+        // mancano address, city, phone, vatNumber
+      });
+
+    expect(response.status).toBe(400);
   });
 });

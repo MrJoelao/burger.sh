@@ -1,4 +1,4 @@
-const { createOrderSchema } = require('@validations/orderValidation');
+const { createOrderSchema, restaurantOrdersQuerySchema } = require('@validations/orderValidation');
 
 const validObjectId = '507f1f77bcf86cd799439011';
 
@@ -144,4 +144,39 @@ describe('orderValidation', () => {
     });
   });
 
+  describe('restaurantOrdersQuerySchema', () => {
+    test('accetta uno stato del flusso ordine', () => {
+      // act
+      const { error } = restaurantOrdersQuerySchema.validate({ status: 'preparing' });
+
+      // assert
+      expect(error).toBeUndefined();
+    });
+
+    test('accetta la query senza status (nessun filtro)', () => {
+      // act
+      const { error } = restaurantOrdersQuerySchema.validate({});
+
+      // assert
+      expect(error).toBeUndefined();
+    });
+
+    test('ignora i parametri di paginazione presenti nella query', () => {
+      // act
+      const { error, value } = restaurantOrdersQuerySchema.validate({ status: 'ready', page: '2', limit: '10' });
+
+      // assert
+      expect(error).toBeUndefined();
+      expect(value.status).toBe('ready');
+    });
+
+    test('rifiuta uno stato fuori dal flusso ordine', () => {
+      // act
+      const { error } = restaurantOrdersQuerySchema.validate({ status: 'inesistente' });
+
+      // assert
+      expect(error).toBeDefined();
+      expect(error.details[0].path).toContain('status');
+    });
+  });
 });

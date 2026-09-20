@@ -1,6 +1,6 @@
 /* burger.sh — Audit logger for setup events */
 
-const { getRealIp } = require('../IpService');
+const { getRealIp } = require('../../services/IpService.js');
 
 /* log an audit event with timestamp, IP, user agent, and event type */
 function logAuditEvent(eventType, req, details = {}) {

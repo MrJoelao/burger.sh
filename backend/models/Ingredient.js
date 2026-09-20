@@ -14,6 +14,16 @@ const ingredientSchema = new mongoose.Schema(
         trim: true, // lista degli allergeni associati all'ingrediente (es. "lattosio", "glutine")
       },
     ],
+    restaurantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      default: null,
+    },
+    managerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true, // mongodb gestirà in automatico la data e ora di creazione/modifica

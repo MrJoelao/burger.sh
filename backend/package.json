@@ -21,7 +21,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "seed:meals": "node ./scripts/seedMeals.js",
-    "seed:admin": "node ./scripts/seedAdmin.js"
+    "seed:admin": "node ./scripts/seedAdmin.js",
+    "demo": "node ./scripts/demo.js",
+    "demo:seed": "node ./scripts/seedDemo.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

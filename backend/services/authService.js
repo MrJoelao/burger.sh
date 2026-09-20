@@ -23,6 +23,10 @@ function buildAuthResponse(user) {
     responseUser.managerStatus = user.managerStatus;
   }
 
+  if (user.restaurantId) {
+    responseUser.restaurantId = user.restaurantId.toString();
+  }
+
   // Include mustChangePassword nel response user
   responseUser.mustChangePassword = user.mustChangePassword || false;
 
@@ -79,7 +83,7 @@ async function login({ email, password }) {
   const user = await User.findOne({ email: normalizedEmail });
   const isMatch = user && await comparePassword(password, user.passwordHash);
   if (!isMatch) {
-    return { error: 'Invalid credentials', statusCode: 401 };
+    return { error: 'Invalid username or password.', statusCode: 401 };
   }
 
   // Blocca login per manager in attesa di approvazione

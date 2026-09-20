@@ -183,11 +183,23 @@ async function confirmCart(customerId, { mode, delivery }) {
   return { order: await populateOrderDetails(draft) };
 }
 
+async function estimateDelivery(customerId, address) {
+  const draft = await findActiveDraft(customerId);
+  if (!draft) {
+    return { error: 'No draft order found', statusCode: 404 };
+  }
+
+  const restaurant = await Restaurant.findById(draft.restaurantId);
+  const estimate = await deliveryService.calculateDelivery(restaurant, address);
+  return { estimate };
+}
+
 module.exports = {
   addItem,
   getCart,
   updateItemQuantity,
   removeItem,
   discardCart,
-  confirmCart
+  confirmCart,
+  estimateDelivery
 };

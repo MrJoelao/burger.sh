@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "approved", "rejected"],
     },
+    restaurantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Restaurant",
+      default: null,
+      description: "ID del ristorante associato al manager (uno e uno solo)"
+    },
     preferences: [{ type: String, trim: true, enum: ALLOWED_PREFERENCES }],
     mustChangePassword: {
       type: Boolean,

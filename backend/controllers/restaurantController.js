@@ -1,10 +1,11 @@
 const Restaurant = require('../models/Restaurant');
 const User = require('../models/User');
 const Dish = require('../models/Dish');
+const Ingredient = require('../models/Ingredient');
 const { isAdmin, isOwner, unauthorized, findOrThrow } = require('../utils/authorization');
 const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
 const { containsFilter, combineFilters } = require('../utils/searchFilters');
-const { settleRestaurants } = require('./userController');
+const { settleRestaurants, syncManagerRestaurant } = require('./userController');
 
 /* controller dei ristoranti: consultazione pubblica (lista e dettaglio) e
    gestione riservata a admin (creazione/eliminazione) e al manager
@@ -103,7 +104,7 @@ async function getRestaurantById(req, res, next) {
 // create ristorante (solo admin)
 async function createRestaurant(req, res, next) {
   try {
-    const { name, address, city, phone, vatNumber, managerId } = req.validated;
+    const { name, address, city, zip, phone, vatNumber, managerId, location } = req.validated;
 
     // verifica che il manager esista e sia un manager
     const manager = await User.findById(managerId);
@@ -115,10 +116,59 @@ async function createRestaurant(req, res, next) {
       name,
       address,
       city,
+      zip,
       phone,
       vatNumber,
-      managerId
+      managerId,
+      location
     });
+
+    const populatedRestaurant = await restaurant.populate('managerId', 'name surname email');
+
+    /* assegna la filiale al manager anche sul suo documento: senza questo il
+       manager resterebbe senza restaurantId finché non passa da /restaurants/first,
+       che però risponde 400 perché la filiale esiste già */
+    await syncManagerRestaurant(managerId);
+    await Ingredient.updateMany(
+      { managerId, restaurantId: null },
+      { $set: { restaurantId: restaurant._id }, $unset: { managerId: 1 } }
+    );
+
+    return jsonOk(res, 201, populatedRestaurant);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// create first restaurant (solo per manager approvati che non hanno ancora un ristorante)
+async function createFirstRestaurant(req, res, next) {
+  try {
+    const { name, address, city, zip, phone, vatNumber, location } = req.validated;
+    const managerId = req.user.id;
+
+    // verifica che il manager non abbia già un ristorante
+    const existingRestaurant = await Restaurant.findOne({ managerId });
+    if (existingRestaurant) {
+      return jsonError(res, 400, 'Hai già un ristorante associato al tuo account');
+    }
+
+    const restaurant = await Restaurant.create({
+      name,
+      address,
+      city,
+      zip,
+      phone,
+      vatNumber,
+      managerId,
+      location
+    });
+
+    // aggiorna l'utente con il restaurantId
+    await User.findByIdAndUpdate(managerId, { restaurantId: restaurant._id });
+    await Ingredient.updateMany(
+      { managerId, restaurantId: null },
+      { $set: { restaurantId: restaurant._id }, $unset: { managerId: 1 } }
+    );
 
     const populatedRestaurant = await restaurant.populate('managerId', 'name surname email');
 
@@ -196,6 +246,7 @@ module.exports = {
   getAllRestaurants,
   getRestaurantById,
   createRestaurant,
+  createFirstRestaurant,
   updateRestaurant,
   deleteRestaurant
 };

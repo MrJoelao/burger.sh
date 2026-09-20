@@ -1,0 +1,46 @@
+import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
+import { AdminStats, executiveMetrics } from './AdminStats.jsx';
+import { managerAdminService } from '../../services/managerAdminService.js';
+
+vi.mock('../../state/authStore.js', () => ({
+  useAuthStore: () => ({ user: { role: 'admin', name: 'root' }, logout: vi.fn() })
+}));
+
+vi.mock('../../router/navigate.js', () => ({ navigate: vi.fn() }));
+
+vi.mock('../../services/managerAdminService.js', () => ({
+  managerAdminService: { getStats: vi.fn() }
+}));
+
+describe('AdminStats', () => {
+  test('mostra i totali e la quota per voce', async () => {
+    managerAdminService.getStats.mockResolvedValue({
+      success: true,
+      data: {
+        users: { total: 10, byRole: { customer: 8, manager: 2 } },
+        restaurants: { total: 3 },
+        orders: { total: 0, byStatus: {} }
+      }
+    });
+
+    render(<AdminStats />);
+
+    expect(await screen.findByText('10')).toBeInTheDocument();
+    expect(screen.getByText('80%')).toBeInTheDocument();
+    expect(screen.getByText('20%')).toBeInTheDocument();
+  });
+
+  test('calcola KPI operativi senza inventare dati non presenti nell API', () => {
+    expect(executiveMetrics({
+      users: { total: 100, byRole: { customer: 80, manager: 15, admin: 5 } },
+      restaurants: { total: 4 },
+      orders: { total: 200, byStatus: { ordered: 10, preparing: 20, delivered: 170 } }
+    })).toEqual({
+      activeManagers: 15,
+      openOrders: 30,
+      deliveredRate: 85,
+      ordersPerUser: 2,
+      ordersPerBranch: 50
+    });
+  });
+});

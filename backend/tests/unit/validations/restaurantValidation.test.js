@@ -1,4 +1,8 @@
-const { createRestaurantSchema, updateRestaurantSchema } = require('@validations/restaurantValidation');
+const {
+  createRestaurantSchema,
+  createFirstRestaurantSchema,
+  updateRestaurantSchema
+} = require('@validations/restaurantValidation');
 
 const validObjectId = '507f1f77bcf86cd799439011';
 
@@ -55,6 +59,22 @@ describe('restaurantValidation', () => {
       const { error } = createRestaurantSchema.validate(payload);
 
       // assert
+      expect(error).toBeDefined();
+    });
+
+    test('fallisce se il CAP non ha cinque cifre', () => {
+      const payload = {
+        name: 'Burger House',
+        address: 'via Roma 10',
+        city: 'Milano',
+        zip: '2010',
+        phone: '+39 02 1234567',
+        vatNumber: 'IT12345678901',
+        managerId: validObjectId
+      };
+
+      const { error } = createRestaurantSchema.validate(payload);
+
       expect(error).toBeDefined();
     });
 
@@ -124,6 +144,23 @@ describe('restaurantValidation', () => {
 
       // assert
       expect(error).toBeDefined();
+    });
+
+    describe('createFirstRestaurantSchema', () => {
+      test('valida le coordinate geocodificate dal wizard', () => {
+        const payload = {
+          name: 'Burger House',
+          address: 'via Roma 10',
+          city: 'Milano',
+          phone: '+39 02 1234567',
+          vatNumber: 'IT12345678901',
+          location: { lat: 45.4642, lng: 9.19 }
+        };
+
+        const { error } = createFirstRestaurantSchema.validate(payload);
+
+        expect(error).toBeUndefined();
+      });
     });
   });
 });

@@ -99,11 +99,25 @@ async function confirmCart(req, res, next) {
   }
 }
 
+async function estimateDelivery(req, res, next) {
+  try {
+    const result = await cartService.estimateDelivery(req.user.id, req.validated.address);
+    if (result.error) {
+      return jsonError(res, result.statusCode, result.error);
+    }
+
+    return jsonOk(res, 200, result.estimate);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   addItem,
   getCart,
   updateItem,
   removeItem,
   discardCart,
-  confirmCart
+  confirmCart,
+  estimateDelivery
 };

@@ -5,7 +5,8 @@ const validateObjectId = require('../middlewares/validateObjectId');
 const {
   addCartItemSchema,
   updateCartItemSchema,
-  confirmCartSchema
+  confirmCartSchema,
+  deliveryEstimateSchema
 } = require('../validations/cartValidation');
 const {
   addItem,
@@ -13,7 +14,8 @@ const {
   updateItem,
   removeItem,
   discardCart,
-  confirmCart
+  confirmCart,
+  estimateDelivery
 } = require('../controllers/cartController');
 
 const router = express.Router();
@@ -25,5 +27,6 @@ router.patch('/items/:dishId', authMiddleware, validateObjectId('dishId'), valid
 router.delete('/items/:dishId', authMiddleware, validateObjectId('dishId'), removeItem);
 router.delete('/', authMiddleware, discardCart);
 router.post('/confirm', authMiddleware, validate(confirmCartSchema), confirmCart);
+router.post('/delivery-estimate', authMiddleware, validate(deliveryEstimateSchema), estimateDelivery);
 
 module.exports = router;

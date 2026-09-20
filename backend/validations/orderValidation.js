@@ -1,5 +1,6 @@
 const Joi = require('joi');
 const { deliverySchema } = require('./common');
+const { ORDER_STATUSES } = require('../constants/orderStatus');
 
 const orderItemSchema = Joi.object({
   dishId: Joi.string().hex().length(24).required(),
@@ -29,12 +30,22 @@ const createOrderSchema = Joi.object({
    un intero ordine) */
 const updateOrderStatusSchema = Joi.object({
   status: Joi.string()
-    .valid('ordered', 'preparing', 'ready', 'on_delivery', 'delivered')
+    .valid(...ORDER_STATUSES)
     .required()
 });
+
+/* query di GET /orders/restaurant/:restaurantId. lo stato è facoltativo, ma se
+   presente deve appartenere al flusso reale: senza questo controllo un refuso
+   (es. status=pronto) restituirebbe silenziosamente tutti gli ordini della
+   filiale invece di quelli filtrati. unknown(true) lascia passare page e limit,
+   già validati da paginationMiddleware, senza duplicarne qui i vincoli. */
+const restaurantOrdersQuerySchema = Joi.object({
+  status: Joi.string().valid(...ORDER_STATUSES)
+}).unknown(true);
 
 module.exports = {
   orderItemSchema,
   createOrderSchema,
-  updateOrderStatusSchema
+  updateOrderStatusSchema,
+  restaurantOrdersQuerySchema
 };

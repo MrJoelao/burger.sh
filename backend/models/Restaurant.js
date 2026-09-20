@@ -18,6 +18,10 @@ const restaurantSchema = new mongoose.Schema(
       required: true,
       trim: true, // città in cui si trova la filiale
     },
+    zip: {
+      type: String,
+      trim: true,
+    },
     phone: {
       type: String,
       required: true,
