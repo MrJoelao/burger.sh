@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Burger.sh — Relazione Tecnica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:#171510; --panel:#211e17; --paper:#c8a565; --amber:#f2bd4e;
+  --dirty:#78633c; --line:#665532; --acid:#d7e96d; --alert:#f06c45; --white:#f0dfb0;
+}
+* { box-sizing:border-box; }
+html { background:#0d0c09; }
+body { margin:0; color:var(--paper); background:var(--ink); font:10.2pt/1.52 "IBM Plex Mono",Consolas,"Courier New",monospace; letter-spacing:.01em; }
+body::before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.32; background-image:linear-gradient(rgba(242,189,78,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(242,189,78,.035) 1px,transparent 1px); background-size:20px 20px; }
+.document { width:210mm; min-height:297mm; margin:0 auto; padding:12mm 14mm 14mm; position:relative; background:var(--ink); }
+.titlebar { display:flex; justify-content:space-between; align-items:center; min-height:9mm; border:1px solid var(--line); padding:2mm 3mm; color:var(--dirty); font-size:8pt; text-transform:uppercase; }
+.titlebar b { color:var(--amber); font-family:"Archivo Black",Impact,sans-serif; letter-spacing:.04em; }
+.status { color:var(--acid); }
+.status::before { content:"■ "; }
+.cover { min-height:245mm; display:flex; flex-direction:column; justify-content:center; border-bottom:1px solid var(--line); position:relative; }
+.cover::after { content:"[ SYSTEM READY ]"; position:absolute; right:0; bottom:9mm; color:var(--acid); font-size:8pt; }
+.prompt { color:var(--dirty); text-transform:uppercase; font-size:9pt; margin:0 0 6mm; }
+.prompt::before { content:"> "; color:var(--amber); }
+.cover h1 { max-width:170mm; margin:0; color:var(--amber); font:clamp(34pt,8vw,62pt)/.92 "Archivo Black",Impact,sans-serif; letter-spacing:-.055em; text-transform:uppercase; text-shadow:3px 3px 0 rgba(102,85,50,.45); }
+.cover h2 { margin:5mm 0 13mm; max-width:150mm; color:var(--white); font:18pt/1.1 "Archivo Black",Impact,sans-serif; letter-spacing:.015em; text-transform:uppercase; }
+.meta { width:100%; max-width:145mm; border-top:1px solid var(--amber); border-bottom:1px solid var(--line); padding:4mm 0; }
+.meta p { margin:1.5mm 0; color:var(--paper); }
+.meta strong { display:inline-block; min-width:37mm; color:var(--dirty); font-weight:400; text-transform:uppercase; }
+main > h2:first-of-type { margin-top:0; }
+h1,h2,h3,h4 { color:var(--white); font-family:"Archivo Black",Impact,"Arial Black",sans-serif; letter-spacing:.035em; line-height:1.05; text-transform:uppercase; break-after:avoid-page; page-break-after:avoid; }
+h1 { font-size:25pt; color:var(--amber); }
+h2 { margin:12mm 0 4mm; padding:3mm 3.5mm; border-left:4px solid var(--amber); border-top:1px solid var(--line); background:rgba(33,30,23,.72); font-size:16pt; }
+h3 { margin:8mm 0 3mm; color:var(--amber); font-size:12pt; }
+h4 { margin:5mm 0 2mm; color:var(--paper); font-size:10.5pt; }
+p { margin:0 0 3.5mm; orphans:4; widows:4; break-inside:avoid; }
+strong { color:var(--white); }
+em { color:var(--amber); }
+a { color:var(--amber); text-decoration:underline; text-underline-offset:2px; }
+code { color:var(--acid); background:#100e0a; padding:.1em .28em; border:1px solid var(--line); font-size:.92em; }
+pre { margin:4mm 0; padding:4mm; overflow:hidden; color:var(--white); background:#100e0a; border:1px solid var(--line); border-left:3px solid var(--amber); font-size:8.1pt; line-height:1.42; white-space:pre-wrap; word-break:break-word; break-inside:avoid; page-break-inside:avoid; }
+pre code { padding:0; border:0; background:none; color:var(--acid); }
+ul,ol { margin:1mm 0 4mm 6mm; padding-left:5mm; break-inside:avoid; page-break-inside:avoid; }
+li { margin:1.3mm 0; padding-left:1mm; }
+li::marker { color:var(--amber); }
+.table-wrap { overflow:hidden; margin:4mm 0 5mm; border:1px solid var(--line); break-inside:avoid; }
+table { width:100%; border-collapse:collapse; font-size:8.4pt; }
+th { color:var(--ink); background:var(--amber); font-weight:600; text-align:left; text-transform:uppercase; }
+th,td { padding:2mm 2.3mm; border-right:1px solid var(--line); border-bottom:1px solid var(--line); vertical-align:top; }
+td { color:var(--paper); }
+tr:nth-child(even) td { background:rgba(33,30,23,.58); }
+hr { border:0; border-top:1px solid var(--line); margin:7mm 0; }
+main > h2 { break-before:auto; page-break-before:auto; }
+main > h2[id^="1-"],
+main > h2[id^="2-"],
+main > h2[id^="3-"],
+main > h2[id^="4-"],
+main > h2[id^="5-"],
+main > h2[id^="6-"],
+main > h2[id^="7-"],
+main > h2[id^="8-"],
+main > h2[id^="9-"],
+main > h2[id^="10-"],
+main > h2[id^="11-"],
+main > h2[id^="12-"],
+main > h2[id^="appendice-"] { break-before:page; page-break-before:always; }
+main > h2 + h3 { margin-top:4mm; }
+footer { margin-top:12mm; padding-top:3mm; border-top:1px solid var(--line); display:flex; justify-content:space-between; color:var(--dirty); font-size:8pt; text-transform:uppercase; }
+@media screen and (max-width:800px) { body { background:var(--ink); } .document { width:100%; min-height:100vh; padding:18px; } .cover { min-height:80vh; } .cover h1 { font-size:clamp(35px,12vw,62px); } .table-wrap { overflow-x:auto; } }
+@media print {
+  @page { size:A4 portrait; margin:0; }
+  html,body { width:210mm; background:var(--ink); -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body::before { position:fixed; }
+  .document { margin:0; }
+  a { color:inherit; text-decoration:none; }
+  .titlebar { break-after:avoid; }
+}
+</style>
+</head>
+<body>
+<article class="document">
+<header class="titlebar"><span><b>burger.sh</b> <span>/ docs / ita</span></span><span class="status">print channel · A4 portrait</span></header>
+<section class="cover" aria-label="Frontespizio">
+  <p class="prompt">technical report // pwm project // v1.0</p>
+  <h1>Relazione<br>tecnica_</h1>
+  <h2>Burger.sh — piattaforma web per ordinazioni online</h2>
+  <div class="meta">
+    <p><strong>Studente</strong> Joel Stephan</p>
+    <p><strong>Matricola</strong> 80311A</p>
+    <p><strong>Corso</strong> Programmazione Web e Mobile</p>
+    <p><strong>Anno</strong> 2025/2026</p>
+    <p><strong>Università</strong> Università degli Studi di Milano</p>
+  </div>
+</section>
+<main>
+<h1 id="burger-sh-relazione-tecnica">Burger.sh – Relazione Tecnica</h1>
+<h2 id="progetto-per-il-corso-di-programmazione-web-e-mobile">Progetto per il corso di Programmazione Web e Mobile</h2>
+<p><strong>Studente:</strong> Joel Stephan <strong>Matricola:</strong> 80311A <strong>Anno accademico:</strong> 2025/2026 <strong>Università:</strong> Università degli Studi di Milano</p>
+<p>---</p>
+<h2 id="indice">Indice</h2>
+<ol><li><a href="#1-frontespizio">Frontespizio</a></li><li><a href="#2-indice">Indice</a></li><li><a href="#3-introduzione">Introduzione</a></li><li><a href="#4-analisi-dei-requisiti">Analisi dei Requisiti</a></li><li><a href="#5-modellazione-del-dominio">Modellazione del Dominio</a></li><li><a href="#6-architettura-del-sistema">Architettura del Sistema</a></li><li><a href="#7-progettazione-delle-api">Progettazione delle API</a></li><li><a href="#8-implementazione-frontend">Implementazione Frontend</a></li><li><a href="#9-scelte-progettuali-e-motivazioni">Scelte Progettuali e Motivazioni</a></li><li><a href="#10-scenari-di-demo">Scenari di Demo</a></li><li><a href="#11-conclusioni">Conclusioni</a></li><li><a href="#12-bibliografia-e-sitografia">Bibliografia e Sitografia</a></li></ol>
+<p>---</p>
+<h2 id="1-frontespizio">1. Frontespizio</h2>
+<p>Questo documento costituisce la relazione tecnica del progetto <strong>Burger.sh</strong>, realizzato come lavoro finale per il corso di Programmazione Web e Mobile dell'Universita' degli Studi di Milano, aa. 2025/2026.</p>
+<p>Il progetto implementa una piattaforma web per la gestione di ordinazioni online in una catena di ristoranti fast food, con supporto per tre ruoli utente (cliente, manager, amministratore), gestione del menu, elaborazione ordini, calcolo consegne a domicilio tramite API di geolocalizzazione e dashboard statistiche.</p>
+<p>---</p>
+<h2 id="2-indice">2. Indice</h2>
+<p>(L'indice e' riportato all'inizio del documento al punto 2.)</p>
+<p>---</p>
+<h2 id="3-introduzione">3. Introduzione</h2>
+<p>Ho sviluppato Burger.sh come piattaforma web per la gestione di ordinazioni online all'interno di una catena di ristoranti fast food. L'applicazione nasce dalla volonta' di digitalizzare il processo di ordinazione, permettendo ai clienti di consultare i menu, selezionare i piatti, effettuare ordini con ritiro in sede o consegna a domicilio, e seguire lo stato della propria ordinazione in tempo reale. Parallelamente, i manager di ogni filiale possono gestire il proprio menu, visualizzare e aggiornare gli ordini ricevuti e consultare statistiche di vendita.</p>
+<p>Ho articolato il sistema in quattro macro-scenari principali. Il primo riguarda la gestione del profilo utente: registrazione, login, modifica dei dati personali, eliminazione dell'account e gestione delle preferenze (tipologie alimentari, allergie). Il secondo e' la gestione del ristorante: creazione e amministrazione della filiale da parte dell'amministratore, gestione del menu con aggiunta, modifica ed eliminazione dei piatti, organizzazione degli ingredienti. Il terzo scenario e' la gestione degli ordini: dal carrello in bozza alla conferma, passando per la selezione dei piatti, la scelta della modalita' di completamento e il tracciamento dello stato dell'ordine. Il quarto e' la gestione delle consegne: calcolo della distanza tra ristorante e indirizzo del cliente, determinazione del costo di consegna, e conferma della ricezione da parte del cliente.</p>
+<p>Lo stack che ho scelto e' composto da Preact con Vite come bundler e Tailwind CSS per lo styling nel frontend. Ho deciso di usare Preact per evitare di complicare il progetto con la gestione manuale del DOM e per migliorare la manutenibilita' del codice frontend attraverso un'architettura a componenti. Vite l'ho scelto per semplificare lo sviluppo grazie al suo hot module replacement e alla velocita' di build. Il backend e' sviluppato con Node.js ed Express v5, con MongoDB come database NoSQL accessibile tramite Mongoose v9. Le API REST sono documentate con Swagger/OpenAPI 3.0.3. Per il calcolo delle distanze e dei costi di consegna, ho integrato le API di OpenStreetMap (Nominatim per il geocoding e OSRM per il routing). L'autenticazione e' gestita tramite token JWT, con hashing delle password mediante bcrypt.</p>
+<p>La versione Light del progetto implementa le funzionalità core: registrazione e login per cliente e manager, CRUD del profilo utente, CRUD del ristorante e del menu, ricerca piatti per tipologia e nome, visualizzazione dettagli piatto. La versione Full aggiunge la ricerca per ingrediente e allergie, la gestione completa degli ordini con carrello, la scelta tra ritiro e consegna, il calcolo della distanza tramite OpenStreetMap, la conferma di consegna, le statistiche per ristorante e lo storico acquisti. Ho inoltre aggiunto funzionalità estese non richieste dalla traccia originale, come il ruolo amministratore, la gestione dei metodi di pagamento e la gestione degli ingredienti.</p>
+<p>---</p>
+<h2 id="4-analisi-dei-requisiti">4. Analisi dei Requisiti</h2>
+<p>Di seguito e' riportata la tabella dei requisiti con il loro stato di implementazione nella versione Full.</p>
+<div class="table-wrap"><table><thead><tr><th>ID</th><th>Requisito</th><th>Stato (Light/Full)</th></tr></thead><tbody><tr><td>R01</td><td>Registrazione e login per cliente e ristoratore</td><td>Light / Full</td></tr><tr><td>R02</td><td>CRUD profilo utente (cliente/ristoratore)</td><td>Light / Full</td></tr><tr><td>R03</td><td>CRUD ristorante e menu (piatti da meal.json + piatti custom)</td><td>Light / Full</td></tr><tr><td>R04</td><td>Ricerca piatti per tipologia, nome, prezzo</td><td>Light / Full</td></tr><tr><td>R05</td><td>Visualizzazione dettagli piatto (ingredienti, foto, info)</td><td>Light / Full</td></tr><tr><td>R06</td><td>Visualizzazione info piatti, clienti, ristoratori, acquisti</td><td>Full</td></tr><tr><td>R07</td><td>Ricerca ristoranti per luogo e nome</td><td>Full</td></tr><tr><td>R08</td><td>Ricerca ristorante per piatto</td><td>Full</td></tr><tr><td>R09</td><td>Ricerca piatti per ingredienti</td><td>Full</td></tr><tr><td>R10</td><td>Ricerca piatti per allergie</td><td>Full</td></tr><tr><td>R11</td><td>Creazione ordine con più piatti</td><td>Full</td></tr><tr><td>R12</td><td>Scelta ritiro in sede o consegna a domicilio</td><td>Full</td></tr><tr><td>R13</td><td>Flusso stati ordine (ordinato → in preparazione → in consegna → consegnato)</td><td>Full</td></tr><tr><td>R14</td><td>Calcolo distanza e costo consegna tramite API OpenStreetMap</td><td>Full</td></tr><tr><td>R15</td><td>Gestione consegne (conferma consegna da parte del cliente)</td><td>Full</td></tr><tr><td>R16</td><td>Statistiche per ristorante (ordini, piatti più venduti, ecc.)</td><td>Full</td></tr><tr><td>R17</td><td>Storico acquisti cliente (presenti e passati)</td><td>Full</td></tr><tr><td>R18</td><td>Ruolo amministratore con gestione filiali e manager</td><td>Full</td></tr><tr><td>R19</td><td>Gestione metodi di pagamento del cliente</td><td>Full</td></tr><tr><td>R20</td><td>Gestione ingredienti (pubblici e privati)</td><td>Full</td></tr><tr><td>R21</td><td>Dashboard manager con ordini in coda e statistiche</td><td>Full</td></tr></tbody></table></div>
+<p>Ogni requisito e' stato tradotto in endpoint API REST e componenti frontend. La registrazione e il login (R01) corrispondono agli endpoint POST /auth/register e POST /auth/login, che restituiscono un token JWT. Il profilo utente (R02) e' gestito dagli endpoint GET/PUT/DELETE /users/me. La gestione del ristorante (R03) coinvolge gli endpoint su /restaurants e /dishes, con supporto per piatti standard (caricati da meal.json) e piatti custom. La ricerca (R04-R10) e' implementata tramite parametri di query sulle rotte /dishes e /restaurants. Gli ordini (R11-R13) seguono un flusso basato su un carrello in bozza (collezione orders con status "draft") che viene confermato tramite POST /cart/confirm. La consegna a domicilio (R14-R15) utilizza il servizio deliveryService che chiama le API OpenStreetMap per geocodificare l'indirizzo e calcolare la distanza. Le statistiche (R16) sono rese dall'endpoint GET /orders/restaurant/:id/dashboard. Lo storico ordini (R17) e' disponibile su GET /orders/user. I requisiti aggiuntivi (R18-R21) sono stati implementati come estensioni progettuali per arricchire la piattaforma.</p>
+<p>---</p>
+<h2 id="5-modellazione-del-dominio">5. Modellazione del Dominio</h2>
+<h3 id="5-1-entit-principali">5.1 Entità principali</h3>
+<p>Le entità principali del dominio che ho modellato sono le seguenti:</p>
+<ul><li><strong>User</strong>: rappresenta tutti gli utenti del sistema, con tre ruoli possibili: customer (cliente), manager (gestore di filiale), admin (amministratore centrale). Contiene i dati anagrafici, le credenziali di accesso, l'indirizzo e le preferenze alimentari. Per i manager e' presente il campo managerStatus che ne traccia lo stato di approvazione.</li><li><strong>Restaurant</strong>: rappresenta una filiale della catena. Contiene nome, indirizzo, città, telefono, partita IVA e il riferimento al manager proprietario. Include inoltre coordinate geografiche (lat/lng) geocodificate al bisogno.</li><li><strong>Dish</strong>: rappresenta un piatto del menu. Può essere standard (isCustom: false, presente in tutti i ristoranti) o custom (isCustom: true, specifico di una filiale). Contiene nome, tipologia, prezzo, url della foto e riferimenti agli ingredienti.</li><li><strong>Ingredient</strong>: rappresenta un ingrediente utilizzato nei piatti. Può essere pubblico (restaurantId: null) o privato di una filiale. Contiene nome e lista di allergeni associati.</li><li><strong>Order</strong>: rappresenta un ordine o un carrello in bozza. Contiene il riferimento al cliente, al ristorante, le righe ordine (orderItems), lo stato corrente, la modalità (pickup/delivery), l'importo totale, il codice ordine e, per le consegne, il sottodocumento delivery con indirizzo, distanza e costo.</li><li><strong>PaymentMethod</strong>: rappresenta un metodo di pagamento associato a un cliente. Contiene tipo (card/cash), etichetta, dettagli e flag del metodo predefinito.</li></ul>
+<h3 id="5-2-schema-collezioni-mongodb">5.2 Schema collezioni MongoDB</h3>
+<p><strong>Collection: users</strong></p>
+<ul><li>_id: ObjectId</li><li>name: String (nome, required)</li><li>surname: String (cognome, required)</li><li>email: String (unique, lowercase, required)</li><li>passwordHash: String (hash bcrypt, required)</li><li>role: String (enum: "customer" | "manager" | "admin", required)</li><li>address: Object (street, city, zip)</li><li>managerStatus: String (enum: "pending" | "approved" | "rejected", presente solo per role="manager")</li><li>restaurantId: ObjectId (ref: Restaurant, default null)</li><li>preferences: Array of String (enum da costante)</li><li>mustChangePassword: Boolean (default false)</li><li>setupCompleted: Boolean (default false)</li><li>createdAt: Date (automatic)</li><li>updatedAt: Date (automatic)</li></ul>
+<p><strong>Collection: restaurants</strong></p>
+<ul><li>_id: ObjectId</li><li>name: String (required)</li><li>address: String (required)</li><li>city: String (required)</li><li>zip: String</li><li>phone: String (required)</li><li>vatNumber: String (required)</li><li>managerId: ObjectId (ref: User, required)</li><li>location: Object (lat, lng, geocoded on demand)</li><li>createdAt: Date (automatic)</li><li>updatedAt: Date (automatic)</li></ul>
+<p><strong>Collection: dishes</strong></p>
+<ul><li>_id: ObjectId</li><li>name: String (required)</li><li>type: String (required, es. "burger", "drink", "side")</li><li>price: Number (required, min 0)</li><li>photoUrl: String</li><li>ingredientIds: Array of ObjectId (ref: Ingredient)</li><li>isCustom: Boolean (default false)</li><li>restaurantId: ObjectId (ref: Restaurant, default null, populated when isCustom=true)</li><li>createdAt: Date (automatic)</li><li>updatedAt: Date (automatic)</li></ul>
+<p><strong>Collection: ingredients</strong></p>
+<ul><li>_id: ObjectId</li><li>name: String (required)</li><li>allergens: Array of String</li><li>restaurantId: ObjectId (ref: Restaurant, default null per ingredienti pubblici)</li><li>managerId: ObjectId (ref: User, default null, usato durante il wizard di setup)</li><li>createdAt: Date (automatic)</li><li>updatedAt: Date (automatic)</li></ul>
+<p><strong>Collection: orders</strong></p>
+<ul><li>_id: ObjectId</li><li>customerId: ObjectId (ref: User, required)</li><li>restaurantId: ObjectId (ref: Restaurant, required)</li><li>orderItems: Array of {dishId, quantity, unitPrice} (embedded)</li><li>status: String (enum: "draft" | "ordered" | "preparing" | "ready" | "on_delivery" | "delivered", required, default "ordered")</li><li>mode: String (enum: "pickup" | "delivery", required when status !== "draft")</li><li>totalAmount: Number (required, default 0)</li><li>orderCode: String (unique, required, es. "FF-A1B2C3")</li><li>delivery: Object (address, distanceKm, deliveryFee, optional, assente when mode="pickup")</li><li>createdAt: Date (automatic)</li><li>updatedAt: Date (automatic)</li><li>Index: unique_draft_per_customer (partial, on customerId + status where status="draft")</li></ul>
+<p><strong>Collection: paymentMethods</strong></p>
+<ul><li>_id: ObjectId</li><li>customerId: ObjectId (ref: User, required)</li><li>type: String (enum: "card" | "cash", required)</li><li>label: String</li><li>details: String (solo ultime 4 cifre per le carte)</li><li>isDefault: Boolean (default false)</li><li>createdAt: Date (automatic)</li><li>updatedAt: Date (automatic)</li></ul>
+<h3 id="5-3-diagramma-concettuale">5.3 Diagramma concettuale</h3>
+<p>Il diagramma ER del dominio che ho progettato prevede le seguenti relazioni principali. Un utente può avere ruolo customer, manager o admin. Un utente con ruolo manager può essere associato a una singola filiale tramite il campo restaurantId. Un ristorante ha un unico manager proprietario (managerId) e può avere zero o più piatti nel menu. I piatti possono essere standard (condivisi tra tutte le filiali) o custom (appartenenti a una singola filiale). Un ordine appartiene a un cliente e a un ristorante, e contiene una o più righe ordine, ciascuna delle quali fa riferimento a un piatto e ne memorizza quantità e prezzo unitario al momento dell'acquisto. Un ordine può avere modalità pickup o delivery. Nel caso di delivery, e' presente un sottodocumento delivery con indirizzo, distanza e costo. Una delivery non e' un'entità separata nel database, ma e' parte integrante dell'ordine. Gli ingredienti sono un'entità indipendente, associabili a zero o più piatti e, nel caso di ingredienti privati, a una specifica filiale. I metodi di pagamento sono associati a un singolo cliente.</p>
+<p>Il diagramma completo e' disponibile come file Draw.io nella cartella docs/ita/diagrams/fastfood-domain-model.drawio.</p>
+<p>---</p>
+<h2 id="6-architettura-del-sistema">6. Architettura del Sistema</h2>
+<h3 id="6-1-schema-architetturale">6.1 Schema architetturale</h3>
+<p>Ho articolato il sistema in tre livelli principali.</p>
+<p>Il <strong>frontend</strong> e' una Single Page Application (SPA) costruita con Preact (libreria UI dichiarativa simile a React, ~3kb) e Vite (bundler moderno). Lo styling e' gestito tramite Tailwind CSS v4 con un design system custom ispirato all'estetica retro-cyberpunk (terminal/CRT). La navigazione e' gestita da un router custom basato su match di pattern del path URL, senza librerie esterne. Le chiamate API sono effettuate tramite fetch con wrapper personalizzato che gestisce il token JWT, il retry su errori di rete e il redirect in caso di session scaduta. Lo stato dell'applicazione e' gestito tramite store Preact (context-based) separati per autenticazione, ordini e ristoranti.</p>
+<p>Il <strong>backend</strong> e' un server HTTP costruito con Node.js ed Express v5. La struttura e' modulare con controller, modelli Mongoose, route, middleware e validation schema distribuiti in cartelle separate. I middleware includono autenticazione JWT, controllo ruoli, validazione delle request body e query, paginazione, gestione errori e rate limiting sulle rotte di setup. L'applicazione usa helmet per la sicurezza HTTP, morgan per il logging e express-rate-limit per proteggere le rotte critiche. L'integrazione con MongoDB e' gestita da Mongoose v9 con modelli mongoose definiti per ciascuna collezione.</p>
+<p>Il <strong>database</strong> e' MongoDB, un database NoSQL orientato a documenti. La modellazione segue uno stile ibrido: embedding per dati strettamente legati al ciclo di vita del documento padre (righe ordine e consegna dentro Order), referencing per dati riutilizzabili o condivisi (utenti, ristoranti, piatti, ingredienti).</p>
+<p>Un <strong>servizio esterno</strong> e' rappresentato dalle API di OpenStreetMap, utilizzate per il geocoding degli indirizzi (Nominatim) e per il calcolo delle distanze stradali (OSRM). Il backend memorizza le coordinate geocodificate dei ristoranti nella collezione restaurants per evitare richieste ripetute al servizio esterno.</p>
+<h3 id="6-2-flusso-richieste-rest">6.2 Flusso richieste REST</h3>
+<p>Quando un utente autenticato effettua una richiesta, ad esempio POST /cart/items per aggiungere un piatto al carrello, il flusso e' il seguente.</p>
+<ol><li>Il frontend richiama api.post('/cart/items', {restaurantId, dishId, quantity}) dal servizio orderService. La funzione fetchWithAuth inserisce automaticamente l'header Authorization: Bearer &lt;token&gt; letto da localStorage.</li><li>La richiesta arriva al server Express, che passa attraverso i middleware globally installati (helmet, morgan, cors).</li><li>Il router monta cartRoutes.js, che applica il middleware authMiddleware per verificare il token JWT. Se il token e' valido, il controller dell'utente autenticato e' aggiunto a req.user.</li><li>Il middleware validate applica lo schema Joi definito in cartValidation.js per validare il body della richiesta.</li><li>Il controller cartController.addItem riceve la richiesta, cerca o crea il carrello in bozza per quel cliente, aggiunge o aggiorna la riga ordine, e salva su MongoDB tramite il modello Order.</li><li>Il modello Order esegue la query di insert/update asincrona su MongoDB.</li><li>Il controller restituisce una risposta JSON con lo stato dell'ordine aggiornato.</li><li>Il frontend riceve la risposta e aggiorna lo store locale (orderStore) tramite setCart, che provvede a riflettere i cambiamenti nell'interfaccia utente grazie al meccanismo reattivo di Preact.</li></ol>
+<p>Per le rotte pubbliche (es. GET /restaurants, GET /dishes), i passaggi 2-4 sono identici, ma il middleware authMiddleware non e' applicato, quindi la richiesta e' svolta senza verifica del token.</p>
+<p>---</p>
+<h2 id="7-progettazione-delle-api">7. Progettazione delle API</h2>
+<p>Le API REST del progetto sono state progettate seguendo i principi RESTful, con un focus sulla chiarezza dei nomi delle risorse e sulla separazione dei concerns tra le diverse entità. La documentazione completa e' disponibile in formato Swagger/OpenAPI 3.0.3 nel file <code>backend/swagger/openapi.yaml</code>, accessibile interattivamente all'indirizzo http://localhost:3000/api-docs in ambiente di sviluppo.</p>
+<p>Le risorse principali che ho implementato sono:</p>
+<p><strong>Autenticazione</strong>: POST /auth/register e POST /auth/login per la registrazione e il login. Entrambi restituiscono un token JWT valido per 3 ore.</p>
+<p><strong>Utenti</strong>: GET/PUT/DELETE /users/me per la gestione del profilo dell'utente autenticato. Include anche la gestione dei metodi di pagamento con GET/POST/PUT/DELETE /users/me/payment-methods.</p>
+<p><strong>Ristoranti</strong>: GET /restaurants (pubblico, con filtri name, city, dishName), GET /restaurants/:id (pubblico), POST /restaurants (solo admin), POST /restaurants/first (manager approvato che crea la prima filiale), PUT/DELETE /restaurants/:id (admin/manager).</p>
+<p><strong>Piatti</strong>: GET /dishes (pubblico, con filtri name, type, minPrice, maxPrice, ingredient, allergen), GET /dishes/restaurant/:id (pubblico), GET /dishes/:id (pubblico), POST/PUT/DELETE /dishes (admin o manager per piatti custom).</p>
+<p><strong>Ingredienti</strong>: GET/POST/PUT/DELETE /ingredients (solo manager).</p>
+<p><strong>Carrello</strong>: GET /cart, POST/PATCH/DELETE /cart/items, DELETE /cart, POST /cart/confirm, POST /cart/delivery-estimate. Il carrello e' un ordine in stato "draft" che puo' essere modificato liberamente prima della conferma.</p>
+<p><strong>Ordini</strong>: POST /orders (ordine diretto), GET /orders/user (storico cliente), GET /orders/restaurant/:id (ordini filiale), GET /orders/restaurant/:id/dashboard (statistiche), GET /orders/:id (dettaglio), PATCH /orders/:id/status (avanzamento stato), PATCH /orders/:id/confirm-delivery (conferma ricezione).</p>
+<p><strong>Admin</strong>: GET/POST/PUT/DELETE /admin/users, GET /admin/stats.</p>
+<p><strong>Setup</strong>: GET /setup/status, POST /setup/request-pin, POST /setup (tutti rate-limited).</p>
+<p>Di seguito tre esempi completi di request body e response JSON per endpoint significativi.</p>
+<p><strong>Esempio 1: POST /auth/register (registrazione cliente)</strong></p>
+<p>Request body:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;Mario&quot;,
+  &quot;surname&quot;: &quot;Rossi&quot;,
+  &quot;email&quot;: &quot;mario.rossi@example.com&quot;,
+  &quot;password&quot;: &quot;password123&quot;,
+  &quot;role&quot;: &quot;customer&quot;,
+  &quot;address&quot;: {
+    &quot;street&quot;: &quot;Via Roma 1&quot;,
+    &quot;city&quot;: &quot;Milano&quot;,
+    &quot;zip&quot;: &quot;20100&quot;
+  },
+  &quot;preferences&quot;: [&quot;vegetariano&quot;, &quot;senza_glutine&quot;]
+}</code></pre>
+<p>Response (201):</p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...&quot;,
+    &quot;user&quot;: {
+      &quot;id&quot;: &quot;64b7a0f9a1234567890abcd0&quot;,
+      &quot;name&quot;: &quot;Mario&quot;,
+      &quot;surname&quot;: &quot;Rossi&quot;,
+      &quot;email&quot;: &quot;mario.rossi@example.com&quot;,
+      &quot;role&quot;: &quot;customer&quot;,
+      &quot;address&quot;: {
+        &quot;street&quot;: &quot;Via Roma 1&quot;,
+        &quot;city&quot;: &quot;Milano&quot;,
+        &quot;zip&quot;: &quot;20100&quot;
+      },
+      &quot;preferences&quot;: [&quot;vegetariano&quot;, &quot;senza_glutine&quot;],
+      &quot;createdAt&quot;: &quot;2025-06-15T10:30:00.000Z&quot;
+    }
+  }
+}</code></pre>
+<p><strong>Esempio 2: POST /cart/confirm (conferma ordine con consegna a domicilio)</strong></p>
+<p>Request body:</p>
+<pre><code class="language-json">{
+  &quot;mode&quot;: &quot;delivery&quot;,
+  &quot;delivery&quot;: {
+    &quot;address&quot;: &quot;Via Torino 5, Milano&quot;
+  }
+}</code></pre>
+<p>Response (200):</p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;_id&quot;: &quot;64b7a0f9a1234567890def01&quot;,
+    &quot;customerId&quot;: &quot;64b7a0f9a1234567890abcd0&quot;,
+    &quot;restaurantId&quot;: &quot;64b7a0f9a1234567890abc1&quot;,
+    &quot;orderItems&quot;: [
+      {
+        &quot;dishId&quot;: &quot;64b7a0f9a1234567890abc2&quot;,
+        &quot;quantity&quot;: 2,
+        &quot;unitPrice&quot;: 6.50
+      },
+      {
+        &quot;dishId&quot;: &quot;64b7a0f9a1234567890abc3&quot;,
+        &quot;quantity&quot;: 1,
+        &quot;unitPrice&quot;: 3.00
+      }
+    ],
+    &quot;status&quot;: &quot;ordered&quot;,
+    &quot;mode&quot;: &quot;delivery&quot;,
+    &quot;totalAmount&quot;: 15.50,
+    &quot;orderCode&quot;: &quot;FF-A1B2C3&quot;,
+    &quot;delivery&quot;: {
+      &quot;address&quot;: &quot;Via Torino 5, Milano&quot;,
+      &quot;distanceKm&quot;: 3.2,
+      &quot;deliveryFee&quot;: 2.50
+    },
+    &quot;createdAt&quot;: &quot;2025-06-15T12:45:00.000Z&quot;
+  }
+}</code></pre>
+<p><strong>Esempio 3: PATCH /orders/:id/status (avanzamento stato ordine da parte del manager)</strong></p>
+<p>Request body:</p>
+<pre><code class="language-json">{
+  &quot;status&quot;: &quot;preparing&quot;
+}</code></pre>
+<p>Response (200):</p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;_id&quot;: &quot;64b7a0f9a1234567890def01&quot;,
+    &quot;customerId&quot;: &quot;64b7a0f9a1234567890abcd0&quot;,
+    &quot;restaurantId&quot;: &quot;64b7a0f9a1234567890abc1&quot;,
+    &quot;orderItems&quot;: [
+      {
+        &quot;dishId&quot;: &quot;64b7a0f9a1234567890abc2&quot;,
+        &quot;quantity&quot;: 2,
+        &quot;unitPrice&quot;: 6.50
+      }
+    ],
+    &quot;status&quot;: &quot;preparing&quot;,
+    &quot;mode&quot;: &quot;pickup&quot;,
+    &quot;totalAmount&quot;: 13.00,
+    &quot;orderCode&quot;: &quot;FF-A1B2C3&quot;,
+    &quot;createdAt&quot;: &quot;2025-06-15T12:45:00.000Z&quot;,
+    &quot;updatedAt&quot;: &quot;2025-06-15T12:50:00.000Z&quot;
+  }
+}</code></pre>
+<p>---</p>
+<h2 id="8-implementazione-frontend">8. Implementazione Frontend</h2>
+<h3 id="8-1-pagine-principali">8.1 Pagine principali</h3>
+<p>Il frontend e' organizzato come SPA con routing basato su path. Di seguito le pagine principali che ho implementato.</p>
+<p><strong>Auth page (/auth)</strong>: Gestisce il flusso di login e registrazione. Presenta un form con campi per nome, cognome, email, password e ruolo. Dopo la registrazione, se l'utente e' un manager, l'account resta in stato pending fino all'approvazione di un admin. Dopo il login, il token JWT e' salvato in localStorage e lo store authStore e' aggiornato.</p>
+<p><strong>HomePage (/)</strong>: Landing page con stile terminal/CRT. Presenta un hero section con il messaggio di benvenuto e due bottoni: uno per accedere al menu (navigate a /orders) e uno per accedere al terminale di autenticazione (navigate a /auth).</p>
+<p><strong>RestaurantSelectPage (/restaurants, /orders)</strong>: Pagina che mostra l'elenco dei ristoranti disponibili con possibilità di filtrare per nome e città. Permette di selezionare un ristorante per vedere il menu.</p>
+<p><strong>OrderMenuPage (/orders/menu/:restaurantId)</strong>: Visualizza il menu del ristorante selezionato con i piatti disponibili, ordinati per tipologia. Per ogni piatto e' possibile vedere nome, prezzo, foto e ingredienti. I piatti possono essere aggiunti al carrello.</p>
+<p><strong>OrderPaymentPage (/orders/payment)</strong>: Pagina di riepilogo ordine dove il cliente conferma la modalità di completamento (ritiro in sede o consegna a domicilio). Per la consegna, e' possibile inserire l'indirizzo e ottenere una stima della distanza e del costo tramite l'endpoint /cart/delivery-estimate.</p>
+<p><strong>OrderDetailPage (/orders/:orderId)</strong>: Mostra i dettagli di un ordine con stato corrente, righe ordine, totale e, per le consegne, indirizzo e costo di consegna. Il cliente può confermare la ricezione se l'ordine e' nello stato on_delivery.</p>
+<p><strong>CustomerDashboard (/dashboard)</strong>: Dashboard del cliente con accesso allo storico ordini (passati e attuali), gestione del profilo e metodi di pagamento.</p>
+<p><strong>ManagerOverview (/dashboard/manager)</strong>: Dashboard principale del manager con vista sugli ordini in arrivo, ordini in preparazione e ordini completati. Link alle sottopagine menu, ingredienti e gestione ristorante.</p>
+<p><strong>ManagerOrders (/manager/orders)</strong>: Pagina che mostra gli ordini della filiale con possibilità di filtrare per stato. Il manager puo' avanzare lo stato di ciascun ordine tramite un menu a tendina.</p>
+<p><strong>ManagerMenu (/manager/menu)</strong>: Pagina per la gestione del menu. Mostra i piatti standard (sola lettura) e i piatti custom (modificabili). Permette di aggiungere, modificare ed eliminare piatti custom, con selezione degli ingredienti disponibili.</p>
+<p><strong>ManagerIngredients (/manager/ingredients)</strong>: Pagina per la gestione degli ingredienti. Permette di creare, modificare ed eliminare ingredienti pubblici e privati (associati alla filiale).</p>
+<p><strong>ManagerRestaurant (/manager/restaurant)</strong>: Pagina per la gestione delle informazioni della filiale (nome, indirizzo, telefono, partita IVA).</p>
+<p><strong>AdminOverview (/dashboard/admin)</strong>: Dashboard amministrativa con accesso alle pagine Utenti, Filiali e Statistiche.</p>
+<p><strong>AdminUsers (/admin/users)</strong>: Elenco di tutti gli utenti con possibilità di filtrare per ruolo e stato manager. Permette di approvare o rifiutare i manager pending.</p>
+<p><strong>AdminBranches (/admin/branches)</strong>: Gestione delle filiali: creazione, modifica e chiusura.</p>
+<p><strong>AdminStats (/admin/stats)</strong>: Statistiche aggregate della piattaforma: utenti per ruolo, totale filiali, ordini totali e per stato.</p>
+<p><strong>ProfilePage (/profile)</strong>: Pagina per la gestione del profilo utente: visualizzazione e modifica dei dati personali, indirizzo, preferenze e metodi di pagamento.</p>
+<p><strong>SetupPage (/setup)</strong>: Pagina per il setup iniziale dell'applicazione. Richiede un PIN inviato via email e permette di creare il primo account admin.</p>
+<p><strong>CreateFirstRestaurantPage (/manager/first-restaurant)</strong>: Wizard per la creazione della prima filiale da parte di un manager approvato. Guida l'utente attraverso l'inserimento dei dati della filiale e il caricamento del menu base.</p>
+<h3 id="8-2-pattern-css-js">8.2 Pattern CSS/JS</h3>
+<p>Il frontend segue questi pattern architetturali.</p>
+<p>La separazione tra struttura e presentazione e' garantita dall'uso di Preact con template htm. I componenti UI sono definiti come funzioni che ritornano template htm, con styling gestito tramite classi Tailwind CSS e CSS custom definito in tokens.css e terminal.css. Non e' presente un file CSS monolitico: lo stile e' distribuito tra utility Tailwind (layout, spacing, tipografia) e regole custom (effetti CRT, animazioni orbitali, colori semantici).</p>
+<p>La logica JavaScript e' organizzata in servizi separati per dominio (api.js, authService.js, orderService.js, restaurantService.js, paymentService.js, setupService.js, systemService.js). Ogni servizio e' un oggetto con metodi asincroni che incapsulano le chiamate API. Il wrapper api.js gestisce automaticamente il token JWT leggendolo da localStorage, attachinglo all'header Authorization, gestendo errori 401 con redirect al login e retry automatico su errori di rete.</p>
+<p>Lo stato dell'applicazione e' gestito tramite store Preact basati su context e useState. I principali store sono: authStore (utente autenticato, loading, login/logout), orderStore (carrello, ordini), restaurantStore (ristoranti, piatti) e uiStore (stato UI globale come sidebar, notifiche). Gli store sono forniti come provider a livello di root dell'applicazione (main.jsx) e consumati dai componenti tramite il hook useContext.</p>
+<p>La gestione del token JWT avviene tramite localStorage. Al login/registrazione, il token e' salvato in localStorage e nella variabile locale authToken del modulo api.js. Ad ogni richiesta API, il token e' letto e aggiunto come header Bearer. In caso di risposta 401, il token e' cancellato e l'utente e' reindirizzato alla pagina di login.</p>
+<p>L'aggiornamento dinamico del DOM e' gestito in modo dichiarativo da Preact: quando lo store e' aggiornato (attraverso setter negli store), i componenti che consumano quello store vengono riconnessi e il DOM e' ricreato automaticamente. Non e' usato innerHTML o createElement manualmente.</p>
+<h3 id="8-3-responsive-design">8.3 Responsive design</h3>
+<p>Il sito e' completamente responsive grazie a Tailwind CSS con il suo sistema di utility responsive (breakpoint sm, md, lg, xl). Il layout utilizza flexbox e grid per adattarsi a diverse dimensioni dello schermo. La navigazione laterale (sidebar) e' collassabile su mobile. I component card dei ristoranti e dei piatti usano griglie responsive che passano da una colonna su mobile a due o tre colonne su desktop. I form di login, registrazione e gestione ordine sono centrati e adattano le dimensioni dei campi in base al breakpoint. I colori e i font sono definiti tramite CSS variables che garantiscono coerenza visiva su tutti i dispositivi.</p>
+<p>---</p>
+<h2 id="9-scelte-progettuali-e-motivazioni">9. Scelte Progettuali e Motivazioni</h2>
+<p><strong>JWT vs Sessioni.</strong> Ho scelto l'autenticazione basata su token JWT (JSON Web Token) anziché sessioni server-side perche' l'architettura del sistema e' stateless: il backend non deve memorizzare lo stato della sessione di alcun utente. Questo e' particolarmente importante per un servizio API REST che potrebbe essere scalato horizontalmente, con piu' istanze del server che non condividono memoria. Il token JWT contiene le informazioni essenziali dell'utente (id, ruolo) ed e' firmato con una chiave segreta, quindi il backend puo' verificarne l'autenticita' senza interpellare il database ad ogni richiesta. I token hanno una durata di 3 ore, sufficiente per una sessione di lavoro ma non troppo lunga da compromettere la sicurezza in caso di furto. Il vantaggio rispetto alle sessioni tradizionali e' la semplicita' e la scalabilita'. Lo svantaggio e' che un token rubato rimane valido fino alla scadenza, mentre una sessione server-side puo' essere invalidata immediatamente.</p>
+<p><strong>MongoDB vs SQL.</strong> La scelta di MongoDB e' caduta sul fatto che il modello dei dati del progetto e' naturalmente orientato ai documenti: un ordine contiene un array di righe ordine, un ristorante ha un array di piatti, un utente ha un array di preferenze e metodi di pagamento. Con un database relazionale, queste strutture avrebbero richiesto tabelle aggiuntive con chiavi esterne e join complessi. Con MongoDB, i dati correlati possono essere embedded direttamente nel documento principale (come orderItems e delivery dentro Order), riducendo il numero di query necessarie. I riferimenti (ref) sono usati per dati condivisi tra piu' documenti (utenti, ristoranti, piatti, ingredienti), mantenendo la consistenza senza duplicazione. Mongoose offre inoltre validazione dello schema a livello di modello, middleware per logica before/after save, e supporto nativo per ObjectId.</p>
+<p><strong>OpenStreetMap API.</strong> Per il calcolo delle distanze e dei costi di consegna, ho integrato le API di OpenStreetMap. Nominatim e' usato per il geocoding degli indirizzi (conversione da testo a coordinate lat/lng), mentre OSRM e' usato per il calcolo della distanza stradale tra due punti. Il flusso e' il seguente: quando un cliente inserisce un indirizzo di consegna, il backend geocodifica l'indirizzo e calcola la distanza dalla filiale. Se la distanza supera 15km, l'ordine e' rifiutato (il servizio di consegna e' limitato a un raggio ragionevole). Il costo di consegna e' calcolato come tariffa base + tariffa per km. Le coordinate del ristorante sono memorizzate nel database dopo la prima geocodifica, per evitare chiamate ripetute al servizio esterno. Questo approccio e' gratuito e open source, a differenza di servizi come Google Maps che richiedono una chiave API e hanno limiti di utilizzo a pagamento.</p>
+<p><strong>Gestione stati ordine.</strong> Ho modellato gli stati degli ordini come un campo status con enum su stringa, piuttosto che come booleani separati o come un sistema di flags. I valori ammessi sono draft, ordered, preparing, ready, on_delivery, delivered. Il flusso e' vincolato a una state machine: ogni transizione e' validata dal backend prima di essere applicata. Per gli ordini pickup, la sequenza e' ordered → preparing → ready → delivered. Per gli ordini delivery, e' ordered → preparing → on_delivery → delivered. La validazione e' enforce a livello di controller, non solo a livello di schema MongoDB, per impedire transizioni non ammesse (es. saltare da ordered a delivered senza passare per preparing). Il carrello in bozza e' un ordine con status "draft" nella stessa collezione orders, per evitare di creare una tabella separata e mantenere la coerenza del modello dati.</p>
+<p><strong>Validazione input.</strong> La validazione e' implementata a due livelli: frontend e backend. A livello frontend, i form usano validazione HTML5 (required, type, minlength) e, dove necessario, validazione JavaScript custom prima di inviare la richiesta. A livello backend, ogni endpoint ha uno schema Joi di validazione definito nei moduli validations/. Questi schemi verificano il tipo, la lunghezza minima/massima, i valori ammessi (enum) e la presenza dei campi richiesti. I middleware validateRequest e validateQuery applicano gli schemi rispettivamente al body e ai parametri di query, restituendo un errore 400 con messaggio descrittivo in caso di validazione fallita. Questo doppio strato di validazione protegge sia dall'uso accidentale che da tentativi malintenzionati di inviare dati non validi al server.</p>
+<p>---</p>
+<h2 id="10-scenari-di-demo">10. Scenari di Demo</h2>
+<p>Di seguito sono descritti cinque scenari end-to-end che ho preparato per la presentazione del progetto.</p>
+<p><strong>Scenario 1: Registrazione nuovo cliente</strong></p>
+<ol><li>Aprire il browser e accedere all'URL del frontend (es. http://localhost:4173).</li><li>Cliccare sul bottone "accedi al terminale" per andare alla pagina di login.</li><li>Cliccare su "Registrati" per passare alla modalita' registrazione.</li><li>Compilare il form con nome, cognome, email, password e indirizzo.</li><li>Selezionare eventualmente alcune preferenze alimentari (vegetariano, senza glutine, ecc.).</li><li>Cliccare su "Registrati".</li><li>Verificare il redirect alla home page e la comparsa del nome utente nell'header.</li><li>Screenshot attesi: screenshot-01-homepage.png, screenshot-02-register.png, screenshot-03-profile-after-register.png.</li></ol>
+<p><strong>Scenario 2: Cliente ordina con ritiro in sede</strong></p>
+<ol><li>Dalla home page, cliccare su "apri il menu" per andare alla selezione ristorante.</li><li>Selezionare un ristorante dalla lista.</li><li>Navigare al menu del ristorante e aggiungere alcuni piatti al carrello (specificando le quantita').</li><li>Andare alla pagina di pagamento e scegliere "ritiro in sede".</li><li>Confermare l'ordine.</li><li>Verificare la creazione dell'ordine con codice alfanumerico e stato "ordered".</li><li>Andare alla pagina del profilo e verificare che l'ordine appaia nello storico.</li><li>Screenshot attesi: screenshot-04-ristorante-list.png, screenshot-05-menu.png, screenshot-06-cart.png, screenshot-07-order-confirmed.png, screenshot-08-order-history.png.</li></ol>
+<p><strong>Scenario 3: Cliente ordina con consegna a domicilio (calcolo distanza)</strong></p>
+<ol><li>Seguire i passaggi 1-3 dello scenario 2 per aggiungere piatti al carrello.</li><li>Nella pagina di pagamento, scegliere "consegna a domicilio".</li><li>Inserire l'indirizzo di consegna (es. "Via Torino 5, Milano").</li><li>Ottenere la stima della distanza e del costo di consegna.</li><li>Confermare l'ordine.</li><li>Verificare che l'ordine contenga i campi delivery con distanceKm e deliveryFee popolati.</li><li>Simulare il flusso di stato: il manager avanza l'ordine a preparing, poi on_delivery.</li><li>Il cliente conferma la ricezione e l'ordine passa a delivered.</li><li>Screenshot attesi: screenshot-09-checkout-delivery.png, screenshot-10-delivery-estimate.png, screenshot-11-order-tracking.png.</li></ol>
+<p><strong>Scenario 4: Ristoratore aggiunge nuovo piatto</strong></p>
+<ol><li>Effettuare il login con un account manager approvato con filiale.</li><li>Navigare alla dashboard manager e andare alla pagina Menu.</li><li>Cliccare su "Aggiungi piatto custom".</li><li>Compilare il form con nome, tipologia, prezzo, url foto e selezionare gli ingredienti.</li><li>Salvare il piatto.</li><li>Verificare che il piatto appaia nel menu della filiale e che sia possibile vederlo nella pagina pubblica del ristorante.</li><li>Screenshot attesi: screenshot-12-manager-login.png, screenshot-13-manager-menu.png, screenshot-14-add-dish-form.png, screenshot-15-dish-list.png.</li></ol>
+<p><strong>Scenario 5: Cliente conferma ricezione ordine</strong></p>
+<ol><li>Effettuare il login come cliente con un ordine a domicilio nello stato "on_delivery".</li><li>Andare alla pagina dettaglio ordine.</li><li>Cliccare sul bottone "Conferma ricezione".</li><li>Verificare che l'ordine passi allo stato "delivered" e che il timestamp di conferma sia registrato.</li><li>Verificare che l'ordine appaia nello storico come ordine passato.</li><li>Screenshot attesi: screenshot-16-order-on-delivery.png, screenshot-17-confirm-delivery.png, screenshot-18-order-delivered.png.</li></ol>
+<p>---</p>
+<h2 id="11-conclusioni">11. Conclusioni</h2>
+<p>Il progetto Burger.sh e' stato un'esperienza formativa significativa che mi ha permesso di approfondire molteplici aspetti dello sviluppo web moderno. Ho imparato a progettare e implementare un'API REST completa con Express e MongoDB, gestendo autenticazione JWT, validazione input, paginazione e gestione errori in modo strutturato. A livello frontend, ho acquisito familiarità con Preact e il pattern di state management basato su context, che si e' rivelato efficace per un'applicazione SPA di medie dimensioni senza la complessità aggiuntiva di librerie esterne per lo stato.</p>
+<p>Le difficolta' principali che ho incontrato sono state tre. La prima e' stata l'integrazione con le API di OpenStreetMap: il geocoding con Nominatim richiede una corretta gestione degli errori (indirizzi non trovati, rate limiting) e il caching delle coordinate per evitare chiamate ripetute. La seconda e' stata la gestione dei token JWT: ho dovuto progettare un sistema che gestisse correttamente la scadenza del token, il refresh implicito al login e il logout, con redirect appropriati in base al contesto. La terza e' stata la modellazione del flusso degli ordini: la state machine con transizioni vincolate e la distinzione tra carrello in bozza e ordine confermato richiede una progettazione attenta per evitare stati inconsistenti.</p>
+<p>Ho risolto queste difficolta' attraverso iterazioni successive e testing. Per OpenStreetMap, ho creato un servizio deliveryService che gestisce il caching delle coordinate e i timeout. Per i token, ho implementato un middleware authMiddleware che verifica la firma JWT e un wrapper fetchWithAuth che gestisce automaticamente il 401. Per gli stati ordine, ho definito schemi di validazione rigorosi e testato tutte le transizioni possibili.</p>
+<p>Come miglioramenti futuri, vorrei aggiungere un sistema di pagamento reale (integrazione con Stripe o simile), notifiche email per gli aggiornamenti degli ordini, supporto PWA per l'installazione su dispositivo mobile, e una dashboard admin piu' ricca con grafici e export dati. Inoltre, sarebbe utile implementare un sistema di rating/recensione per i ristoranti e un chatbot per assistere gli utenti nella navigazione.</p>
+<p>---</p>
+<h2 id="12-bibliografia-e-sitografia">12. Bibliografia e Sitografia</h2>
+<ul><li>Documentazione ufficiale Node.js: <a href="https://nodejs.org/docs/latest/api">https://nodejs.org/docs/latest/api</a></li><li>Documentazione MongoDB: <a href="https://mongodb.com/docs/manual/tutorial">https://mongodb.com/docs/manual/tutorial</a></li><li>Documentazione Mongoose: <a href="https://mongoosejs.com/docs/">https://mongoosejs.com/docs/</a></li><li>Documentazione Express.js: <a href="https://expressjs.com/">https://expressjs.com/</a></li><li>Documentazione Preact: <a href="https://preactjs.com/guide/v10/">https://preactjs.com/guide/v10/</a></li><li>Documentazione Vite: <a href="https://vitejs.dev/guide/">https://vitejs.dev/guide/</a></li><li>Documentazione Tailwind CSS: <a href="https://tailwindcss.com/docs/">https://tailwindcss.com/docs/</a></li><li>MDN HTML/CSS/JS: <a href="https://developer.mozilla.org/en-US/docs/Web">https://developer.mozilla.org/en-US/docs/Web</a></li><li>OpenStreetMap API (Nominatim): <a href="https://wiki.openstreetmap.org/wiki/Nominatim">https://wiki.openstreetmap.org/wiki/Nominatim</a></li><li>OpenStreetMap API (OSRM): <a href="https://project-osrm.org/">https://project-osrm.org/</a></li><li>Swagger/OpenAPI: <a href="https://swagger.io/">https://swagger.io/</a></li><li>JWT.io Documentation: <a href="https://jwt.io/introduction/">https://jwt.io/introduction/</a></li><li>Joi Validation: <a href="https://joi.dev/api/">https://joi.dev/api/</a></li><li>bcrypt documentation: <a href="https://www.npmjs.com/package/bcrypt">https://www.npmjs.com/package/bcrypt</a></li><li>Helmet (HTTP security headers): <a href="https://helmetjs.github.io/">https://helmetjs.github.io/</a></li><li>htm (HTML templating): <a href="https://github.com/developit/htm">https://github.com/developit/htm</a></li></ul>
+<p>---</p>
+<h2 id="appendice-confronto-documentazione-vs-implementazione-reale">Appendice: Confronto Documentazione vs Implementazione Reale</h2>
+<p>Di seguito e' riportata una analisi delle discrepanze tra la documentazione originale (docs/ita/) e l'implementazione effettiva del progetto.</p>
+<p><strong>Frontend: tecnologia e architettura</strong></p>
+<p>La documentazione originale descriveva un frontend basato su HTML5, CSS3 e JavaScript vanilla con pagine separate. L'implementazione reale usa Preact (libreria UI dichiarativa) con Vite come bundler, Tailwind CSS v4 per lo styling, e un router custom che trasforma l'applicazione in una SPA (Single Page Application). I file HTML non esistono più come entità separate: esiste un singolo index.html che funge da shell, mentre tutto il contenuto e' renderizzato dinamicamente dai componenti Preact.</p>
+<p><strong>Ruolo amministratore</strong></p>
+<p>La documentazione originale menzionava il ruolo Admin solo come "estensione proposta". Nell'implementazione, il ruolo admin e' pienamente integrato con router dedicati (/admin/users, /admin/branches, /admin/stats), controller, middleware di autorizzazione (requireAdmin) e pagine frontend complete.</p>
+<p><strong>Carrello vs Ordine diretto</strong></p>
+<p>La documentazione originale descriveva la creazione diretta di ordini (POST /orders). L'implementazione reale introduce una risorsa separata /cart per il carrello in bozza, con operazioni CRUD su /cart/items e un endpoint di conferma /cart/confirm. Questo permette al cliente di costruire l'ordine in modo iterativo senza creare documenti a permanenza sul database finché non e' pronto a confermare.</p>
+<p><strong>Stato del ordine</strong></p>
+<p>La documentazione originale elencava solo gli stati ordered, preparing, ready, on_delivery, delivered. L'implementazione reale include anche lo stato draft per rappresentare il carrello in bozza nella stessa collezione orders.</p>
+<p><strong>Creazione ristorante</strong></p>
+<p>La documentazione originale prevedeva un unico endpoint POST /restaurants per la creazione. L'implementazione distingue tra POST /restaurants (solo admin) e POST /restaurants/first (manager approvato che crea la prima filiale). Questo riflette il flusso di onboarding reais del sistema.</p>
+<p><strong>Ingredienti come collezione separata</strong></p>
+<p>La documentazione originale parlava genericamente di "ingredienti" senza specificare una collezione dedicata. L'implementazione reale ha una collezione ingredients indipendente, con endpoint CRUD e gestione degli allergeni, accessibile solo ai manager.</p>
+<p><strong>Metodi di pagamento</strong></p>
+<p>La documentazione originale menzionava "eventuali metodi di pagamento associati" come funzionalità opzionale. L'implementazione include una collezione paymentMethods completa con CRUD e gestione del metodo predefinito.</p>
+<p><strong>Validazione e middleware</strong></p>
+<p>La documentazione originale non dettagliava i meccanismi di validazione. L'implementazione usa Joi per la validazione degli schema con middleware dedicati (validateRequest, validateQuery, validateObjectId) e un error handler globale che normalizza tutti gli errori in un formato JSON uniforme.</p>
+<p><strong>Rate limiting</strong></p>
+<p>Le rotte di setup (POST /setup, POST /setup/request-pin) sono protette da rate limiting (max 5 richieste per 15 minuti per IP) per prevenire abusi durante la fase di configurazione iniziale.</p>
+<p><strong>Testing</strong></p>
+<p>Il backend include una suite di test Jest con MongoDB Memory Server per testare controller e route in isolamento. Il frontend include test con @testing-library/preact e Vitest. La documentazione originale non menzionava alcuna strategia di testing.</p>
+<p><strong>Swagger/OpenAPI</strong></p>
+<p>La documentazione API e' interamente definita in un file YAML (backend/swagger/openapi.yaml) conforme alla specifica OpenAPI 3.0.3. Il file e' stato aggiornato per riflettere l'implementazione reale, includendo tutti gli endpoint sopra descritti.</p>
+<p>---</p>
+<p><em>Documento generato per il corso di Programmazione Web e Mobile, aa. 2025/2026.</em></p>
+</main>
+<footer><span>burger.sh / technical report</span><span>2025/2026 · fine documento</span></footer>
+</article>
+</body>
+</html>

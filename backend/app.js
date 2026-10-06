@@ -1,41 +1,139 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+require('dotenv').config();
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+/* stesso principio già usato in config/db.js per MONGODB_URI: senza questo
+   controllo, jwt.js firmerebbe e verificherebbe i token con un secret
+   undefined, rendendoli falsificabili da chiunque conosca la libreria usata */
+if (!process.env.JWT_SECRET) {
+  throw new Error('Errore: JWT_SECRET non definita nel file .env');
+}
+
+/* validazione lunghezza JWT_SECRET: secret troppo corti sono vulnerabili ad attacchi brute-force.
+   consigliato minimo 32 caratteri per sicurezza equivalente a 256 bit */
+if (process.env.JWT_SECRET.length < 32) {
+  throw new Error(`Errore: JWT_SECRET troppo corta (${process.env.JWT_SECRET.length} caratteri). Lunghezza minima richiesta: 32 caratteri.`);
+}
+
+var express = require('express');
+var helmet = require('helmet');
+var logger = require('morgan');
+var rateLimit = require('express-rate-limit');
+var { ipKeyGenerator } = require('express-rate-limit');
+var swaggerUi = require('swagger-ui-express');
+var YAML = require('yamljs');
+var path = require('path');
+
+var frontendRoot = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, '../frontend/dist')
+  : path.join(__dirname, '../frontend');
+
+var notFound = require('./middlewares/notFound');
+var errorHandler = require('./middlewares/errorHandler');
 
 var app = express();
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
+/* trust proxy per supporto reverse proxy e CDN: necessario per gestire
+   IP reali dietro proxy, load balancer, etc. */
+app.set('trust proxy', true);
 
+// Serve frontend static files (HTML, CSS, JS)
+app.use(express.static(frontendRoot));
+
+/* imposta gli header http di sicurezza di base (X-Content-Type-Options,
+   Strict-Transport-Security, niente X-Powered-By, ecc.), mancanti finora */
+app.use(helmet());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+/* limita le richieste pubbliche (non autenticate) a 100 per ip ogni 15 minuti,
+   come protezione di base contro abusi da parte di client non autenticati.
+   gli utenti autenticati hanno limiti diversi, definiti in authMiddleware.js */
+const publicLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,     // 15 minuti
+  max: 100,                     // 100 richieste per ip
+  keyGenerator: ipKeyGenerator, // helper integrato per supporto IPv4/IPv6
+  skip: (req) => {
+    // salta il rate limit per le richieste autenticate, che hanno limiti propri in authMiddleware
+    return req.headers.authorization?.startsWith('Bearer ');
+  },
+  message: 'Too many requests from this IP, please try again later.'
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+app.use(publicLimiter);
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+/* documentazione interattiva delle api, montata solo fuori produzione:
+   espone la forma esatta di ogni endpoint (inclusi quelli interni come
+   /api/admin/*), che non ha senso rendere pubblica su un deploy reale */
+if (process.env.NODE_ENV !== 'production') {
+  const openapiSpec = YAML.load(path.join(__dirname, 'swagger', 'openapi.yaml'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+}
+
+app.get('/api/health', function(req, res) {
+  res.status(200).json({
+    success: true,
+    message: 'API working correctly'
+  });
 });
+
+const authRoutes = require('./routes/authRoutes');
+const restaurantRoutes = require('./routes/restaurantRoutes');
+const dishRoutes = require('./routes/dishRoutes');
+const ingredientRoutes = require('./routes/ingredientRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const cartRoutes = require('./routes/cartRoutes');
+const userRoutes = require('./routes/userRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const setupRoutes = require('./routes/setupRoutes');
+const requirePasswordChange = require('./middlewares/requirePasswordChange');
+
+// Apply routes that require authentication
+app.use('/api/auth', authRoutes);
+app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/dishes', dishRoutes);
+app.use('/api/ingredients', ingredientRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Global middleware: if user has mustChangePassword=true, block access
+// to all routes except /api/setup/change-password
+// This must come AFTER authentication routes so req.user is populated
+app.use('/api', requirePasswordChange);
+
+// Setup routes (no auth required)
+app.use('/api/setup', setupRoutes);
+
+// Fallback: serve frontend HTML files if they exist, otherwise serve index.html for SPA
+app.use(function spaFallback(req, res, next) {
+  if (req.path.startsWith('/api') || req.path.startsWith('/api-docs')) {
+    return next();
+  }
+  
+  // Check if the requested file exists in frontend directory
+  const filePath = path.join(frontendRoot, req.path);
+  const fs = require('fs');
+  
+  try {
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+  } catch (err) {
+    // Ignore errors
+  }
+  
+  // Fall back to index.html for SPA routing
+  return res.sendFile(path.join(frontendRoot, 'index.html'));
+});
+
+/* gestisce le richieste che non corrispondono a nessuna rotta definita. va registrato
+   dopo tutte le rotte, altrimenti intercetterebbe ogni richiesta prima che raggiunga
+   il controller corretto */
+app.use(notFound);
+
+/* middleware globale per la gestione degli errori. deve essere l'ultimo, perché deve
+   poter ricevere gli errori generati dalle rotte e dai middleware precedenti */
+app.use(errorHandler);
 
 module.exports = app;

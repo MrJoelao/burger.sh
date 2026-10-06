@@ -1,0 +1,80 @@
+[
+  {
+    "name": "Cheeseburger",
+    "type": "burger",
+    "price": 6.5,
+    "photoUrl": "https://picsum.photos/seed/cheeseburger/400"
+  },
+  {
+    "name": "Doppio Bacon Burger",
+    "type": "burger",
+    "price": 8.9,
+    "photoUrl": "https://picsum.photos/seed/bacon-burger/400"
+  },
+  {
+    "name": "Veggie Burger",
+    "type": "burger",
+    "price": 7.5,
+    "photoUrl": "https://picsum.photos/seed/veggie-burger/400"
+  },
+  {
+    "name": "Chicken Burger",
+    "type": "burger",
+    "price": 7.9,
+    "photoUrl": "https://picsum.photos/seed/chicken-burger/400"
+  },
+  {
+    "name": "Hot Dog Classico",
+    "type": "hot_dog",
+    "price": 5.5,
+    "photoUrl": "https://picsum.photos/seed/hot-dog/400"
+  },
+  {
+    "name": "Patatine Fritte",
+    "type": "side",
+    "price": 3,
+    "photoUrl": "https://picsum.photos/seed/fries/400"
+  },
+  {
+    "name": "Anelli di Cipolla",
+    "type": "side",
+    "price": 3.5,
+    "photoUrl": "https://picsum.photos/seed/onion-rings/400"
+  },
+  {
+    "name": "Nuggets di Pollo (6 pz)",
+    "type": "side",
+    "price": 4.5,
+    "photoUrl": "https://picsum.photos/seed/nuggets/400"
+  },
+  {
+    "name": "Insalata Mista",
+    "type": "salad",
+    "price": 5,
+    "photoUrl": "https://picsum.photos/seed/salad/400"
+  },
+  {
+    "name": "Coca Cola",
+    "type": "drink",
+    "price": 2.5,
+    "photoUrl": "https://picsum.photos/seed/cola/400"
+  },
+  {
+    "name": "Acqua Naturale",
+    "type": "drink",
+    "price": 1.5,
+    "photoUrl": "https://picsum.photos/seed/water/400"
+  },
+  {
+    "name": "Milkshake alla Vaniglia",
+    "type": "drink",
+    "price": 4,
+    "photoUrl": "https://picsum.photos/seed/milkshake/400"
+  },
+  {
+    "name": "Sundae al Cioccolato",
+    "type": "dessert",
+    "price": 3,
+    "photoUrl": "https://picsum.photos/seed/sundae/400"
+  }
+]

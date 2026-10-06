@@ -1,0 +1,252 @@
+const Restaurant = require('../models/Restaurant');
+const User = require('../models/User');
+const Dish = require('../models/Dish');
+const Ingredient = require('../models/Ingredient');
+const { isAdmin, isOwner, unauthorized, findOrThrow } = require('../utils/authorization');
+const { jsonOk, jsonError, jsonMessage, jsonPaginated, handleAuth } = require('../utils/httpResponses');
+const { containsFilter, combineFilters } = require('../utils/searchFilters');
+const { settleRestaurants, syncManagerRestaurant } = require('./userController');
+
+/* controller dei ristoranti: consultazione pubblica (lista e dettaglio) e
+   gestione riservata a admin (creazione/eliminazione) e al manager
+   proprietario (modifica dei propri dati). */
+
+/* risolve il filtro sul ristorante a partire dal nome di un piatto offerto:
+   un piatto del menu comune (isCustom: false) è ordinabile in qualsiasi
+   filiale, quindi non restringe la ricerca; un piatto custom la restringe
+   invece ai soli ristoranti proprietari di quel piatto */
+async function restaurantIdsForDish(dishName) {
+  const matchingDishes = await Dish.find(
+    { name: containsFilter(dishName) },
+    'isCustom restaurantId'
+  );
+
+  const offersCommonDish = matchingDishes.some((dish) => !dish.isCustom);
+  if (offersCommonDish) {
+    return null;
+  }
+
+  return matchingDishes.filter((dish) => dish.isCustom).map((dish) => dish.restaurantId);
+}
+
+/* costruisce il filtro Mongoose per GET /api/restaurants a partire dai
+   parametri di ricerca opzionali name, city e dishName */
+async function buildRestaurantSearchFilter({ name, city, dishName }) {
+  const conditions = [];
+
+  const nameFilter = containsFilter(name);
+  if (nameFilter) {
+    conditions.push({ name: nameFilter });
+  }
+
+  const cityFilter = containsFilter(city);
+  if (cityFilter) {
+    conditions.push({ city: cityFilter });
+  }
+
+  if (dishName) {
+    const restaurantIds = await restaurantIdsForDish(dishName);
+    if (restaurantIds) {
+      conditions.push({ _id: { $in: restaurantIds } });
+    }
+  }
+
+  return combineFilters(conditions);
+}
+
+/* chi può modificare un ristorante: admin (globale) oppure il manager
+   proprietario di quel ristorante specifico */
+function canModifyRestaurant(req, restaurant) {
+  if (isAdmin(req.user) || isOwner(restaurant.managerId, req.user.id)) {
+    return { authorized: true };
+  }
+
+  return unauthorized('Not authorized to modify this restaurant');
+}
+
+// get tutti i ristoranti (con paginazione offset-based e filtri di ricerca opzionali)
+async function getAllRestaurants(req, res, next) {
+  try {
+    // estrae paginazione dal middleware (già validata e calcolata)
+    const { page, limit, skip } = req.pagination;
+    const { name, city, dishName } = req.query;
+
+    const filter = await buildRestaurantSearchFilter({ name, city, dishName });
+
+    const total = await Restaurant.countDocuments(filter);
+    const restaurants = await Restaurant.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .populate('managerId', 'name surname email');
+
+    return jsonPaginated(res, 200, page, limit, total, restaurants);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// get ristorante by id
+async function getRestaurantById(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const restaurant = await findOrThrow(
+      Restaurant.findById(id).populate('managerId', 'name surname email'),
+      'Restaurant not found'
+    );
+
+    return jsonOk(res, 200, restaurant);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// create ristorante (solo admin)
+async function createRestaurant(req, res, next) {
+  try {
+    const { name, address, city, zip, phone, vatNumber, managerId, location } = req.validated;
+
+    // verifica che il manager esista e sia un manager
+    const manager = await User.findById(managerId);
+    if (!manager || manager.role !== 'manager') {
+      return jsonError(res, 400, 'Invalid manager ID or user is not a manager');
+    }
+
+    const restaurant = await Restaurant.create({
+      name,
+      address,
+      city,
+      zip,
+      phone,
+      vatNumber,
+      managerId,
+      location
+    });
+
+    const populatedRestaurant = await restaurant.populate('managerId', 'name surname email');
+
+    /* assegna la filiale al manager anche sul suo documento: senza questo il
+       manager resterebbe senza restaurantId finché non passa da /restaurants/first,
+       che però risponde 400 perché la filiale esiste già */
+    await syncManagerRestaurant(managerId);
+    await Ingredient.updateMany(
+      { managerId, restaurantId: null },
+      { $set: { restaurantId: restaurant._id }, $unset: { managerId: 1 } }
+    );
+
+    return jsonOk(res, 201, populatedRestaurant);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// create first restaurant (solo per manager approvati che non hanno ancora un ristorante)
+async function createFirstRestaurant(req, res, next) {
+  try {
+    const { name, address, city, zip, phone, vatNumber, location } = req.validated;
+    const managerId = req.user.id;
+
+    // verifica che il manager non abbia già un ristorante
+    const existingRestaurant = await Restaurant.findOne({ managerId });
+    if (existingRestaurant) {
+      return jsonError(res, 400, 'Hai già un ristorante associato al tuo account');
+    }
+
+    const restaurant = await Restaurant.create({
+      name,
+      address,
+      city,
+      zip,
+      phone,
+      vatNumber,
+      managerId,
+      location
+    });
+
+    // aggiorna l'utente con il restaurantId
+    await User.findByIdAndUpdate(managerId, { restaurantId: restaurant._id });
+    await Ingredient.updateMany(
+      { managerId, restaurantId: null },
+      { $set: { restaurantId: restaurant._id }, $unset: { managerId: 1 } }
+    );
+
+    const populatedRestaurant = await restaurant.populate('managerId', 'name surname email');
+
+    return jsonOk(res, 201, populatedRestaurant);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// update ristorante (solo il manager del ristorante o admin)
+async function updateRestaurant(req, res, next) {
+  try {
+    const { id } = req.params;
+    const updates = { ...req.validated };
+
+    /* managerId non è modificabile tramite questo endpoint: il trasferimento
+       di un ristorante a un altro manager è un'operazione riservata all'admin
+       e va fatta con un flusso dedicato, non con una update generica (evita
+       che un manager proprietario ceda/rubi la propria filiale a chiunque) */
+    delete updates.managerId;
+
+    const restaurant = await findOrThrow(Restaurant.findById(id), 'Restaurant not found');
+
+    const authCheck = canModifyRestaurant(req, restaurant);
+    if (!authCheck.authorized) {
+      return handleAuth(res, authCheck);
+    }
+
+    /* address/city cambiati invalidano la location geocodificata in cache
+       (deliveryService.ensureRestaurantLocation): senza questo, le consegne
+       continuerebbero a calcolare la distanza dalla vecchia posizione fino
+       al prossimo riavvio del processo */
+    const mongoUpdate = { $set: updates };
+    if (updates.address !== undefined || updates.city !== undefined) {
+      mongoUpdate.$unset = { location: 1 };
+    }
+
+    const updatedRestaurant = await Restaurant.findByIdAndUpdate(id, mongoUpdate, {
+      returnDocument: 'after',
+      runValidators: true
+    }).populate('managerId', 'name surname email');
+
+    return jsonOk(res, 200, updatedRestaurant);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/* delete ristorante: l'admin può chiudere qualsiasi filiale, il manager
+   proprietario può chiudere la propria senza dover eliminare l'intero
+   account (a differenza di prima, quando l'unico modo era DELETE /api/users/me).
+   con newManagerId nel body, la filiale viene trasferita invece di essere
+   chiusa, riusando la stessa regola già applicata alla dismissione di un manager. */
+async function deleteRestaurant(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { newManagerId } = req.validated || {};
+
+    const restaurant = await findOrThrow(Restaurant.findById(id), 'Restaurant not found');
+
+    const authCheck = canModifyRestaurant(req, restaurant);
+    if (!authCheck.authorized) {
+      return handleAuth(res, authCheck);
+    }
+
+    await settleRestaurants([restaurant], newManagerId);
+
+    return jsonMessage(res, 200, 'Restaurant deleted successfully');
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  getAllRestaurants,
+  getRestaurantById,
+  createRestaurant,
+  createFirstRestaurant,
+  updateRestaurant,
+  deleteRestaurant
+};
